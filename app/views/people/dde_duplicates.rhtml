@@ -1,0 +1,139 @@
+<style type="text/css">
+  .link {
+    border-width: 0 1px 4px;
+    font-size: 12px;
+    font-weight: bold;
+    padding: 8px 12px 7px;
+    text-transform: uppercase;
+  }
+
+  .btn-danger {
+    background-color: #ff4136;
+    border-color: #ff291c;
+    color: #ffffff;
+  }
+  .link {
+    -moz-user-select: none;
+    background-image: none;
+    border: 1px solid transparent;
+    border-radius: 4px;
+    cursor: pointer;
+    display: inline-block;
+    font-size: 14px;
+    font-weight: normal;
+    line-height: 2.429;
+    margin-bottom: 0;
+    padding: 6px 12px;
+    text-align: center;
+    vertical-align: middle;
+    white-space: nowrap;
+    width: 86%;
+  }
+
+  a {
+    color: #158cba;
+    text-decoration: none;
+  }
+  a {
+    background: transparent none repeat scroll 0 0;
+  }
+
+  table tbody td{
+    border-bottom-width: 2px !important;
+    border: 1px solid #dddddd;
+  }
+
+  .alert {
+    border-width: 0 1px 4px;
+  }
+  .alert-info {
+    background-color: #75caeb;
+    border-color: #40b5e3;
+    color: #ffffff;
+  }
+  .alert {
+    border: 1px solid transparent;
+    margin-bottom: 20px;
+    padding: 15px;
+    font-weight: bold;
+    font-size: 16pt;
+  }
+
+  .drug-name{
+    font-size: 14pt;
+    padding-top: 10px;
+    padding-bottom: 10px;
+  }
+
+  .drug-stock{
+    font-size: 14pt;
+    font-weight: bold;
+  }
+
+  .theader{
+    font-size: 14pt;
+    font-weight: bold;
+  }
+
+  #number{
+      background-color: #4A708B;
+      border-bottom: 1px outset black;
+      text-decoration: none;
+      padding: 10px 16px 10px 10px;
+      text-align: center;
+      text-decoration: none;
+      width: 20%;
+    }
+
+    #number a{
+      color: white !important;
+}
+</style>
+<div class="alert alert-info">
+  <center><i><u>National ID duplicates</u></i></center>
+</div>
+<div style="overflow: auto; height: 550px;">
+  <table style="padding-left: 5%; width: 96%;">
+    <thead>
+
+      <tr style="background-color: #FFF68F; font-size: 14pt">
+        <th style="text-align: left;" class="theader">First Name</th>
+        <th style="text-align: left;" class="theader">Last Name</th>
+        <th style="text-align: left;" class="theader">Gender</th>
+        <th style="text-align: left;" class="theader">Date of Birth</th>
+        <th style="text-align: left;" class="theader">Current Village</th>
+        <th style="text-align: left;" class="theader">Home Village</th>
+        <th style="text-align: left;" class="theader">Current Residence</th>
+        <th style="text-align: left;" class="theader">Home District</th>
+      </tr>
+    </thead>
+    <tbody>
+      <% @dde_duplicates.each do |key,values| %>
+        <tr>
+          <td  class="drug-name"><%= values["first_name"] %></td>
+          <td  class="drug-name"><%= values["family_name"] %></td>
+          <td  class="drug-name" style="text-align: center;"><%= values["gender"] %></td>
+          <td  class="drug-name"><%= values["birthdate"] %></td>
+          <td  class="drug-name"><%= values["current_village"] %></td>
+          <td  class="drug-name"><%= values["home_village"] %></td>
+          <td  class="drug-name"><%= values["current_residence"] %></td>
+          <td  class="drug-name"><%= values["home_district"] %></td>
+          <td id="number" style="text-align:center"><a href="/people/search?identifier=<%= values["npid"] %>&dde_document_id=<%= values["doc_id"] %>&was_duplicate=true">Select patient</a></td>
+        </tr>
+      <% end %>
+    </tbody>
+  </table>
+</div>
+<div id="buttons" class="buttonsDiv">
+  <button onmousedown="window.location='/'" class="button green navButton" id="nextButton"><span>Finish</span></button>
+</div>
+
+<script type="text/javascript">
+  var tt_cancel_destination = "/clinic";
+
+  var cancelButtonHTML = '<button id="cancelButton" class="button navButton red" onclick="if (tt_cancel_destination) window.location = tt_cancel_destination;"><span>Cancel</span></button>';
+  window.onload = function(){
+    buttons = document.getElementById("buttons");
+    buttons.innerHTML += cancelButtonHTML;
+  }
+</script>
