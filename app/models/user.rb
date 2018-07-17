@@ -2,32 +2,31 @@ require 'digest/sha1'
 require 'digest/sha2'
 
 class User < ActiveRecord::Base
-	devise :database_authenticatable, :token_authenticatable,
-		:authentication_keys => [:login]
+	devise :database_authenticatable, :authentication_keys => [:login]
 
-	set_table_name :users
-	set_primary_key :user_id
-	include Openmrs
+	self.table_name = "users"
+	self.primary_key = "user_id"
+	#include Openmrs
 
 	before_save :set_password, :before_create
 	
 	attr :plain_password
 	#cattr_accessor :current_user
-	attr_accessor :plain_password
-	attr_accessor :password_salt
-	attr_accessor :encrypted_password
+	#attr_accessor :plain_password
+	#attr_accessor :password_salt
+	#attr_accessor :encrypted_password
 	#attr_accessor :secret_question
 	#attr_accessible :encrypted_password
 	# User name attribute for Devise
 
 	# Virtual attribute for authenticating by either username or email
 	# This is in addition to a real persisted field like 'username'
-	attr_accessor :login
-	attr_accessible :login, :username, :password, :secret_question
+	#attr_accessor :login
+	#attr_accessible :login, :username, :password, :secret_question
 
-	belongs_to :person, :foreign_key => :person_id, :conditions => {:voided => 0}
-	has_many :user_properties, :foreign_key => :user_id # no default scope
-	has_many :user_roles, :foreign_key => :user_id, :dependent => :delete_all # no default scope
+	belongs_to :person, -> { where voided: 0 }, foreign_key: :person_id
+	has_many :user_properties, foreign_key: :user_id # no default scope
+	has_many :user_roles, foreign_key: :user_id, dependent: :delete_all # no default scope
 	#has_many :names, :class_name => 'PersonName', :foreign_key => :person_id, :dependent => :destroy, :order => 'person_name.preferred DESC', :conditions => {:voided =>  0}
 
 	def set_password
@@ -36,10 +35,7 @@ class User < ActiveRecord::Base
 		self.password = encrypt(self.plain_password, self.salt) if self.plain_password
 	end
   
-	has_one :activities_property,
-		  :class_name => 'UserProperty',
-		  :foreign_key => :user_id,
-		  :conditions => ['property = ?', 'Activities'] 
+	has_one :activities_property, -> { where (['property = ?', 'Activities'])}, class_name: :UserProperty, foreign_key: :user_id
 
 	# Custom search method for our custom login attribute
 	def self.find_for_database_authentication(warden_conditions)

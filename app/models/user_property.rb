@@ -1,6 +1,7 @@
+require 'composite_primary_keys'
 class UserProperty < ActiveRecord::Base
-  set_table_name "user_property"
-  set_primary_keys :user_id, :property
-  include Openmrs
-  belongs_to :user, :foreign_key => :user_id, :conditions => {:voided => 0}
+  self.table_name = "user_property"
+  self.primary_keys = :user_id, :property
+  #include Openmrs
+  belongs_to :user, -> { where voided: 0 }, foreign_key: :user_id
 end
