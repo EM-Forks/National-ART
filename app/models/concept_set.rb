@@ -1,7 +1,7 @@
 class ConceptSet < ActiveRecord::Base
-  set_table_name :concept_set
-  set_primary_key :concept_set_id
-  include Openmrs
-  belongs_to :set, :class_name => 'Concept', :conditions => {:retired => 0}
-  belongs_to :concept, :conditions => {:retired => 0}
+  self.table_name = "concept_set"
+  self.primary_key = "concept_set_id"
+  
+  belongs_to :set, -> { where retired: 0 }, class_name: :Concept
+  belongs_to :concept, -> { where retired: 0 }
 end

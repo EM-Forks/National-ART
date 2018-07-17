@@ -1,7 +1,7 @@
 class ConceptDatatype < ActiveRecord::Base
-  set_table_name :concept_datatype
-  set_primary_key :concept_datatype_id
-  include Openmrs
-  has_many :concepts, :class_name => 'Concept', :foreign_key => :datatype_id, :conditions => {:retired => 0}
-  belongs_to :user, :foreign_key => :user_id, :conditions => {:voided => 0}
+  self.table_name = "concept_datatype"
+  self.primary_key  = "concept_datatype_id"
+
+  has_many :concepts, -> { where retired: 0 },  class_name: :Concept, foreign_key: :datatype_id
+  belongs_to :user, -> { where voided: 0 }, foreign_key: :user_id
 end

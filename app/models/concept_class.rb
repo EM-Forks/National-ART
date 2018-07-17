@@ -1,9 +1,8 @@
 class ConceptClass < ActiveRecord::Base
-  set_table_name :concept_class
-  set_primary_key :concept_class_id
-  include Openmrs
+  self.table_name = "concept_class"
+  self.primary_key = "concept_class_id"
 
-  has_many :concepts, :class_name => 'Concept', :foreign_key => 'class_id', :conditions => {:retired => 0}
+  has_many :concepts, -> { where retired: 0 }, class_name: :Concept, foreign_key: :class_id
 
   def self.diagnosis_concepts
     @@diagnoses ||= self.find_by_name("DIAGNOSIS", :include => {:concepts => :name}).concepts

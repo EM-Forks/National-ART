@@ -11,13 +11,8 @@ class Observation < ActiveRecord::Base
   belongs_to :answer_concept_name, -> { where voided: 0 }, class_name: "ConceptName", foreign_key: "value_coded_name_id"
   has_many :concept_names, through: "concept"
 
-  #named_scope :recent, lambda {|number| {:joins => [:encounter], :order => 'obs_datetime DESC,date_created DESC', :limit => number}}
-  scope :recent,-> joins(:encounter),  lambda { |number| limit(number) }
-
-  #named_scope :before, lambda {|date| {:conditions => ["obs_datetime < ? ", date], :order => 'obs_datetime DESC, date_created DESC', :limit => 1}}
+  scope :recent, lambda{ |number| joins(:encounter).order("obs_datetime DESC,date_created DESC").limit(number)}
   scope :before, lambda { |date| where(["obs_datetime < ? ", date]).order('obs_datetime DESC,date_created DESC').limit(1) }
-
-  #named_scope :old, lambda {|number| {:order => 'obs_datetime ASC, date_created ASC', :limit => number}}
   scope :old, lambda { |number| order('obs_datetime DESC,date_created DESC').limit(number) }
 
 
