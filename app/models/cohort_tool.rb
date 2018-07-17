@@ -1,5 +1,5 @@
 class CohortTool < ActiveRecord::Base
-  set_table_name "encounter"
+  self.table_name = "encounter"
   
   def self.survival_analysis(survival_start_date=@start_date,
       survival_end_date=@end_date,
