@@ -1,11 +1,11 @@
 class ConceptAnswer < ActiveRecord::Base
-  set_table_name :concept_answer
-  set_primary_key :concept_answer_id
-  include Openmrs
+  self.table_name  = "concept_answer"
+  self.primary_key = "concept_answer_id"
 
-  belongs_to :answer, :class_name => 'Concept', :foreign_key => 'answer_concept', :conditions => {:retired => 0}
-  belongs_to :drug, :class_name => 'Drug', :foreign_key => 'answer_drug', :conditions => {:retired => 0}
-  belongs_to :concept, :class_name => 'Concept', :foreign_key => 'concept_id', :conditions => {:retired => 0}
+
+  belongs_to :answer, -> { where retired: 0 }, class_name: :Concept, foreign_key: :answer_concept
+  belongs_to :drug, -> { where retired: 0 }, class_name: :Drug, foreign_key: :answer_drug
+  belongs_to :concept, -> { where retired: 0 }, class_name: :Concept, foreign_key: :concept_id
 
   def name
     self.answer.fullname rescue ''

@@ -1,8 +1,8 @@
 class ConceptNumeric < ActiveRecord::Base
-  set_table_name :concept_numeric
-  set_primary_key :concept_id
-  include Openmrs
-  has_one :concept, :foreign_key => :concept_id, :dependent => :destroy
+  self.table_name = "concept_numeric"
+  self.primary_key = "concept_id"
+
+  has_one :concept, foreign_key: :concept_id, dependent: :destroy
   
   def options 
     result = {}
