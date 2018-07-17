@@ -1,6 +1,7 @@
+require 'composite_primary_keys'
 class UserRole < ActiveRecord::Base
-  set_table_name :user_role
-  set_primary_keys :role, :user_id
-  include Openmrs
-  belongs_to :user, :foreign_key => :user_id, :conditions => {:retired => 0}
+  self.table_name  = "user_role"
+  self.primary_keys = :role, :user_id
+  #include Openmrs
+  belongs_to :user, -> { where retired: 0 }, foreign_key: :user_id
 end
