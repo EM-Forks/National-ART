@@ -1,6 +1,6 @@
 class Location < ActiveRecord::Base
-  set_table_name "location"
-  set_primary_key "location_id"
+  self.table_name = "location"
+  self.primary_key ="location_id"
   include Openmrs
 
   cattr_accessor :current_location

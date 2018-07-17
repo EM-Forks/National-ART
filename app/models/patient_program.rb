@@ -1,19 +1,19 @@
 class PatientProgram < ActiveRecord::Base
-  set_table_name "patient_program"
-  set_primary_key "patient_program_id"
+  self.table_name = "patient_program"
+  self.primary_key = "patient_program_id"
   include Openmrs
-  belongs_to :patient, :conditions => {:voided => 0}
-  belongs_to :program, :conditions => {:retired => 0}
-  belongs_to :location, :conditions => {:retired => 0}
-  has_many :patient_states, :class_name => 'PatientState', :conditions => {:voided => 0}, :order => 'start_date, date_created', :dependent => :destroy
+  belongs_to :patient, -> {where(voided: 0)}
+  belongs_to :program, -> {where(retired: 0)}
+  belongs_to :location, -> {where(retired: 0)}
+  has_many :patient_states, -> {where(voided: 0)}, class_name: 'PatientState' # :order => 'start_date, date_created', :dependent => :destroy
 
-  named_scope :current, :conditions => ['date_enrolled < NOW() AND (date_completed IS NULL OR date_completed > NOW())']
-  named_scope :local, lambda{|| {:conditions => ['location_id IN (?)',  Location.current_health_center.children.map{|l|l.id} + [Location.current_health_center.id] ]}}
+  scope :current, -> { where('date_enrolled < NOW() AND (date_completed IS NULL OR date_completed > NOW())')}
+  scope :local, lambda{|| where (['location_id IN (?)',  Location.current_health_center.children.map{|l|l.id} + [Location.current_health_center.id] ])}
 
-  named_scope :in_programs, lambda{|names| names.blank? ? {} : {:include => :program, :conditions => ['program.name IN (?)', Array(names)]}}
-  named_scope :not_completed, lambda{||  {:conditions => ['date_completed IS NULL']}}
+  scope :in_programs, lambda{|names| names.blank? ? {} : includes(:program).where(['program.name IN (?)', Array(names)])}
+  scope :not_completed, lambda{|| where('date_completed IS NULL')}
 
-  named_scope :in_uncompleted_programs, lambda{|names| names.blank? ? {} : {:include => :program, :conditions => ['program.name IN (?) AND date_completed IS NULL', Array(names)]}}
+  scope :in_uncompleted_programs, lambda{|names| names.blank? ? {} : includes(:program).where(['program.name IN (?) AND date_completed IS NULL', Array(names)])}
 
   validates_presence_of :date_enrolled, :program_id
 

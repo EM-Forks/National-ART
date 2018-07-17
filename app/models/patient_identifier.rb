@@ -1,10 +1,10 @@
 class PatientIdentifier < ActiveRecord::Base
-  set_table_name "patient_identifier"
-  set_primary_key :patient_identifier_id
+  self.table_name = "patient_identifier"
+  self.primary_key = "patient_identifier_id"
   include Openmrs
 
-  belongs_to :type, :class_name => "PatientIdentifierType", :foreign_key => :identifier_type, :conditions => {:retired => 0}
-  belongs_to :patient, :class_name => "Patient", :foreign_key => :patient_id, :conditions => {:voided => 0}
+  belongs_to :type, ->{where(retired:0)},class_name: :PatientIdentifierType, foreign_key: :identifier_type
+  belongs_to :patient,->{where(retired:0)}, class_name: :Patient, foreign_key: :patient_id
 
   def self.calculate_checkdigit(number)
     # This is Luhn's algorithm for checksums
