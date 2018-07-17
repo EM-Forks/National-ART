@@ -1,10 +1,10 @@
 module Openmrs
-  module ClassMethod
 
+  module ClassMethods
     def assign_scopes
       col_names = self.columns.map(&:name)
-      default_scope {where ("#{self.table_name}.voided = 0") if col_names.include?("voided")}
-      default_scope {where ("#{self.table_name}.retired = 0") if col_names.include?("retired")}
+      default_scope {where ("#{self.table_name}.voided = 0")} if col_names.include?("voided")
+      default_scope {where ("#{self.table_name}.retired = 0")}if col_names.include?("retired")
     end
     def [](name)
       name = name.to_s.gsub('_', ' ')
@@ -16,7 +16,6 @@ module Openmrs
     base.extend(ClassMethods)
     base.assign_scopes
   end
-
   def before_save
     super
     self.changed_by = User.current.id if self.attribute_method?("changed_by") and User.current != nil

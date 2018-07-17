@@ -1,24 +1,26 @@
 class Patient < ActiveRecord::Base
-  set_table_name "patient"
-  set_primary_key "patient_id"
+  before_save
+  after_save
+  self.table_name = "patient"
+  self.primary_key ="patient_id"
   include Openmrs
 
-  has_one :person, :foreign_key => :person_id, :conditions => {:voided => 0}
-  has_many :patient_identifiers, :foreign_key => :patient_id, :dependent => :destroy, :conditions => {:voided => 0}
-  has_many :patient_programs, :conditions => {:voided => 0}
-  has_many :programs, :through => :patient_programs
-  has_many :relationships, :foreign_key => :person_a, :dependent => :destroy, :conditions => {:voided => 0}
-  has_many :orders, :conditions => {:voided => 0}
-  has_many :encounters, :conditions => {:voided => 0} do
+  has_one :person, ->{where(voided: 0)},foreign_key: :person_id
+  has_many :patient_identifiers,-> {where(voided: 0)}, foreign_key: :patient_id, dependent: :destroy
+  has_many :patient_programs,-> {where(voided:0)}
+  has_many :programs, through: :patient_programs
+  has_many :relationships,->{where(voided: 0)}, foreign_key: :person_a, dependent: :destroy
+  has_many :orders, ->{where(voided:0)}
+  has_many :encounters,->{where(voided:0)} do
 
     def find_by_date(encounter_date)
       encounter_date = Date.today unless encounter_date
-      find(:all, :conditions => ["encounter_datetime BETWEEN ? AND ?",
+      where("encounter_datetime BETWEEN ? AND ?",
           encounter_date.to_date.strftime('%Y-%m-%d 00:00:00'),
           encounter_date.to_date.strftime('%Y-%m-%d 23:59:59')
-        ]) # Use the SQL DATE function to compare just the date part
+       ) # Use the SQL DATE function to compare just the date part
     end
-  end
+ end
 
   def after_void(reason = nil)
     self.person.void(reason) rescue nil
@@ -29,8 +31,8 @@ class Patient < ActiveRecord::Base
   end
 
   def current_bp(date = Date.today)
-    encounter_id = self.encounters.last(:conditions => ["encounter_type = ? AND DATE(encounter_datetime) = ?",
-        EncounterType.find_by_name("VITALS").id, date.to_date]).id rescue nil
+    encounter_id = self.encounters.where("encounter_type = ? AND DATE(encounter_datetime) = ?",
+                                          EncounterType.find_by_name("VITALS").id, date.to_date).last.id rescue nil
 
     ans = [(Observation.last(:conditions => ["encounter_id = ? AND concept_id = ?", encounter_id,
             ConceptName.find_by_name("SYSTOLIC BLOOD PRESSURE").concept_id]).answer_string.to_i rescue nil),
