@@ -1,23 +1,39 @@
 class Observation < ActiveRecord::Base
-  set_table_name :obs
-  set_primary_key :obs_id
-  include Openmrs
-  belongs_to :encounter, :conditions => {:voided => 0}
-  belongs_to :order, :conditions => {:voided => 0}
-  belongs_to :concept, :conditions => {:retired => 0}
-  belongs_to :concept_name, :class_name => "ConceptName", :foreign_key => "concept_name", :conditions => {:voided => 0}
-  belongs_to :answer_concept, :class_name => "Concept", :foreign_key => "value_coded", :conditions => {:retired => 0}
-  belongs_to :answer_concept_name, :class_name => "ConceptName", :foreign_key => "value_coded_name_id", :conditions => {:voided => 0}
-  has_many :concept_names, :through => :concept
+ self.table_name = "obs"
+  self.primary_key = "obs_id"
+  #include Openmrs
 
-  named_scope :recent, lambda {|number| {:joins => [:encounter], :order => 'obs_datetime DESC,date_created DESC', :limit => number}}
-  named_scope :before, lambda {|date| {:conditions => ["obs_datetime < ? ", date], :order => 'obs_datetime DESC, date_created DESC', :limit => 1}}
-  named_scope :old, lambda {|number| {:order => 'obs_datetime ASC, date_created ASC', :limit => number}}
-  named_scope :question, lambda {|concept|
+  belongs_to :encounter, -> { where voided: 0 }
+  belongs_to :order, -> { where voided: 0 }
+  belongs_to :concept, -> { where retired: 0 }
+  belongs_to :concept_name
+  belongs_to :answer_concept, -> { where retired: 0 },  class_name: "Concept", foreign_key: "value_coded"
+  belongs_to :answer_concept_name, -> { where voided: 0 }, class_name: "ConceptName", foreign_key: "value_coded_name_id"
+  has_many :concept_names, through: "concept"
+
+  #named_scope :recent, lambda {|number| {:joins => [:encounter], :order => 'obs_datetime DESC,date_created DESC', :limit => number}}
+  scope :recent,-> joins(:encounter),  lambda { |number| limit(number) }
+
+  #named_scope :before, lambda {|date| {:conditions => ["obs_datetime < ? ", date], :order => 'obs_datetime DESC, date_created DESC', :limit => 1}}
+  scope :before, lambda { |date| where(["obs_datetime < ? ", date]).order('obs_datetime DESC,date_created DESC').limit(1) }
+
+  #named_scope :old, lambda {|number| {:order => 'obs_datetime ASC, date_created ASC', :limit => number}}
+  scope :old, lambda { |number| order('obs_datetime DESC,date_created DESC').limit(number) }
+
+
+  #named_scope :question, lambda {|concept|
+    #concept_id = concept.to_i
+    #concept_id = ConceptName.first(:conditions => {:name => concept}).concept_id rescue 0 if concept_id == 0
+    #{:conditions => {:concept_id => concept_id}}
+  #}
+
+
+  scope :question, lambda { |concept|
     concept_id = concept.to_i
-    concept_id = ConceptName.first(:conditions => {:name => concept}).concept_id rescue 0 if concept_id == 0
-    {:conditions => {:concept_id => concept_id}}
+    concept_id = ConceptName.where(["name =? ", concept]).first.concept_id rescue 0 if concept_id == 0
+    where(["concept_id =? ", concept_id])
   }
+
 
   def validate
     if (value_numeric != '0.0' && value_numeric != '0' && !value_numeric.blank?)

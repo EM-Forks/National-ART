@@ -1,26 +1,22 @@
-require "will_paginate"
+#require "will_paginate"
 class Encounter < ActiveRecord::Base
-  set_table_name :encounter
-  set_primary_key :encounter_id
+  self.table_name = "encounter"
+  self.primary_key = "encounter_id"
+
   include Openmrs
-  has_many :observations, :dependent => :destroy, :conditions => {:voided => 0}
-  has_many :drug_orders,  :through   => :orders,  :foreign_key => 'order_id'
-  has_many :orders, :dependent => :destroy, :conditions => {:voided => 0}
-  belongs_to :type, :class_name => "EncounterType", :foreign_key => :encounter_type, :conditions => {:retired => 0}
-  belongs_to :provider, :class_name => "Person", :foreign_key => :provider_id, :conditions => {:voided => 0}
-  belongs_to :patient, :conditions => {:voided => 0}
+
+  has_many :observations, -> { where voided: 0 }, dependent: "destroy"
+  has_many :drug_orders, foreign_key: "order_id", through: "orders"
+  has_many :orders, -> { where voided: 0 }, dependent: "destroy"
+  belongs_to :type, -> { where retired: 0 }, class_name: "EncounterType", foreign_key: "encounter_type"  
+  #belongs_to :provider, -> { where voided: 0 }, class_name: "Person", foreign_key: "provider_id"
+  belongs_to :patient, -> { where voided: 0 }
 
   # TODO, this needs to account for current visit, which needs to account for possible retrospective entry
-  named_scope :current, :conditions => 'DATE(encounter.encounter_datetime) = CURRENT_DATE()'
+  #named_scope :current, :conditions => 'DATE(encounter.encounter_datetime) = CURRENT_DATE()'
 
-  def before_save
-    self.provider = User.current.person if self.provider.blank?
-    # TODO, this needs to account for current visit, which needs to account for possible retrospective entry
-    self.encounter_datetime = Time.now if self.encounter_datetime.blank?
-  end
-
-  def after_save
-    self.add_location_obs
+  def self.current
+    self.where("DATE(encounter.encounter_datetime) = CURRENT_DATE()")
   end
 
   def after_void(reason = nil)
