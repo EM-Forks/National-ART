@@ -9,7 +9,7 @@ class Concept < ActiveRecord::Base
   has_one :concept_numeric, :foreign_key => :concept_id, :dependent => :destroy
   #has_one :name, :class_name => 'ConceptName'
   has_many :answer_concept_names, -> { where voided: 0 }, :class_name => 'ConceptName'
-  has_many :concept_names, -> { where voided: 0 }
+  has_many :concept_names, -> { where voided: 0 }, foreign_key: :concept_id
   has_many :concept_maps # no default scope
   has_many :concept_sets  # no default scope
   has_many :concept_answers do # no default scope
@@ -25,7 +25,8 @@ class Concept < ActiveRecord::Base
   has_many :concept_members, :class_name => 'ConceptSet', :foreign_key => :concept_set
 
   def self.find_by_name(concept_name)
-    Concept.find(:first, :joins => 'INNER JOIN concept_name on concept_name.concept_id = concept.concept_id', :conditions => ["concept.retired = 0 AND concept_name.voided = 0 AND concept_name.name =?", "#{concept_name}"])
+    Concept.where(["concept.retired = 0 AND concept_name.voided = 0 AND concept_name.name = ?",
+                   concept_name]).joins(:concept_names).first
   end
 
   def shortname

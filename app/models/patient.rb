@@ -371,28 +371,26 @@ EOF
   def self.current_hiv_program_state(patient)
     return PatientProgram.where(["patient_id = ? AND program_id = ? AND location.location_id = ? AND date_completed IS NULL",
                                  patient.id, Program.find_by_concept_id(Concept.find_by_name('HIV PROGRAM').id).id,
-                                 Location.current_health_center]
-                    ).joins(:location).first.patient_states.current.first.program_workflow_state.concept.fullname rescue ''
+                                 Location.current_health_center.id]).joins(:location).first.patient_states.current.first.program_workflow_state.concept.fullname rescue ''
   end
 
   def self.hiv_encounter(patient, encounter, date = Date.today)
-    return Encounter.find(:all,:order => "encounter_datetime DESC,date_created DESC",
-      :conditions =>["DATE(encounter_datetime) = ? AND patient_id = ? AND encounter_type = ?",
-        date.to_date, patient.id, EncounterType.find_by_name(encounter).id],
-      :include => [:observations])
+    return Encounter.includes(:observations).where(["DATE(encounter_datetime) = ? AND patient_id = ? AND encounter_type = ?",
+                                                    date.to_date, patient.id, EncounterType.find_by_name(encounter).id]
+                                    ).order("encounter_datetime DESC,date_created DESC")
   end
 
   def self.concept_set(concept)
     concept_id = ConceptName.find_by_name(concept).concept_id
-    set = ConceptSet.find_all_by_concept_set(concept_id, :order => 'sort_weight')
+    set = ConceptSet.where(concept_set_id: concept_id).order('sort_weight')
     symptoms_ids = set.map{|item|next if item.concept.blank? ; item.concept_id }
     return symptoms_ids
   end
 
   def self.regimen_index(hiv_regimen_map)
-    return Regimen.find_by_sql("select distinct(c.name) as name, r.regimen_index as reg_index from concept_name c
+    return Regimen.find_by_sql(["select distinct(c.name) as name, r.regimen_index as reg_index from concept_name c
     inner join regimen r on r.concept_id = c.concept_id
-    where c.concept_id = '#{hiv_regimen_map}' and  concept_name_type = 'short' limit 1").map{|regimen| regimen.reg_index}
+    where c.concept_id = ? and  concept_name_type = 'short' limit 1",hiv_regimen_map]).map{|regimen| regimen.reg_index}
   end
 
   def date_started_art
@@ -407,17 +405,17 @@ EOF
   def self.type_of_hiv_confirmatory_test(patient, session_date = Date.today)
     hiv_confirmatory_test_concept_id = Concept.find_by_name('CONFIRMATORY HIV TEST TYPE').concept_id
 
-    hiv_confirmatory_answer_string = patient.person.observations.find(:last, :conditions => ["DATE(obs_datetime) <= ? AND concept_id =?",
+    hiv_confirmatory_answer_string = patient.person.observations.where(["DATE(obs_datetime) <= ? AND concept_id =?",
         session_date, hiv_confirmatory_test_concept_id]
-    ).answer_string.squish.upcase rescue nil
+    ).last.answer_string.squish.upcase rescue nil
 
     return hiv_confirmatory_answer_string
   end
 
   def self.date_of_hiv_clinic_registration(patient, session_date = Date.today)
     encounter_type_id = EncounterType.find_by_name("HIV CLINIC REGISTRATION").encounter_type_id
-    hiv_clinic_reg_enc = patient.encounters.find(:last, :conditions => ["encounter_type =? AND 
-        DATE(encounter_datetime) < ?", encounter_type_id, session_date])
+    hiv_clinic_reg_enc = patient.encounters.where(["encounter_type =? AND DATE(encounter_datetime) < ?",
+                                                              encounter_type_id, session_date]).last
 
     unless hiv_clinic_reg_enc.blank?
       reg_date = (hiv_clinic_reg_enc.encounter_datetime.to_date rescue hiv_clinic_reg_enc.encounter_datetime)
@@ -428,11 +426,11 @@ EOF
   end
 
   def self.cpt_prescribed_in_the_last_prescription?(patient, session_date = Date.today)
-    last_order_date = patient.orders.find(:last, :joins => [:encounter], :conditions => ["DATE(encounter_datetime) < ?",
-        session_date]).encounter.encounter_datetime.to_date rescue nil
+    last_order_date = patient.orders.where(["DATE(encounter_datetime) < ?", session_date]
+                            ).joins(:encounter).last.encounter.encounter_datetime.to_date rescue nil
     return false if last_order_date.blank?
-    last_orders = patient.orders.find(:all, :joins => [:encounter], :conditions => ["DATE(encounter_datetime) =?",
-        last_order_date])
+    last_orders = patient.orders.where(["DATE(encounter_datetime) =?",
+                                        last_order_date]).joins(:encounter)
 
     last_orders.each do |order|
       drug_name = order.drug_order.drug.name rescue nil
@@ -447,11 +445,11 @@ EOF
   end
 
   def self.ipt_prescribed_in_the_last_prescription?(patient, session_date = Date.today)
-    last_order_date = patient.orders.find(:last, :joins => [:encounter], :conditions => ["DATE(encounter_datetime) < ?",
-        session_date]).encounter.encounter_datetime.to_date rescue nil
+    last_order_date = patient.orders.where(["DATE(encounter_datetime) < ?", session_date]
+                                 ).joins(:encounter).last.encounter.encounter_datetime.to_date rescue nil
     return false if last_order_date.blank?
-    last_orders = patient.orders.find(:all, :joins => [:encounter], :conditions => ["DATE(encounter_datetime) =?",
-        last_order_date])
+    last_orders = patient.orders.where(["DATE(encounter_datetime) =?",
+                                        last_order_date]).joins(:encounter)
 
     last_orders.each do |order|
       drug_name = order.drug_order.drug.name rescue nil
@@ -470,12 +468,13 @@ EOF
     encounter_type_id = EncounterType.find_by_name("HIV CLINIC CONSULTATION").encounter_type_id
     side_effects_concept_id = Concept.find_by_name("MLW ART SIDE EFFECTS").concept_id
     
-    hiv_clinic_consultation_encounters = patient.encounters.find(:all, :conditions => ["encounter_type =? AND
-      DATE(encounter_datetime) <= ?", encounter_type_id, session_date.to_date])
+    hiv_clinic_consultation_encounters = patient.encounters.where(["encounter_type =? AND
+                                         DATE(encounter_datetime) <= ?", encounter_type_id,
+                                                                   session_date.to_date])
 
     hiv_clinic_consultation_encounters.each do |enc|
       encounter_datetime = enc.encounter_datetime.to_date.strftime("%d/%b/%Y")
-      observation_answers = enc.observations.find(:all, :conditions => ["concept_id =?",
+      observation_answers = enc.observations.where(["concept_id =?",
           side_effects_concept_id]).collect{|o|o.answer_string.squish}.compact
       side_effects[encounter_datetime] = observation_answers unless observation_answers.blank?
     end
@@ -496,11 +495,11 @@ side_effects_concept_id = Concept.find_by_name("MALAWI ART SIDE EFFECTS").concep
     symptom_present_concept_id = Concept.find_by_name("SYMPTOM PRESENT").concept_id
 
     encounter_type_id = EncounterType.find_by_name("HIV CLINIC CONSULTATION").encounter_type_id
-    encounter = patient.encounters.find(:first, :conditions => ["encounter_type =? AND
-        DATE(encounter_datetime) <= ?", encounter_type_id, session_date])
+    encounter = patient.encounters.where(["encounter_type =? AND
+        DATE(encounter_datetime) <= ?", encounter_type_id, session_date]).first
     return [] if encounter.blank?
 
-    contraindications = patient.person.observations.find(:all, :conditions => ["concept_id IN (?) AND
+    contraindications = patient.person.observations.where(["concept_id IN (?) AND
         DATE(obs_datetime) <= ? AND encounter_id =?", [side_effects_concept_id, symptom_present_concept_id],
         session_date, encounter.id]
     ).collect{|o|o.answer_string.squish}
@@ -511,9 +510,9 @@ side_effects_concept_id = Concept.find_by_name("MALAWI ART SIDE EFFECTS").concep
   def self.date_of_first_hiv_clinic_enc(patient, session_date = Date.today)
     
     encounter_type_id = EncounterType.find_by_name("HIV CLINIC CONSULTATION").encounter_type_id
-    encounter_datetime = patient.encounters.find(:first, :conditions => ["encounter_type =? AND 
+    encounter_datetime = patient.encounters.where(["encounter_type =? AND
         DATE(encounter_datetime) <= ?", encounter_type_id, session_date]
-    ).encounter_datetime.to_date.strftime("%d/%b/%Y") rescue nil
+    ).first.encounter_datetime.to_date.strftime("%d/%b/%Y") rescue nil
 
     return encounter_datetime
   end
@@ -522,13 +521,13 @@ side_effects_concept_id = Concept.find_by_name("MALAWI ART SIDE EFFECTS").concep
     side_effects_concept_id = Concept.find_by_name("MALAWI ART SIDE EFFECTS").concept_id
     symptom_present_conept_id = Concept.find_by_name("SYMPTOM PRESENT").concept_id
 
-    side_effects_observations = patient.person.observations.find(:all, :conditions => ["concept_id IN (?) AND
-        DATE(obs_datetime) = ?", [side_effects_concept_id, symptom_present_conept_id], session_date]
-    )
+    side_effects_observations = patient.person.observations.where(["concept_id IN (?) AND
+        DATE(obs_datetime) = ?", [side_effects_concept_id, symptom_present_conept_id], session_date])
+
     side_effects_contraindications = []
     side_effects_observations.each do |obs|
       next if !obs.obs_group_id.blank?
-      child_obs = Observation.find(:last, :conditions => ["obs_group_id = ?", obs.obs_id])
+      child_obs = Observation.where(["obs_group_id = ?", obs.obs_id]).last
       unless child_obs.blank?
         answer_string = child_obs.answer_string.squish
         next if answer_string.match(/NO/i)
@@ -543,13 +542,12 @@ side_effects_concept_id = Concept.find_by_name("MALAWI ART SIDE EFFECTS").concep
     side_effects_concept_id = Concept.find_by_name("MALAWI ART SIDE EFFECTS").concept_id
     symptom_present_conept_id = Concept.find_by_name("SYMPTOM PRESENT").concept_id
 
-    side_effects_observations = patient.person.observations.find(:all, :conditions => ["concept_id IN (?) AND
-        DATE(obs_datetime) <= ?", [side_effects_concept_id, symptom_present_conept_id], session_date]
-    )
+    side_effects_observations = patient.person.observations.where(["concept_id IN (?) AND
+        DATE(obs_datetime) <= ?", [side_effects_concept_id, symptom_present_conept_id], session_date])
     side_effects_obs_ever = []
     side_effects_observations.each do |obs|
       next if !obs.obs_group_id.blank?
-      child_obs = Observation.find(:last, :conditions => ["obs_group_id = ?", obs.obs_id])
+      child_obs = Observation.where(["obs_group_id = ?", obs.obs_id]).last
       unless child_obs.blank?
         answer_string = child_obs.answer_string.squish
         next if answer_string.match(/NO/i)
@@ -564,16 +562,16 @@ side_effects_concept_id = Concept.find_by_name("MALAWI ART SIDE EFFECTS").concep
   def self.previous_weight(patient, session_date)
     weight_concept_id = Concept.find_by_name("WEIGHT").concept_id
 
-    previous_patient_weight = patient.person.observations.find(:last, :conditions => ["concept_id =? AND
+    previous_patient_weight = patient.person.observations.where(["concept_id =? AND
         DATE(obs_datetime) < ?", weight_concept_id, session_date]
-    ).answer_string.squish rescue 0
+    ).last.answer_string.squish rescue 0
 
     return previous_patient_weight
   end
 
   def self.ever_had_dispensations(patient, session_date)
     dispensing_enc_type_id =  EncounterType.find_by_name('DISPENSING').id
-    dispensation_encounters = patient.encounters.find(:all, :conditions => ["encounter_type =? AND
+    dispensation_encounters = patient.encounters.where(["encounter_type =? AND
         (DATE(encounter_datetime) < ? OR DATE(encounter_datetime) > ?)", dispensing_enc_type_id, session_date, session_date])
     return true unless dispensation_encounters.blank?
     return false
@@ -582,7 +580,7 @@ side_effects_concept_id = Concept.find_by_name("MALAWI ART SIDE EFFECTS").concep
   def self.latest_outcome_date(patient)
     outcome_dates = []
     hiv_program_id = Program.find_by_name("HIV PROGRAM").id
-    hiv_program = patient.patient_programs.find(:last, :conditions => ["program_id = ?", hiv_program_id])
+    hiv_program = patient.patient_programs.where(["program_id = ?", hiv_program_id]).last
 
     hiv_program.patient_states.each do |ps|
       outcome_dates << ps.start_date
@@ -599,7 +597,7 @@ side_effects_concept_id = Concept.find_by_name("MALAWI ART SIDE EFFECTS").concep
 
   def self.has_inconsistency_outcome_dates?(patient)
     hiv_program_id = Program.find_by_name("HIV PROGRAM").id
-    hiv_program = patient.patient_programs.find(:last, :conditions => ["program_id = ?", hiv_program_id])
+    hiv_program = patient.patient_programs.where(["program_id = ?", hiv_program_id]).last
     outcome_dates = hiv_program.patient_states.collect{|ps|[ps.start_date, ps.end_date]} rescue []
     inconsistency_outcome = false
 
@@ -626,7 +624,7 @@ side_effects_concept_id = Concept.find_by_name("MALAWI ART SIDE EFFECTS").concep
   def second_line_regimens
 	  regimen_category = Concept.find_by_name("Regimen Category")
 
-    regimen_observations = Observation.find(:all, :conditions => ["concept_id = ? AND
+    regimen_observations = Observation.where(["concept_id = ? AND
         person_id = ?", regimen_category.id, self.patient_id])
 
     second_line_regimen_indices = ["7A","8A","9P", "9A"]
@@ -648,8 +646,10 @@ side_effects_concept_id = Concept.find_by_name("MALAWI ART SIDE EFFECTS").concep
 
   def tb_status(encounter_datetime)
     tb_status_concept_id = ConceptName.find_by_name('TB STATUS').concept_id
-    tb_obs = Observation.find(:last, :joins => [:encounter], :conditions => ["concept_id =? AND
-        DATE(encounter_datetime) =? AND patient_id =?", tb_status_concept_id, encounter_datetime.to_date, self.patient_id])
+    tb_obs = Observation.where(["concept_id =? AND DATE(encounter_datetime) =? AND patient_id =?",
+                                tb_status_concept_id, encounter_datetime.to_date,
+                                self.patient_id]).joins(:encounter).last
+
     answer_string = tb_obs.answer_string.squish rescue ""
     return answer_string
   end
@@ -657,9 +657,9 @@ side_effects_concept_id = Concept.find_by_name("MALAWI ART SIDE EFFECTS").concep
   def regimen(encounter_datetime)
     regimen_category_concept_id = Concept.find_by_name("Regimen Category").concept_id
 
-    regimen_obs = Observation.find(:last, :joins => [:encounter], :conditions => ["concept_id =? AND
+    regimen_obs = Observation.where(["concept_id =? AND
         DATE(encounter_datetime) =? AND patient_id =?", regimen_category_concept_id, encounter_datetime.to_date, self.patient_id]
-    )
+    ).joins(:encounter).last
     answer_string = regimen_obs.answer_string.squish rescue ""
     return answer_string
   end
@@ -686,9 +686,9 @@ side_effects_concept_id = Concept.find_by_name("MALAWI ART SIDE EFFECTS").concep
   def adherence(encounter_datetime)
     drug_order_adherence_concept_id = Concept.find_by_name("DRUG ORDER ADHERENCE").concept_id
 
-    regimen_obs = Observation.find(:last, :joins => [:encounter], :conditions => ["concept_id =? AND
+    regimen_obs = Observation.where(["concept_id =? AND
         DATE(encounter_datetime) =? AND patient_id =?", drug_order_adherence_concept_id, encounter_datetime.to_date, self.patient_id]
-    )
+    ).joins(:encounter).last
     answer_string = regimen_obs.answer_string.squish rescue ""
     return answer_string
   end
@@ -697,15 +697,14 @@ side_effects_concept_id = Concept.find_by_name("MALAWI ART SIDE EFFECTS").concep
     side_effects_concept_id = Concept.find_by_name("MALAWI ART SIDE EFFECTS").concept_id
     symptom_present_conept_id = Concept.find_by_name("SYMPTOM PRESENT").concept_id
 
-    side_effects_observations = self.person.observations.find(:all, :joins => [:encounter],
-      :conditions => ["concept_id IN (?) AND DATE(encounter_datetime) =?",
+    side_effects_observations = self.person.observations.where(["concept_id IN (?) AND DATE(encounter_datetime) =?",
         [side_effects_concept_id, symptom_present_conept_id], encounter_datetime.to_date]
-    )
+    ).joins(:encounter)
 
     side_effects = []
     side_effects_observations.each do |obs|
       next if !obs.obs_group_id.blank?
-      child_obs = Observation.find(:last, :conditions => ["obs_group_id = ?", obs.obs_id])
+      child_obs = Observation.where(["obs_group_id = ?", obs.obs_id]).last
 
       unless child_obs.blank?
         answer_string = child_obs.answer_string.squish

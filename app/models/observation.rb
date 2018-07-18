@@ -73,33 +73,23 @@ class Observation < ActiveRecord::Base
   end
 
   def self.find_most_common(concept_question, answer_string, limit = 10)
-    self.find(:all, 
-      :select => "COUNT(*) as count, concept_name.name as value", 
-      :joins => "INNER JOIN concept_name ON concept_name.concept_name_id = value_coded_name_id AND concept_name.voided = 0", 
-      :conditions => ["obs.concept_id = ? AND (concept_name.name LIKE ? OR concept_name.name IS NULL)", concept_question, "%#{answer_string}%"],
-      :group => :value_coded_name_id, 
-      :order => "COUNT(*) DESC",
-      :limit => limit).map{|o| o.value }
+    self.select("COUNT(*) as count, concept_name.name as value").joins(
+      "INNER JOIN concept_name ON concept_name.concept_name_id = value_coded_name_id AND concept_name.voided = 0"
+      ).where(["obs.concept_id = ? AND (concept_name.name LIKE ? OR concept_name.name IS NULL)", concept_question, "%#{answer_string}%"]
+    ).group(:value_coded_name_id).order("COUNT(*) DESC").limit(limit).map{|o| o.value }
   end
 
   def self.find_most_common_location(concept_question, answer_string, limit = 10)
-    self.find(:all, 
-      :select => "COUNT(*) as count, location.name as value", 
-      :joins => "INNER JOIN locations ON location.location_id = value_location AND location.retired = 0", 
-      :conditions => ["obs.concept_id = ? AND location.name LIKE ?", concept_question, "%#{answer_string}%"],
-      :group => :value_location, 
-      :order => "COUNT(*) DESC",
-      :limit => limit).map{|o| o.value }
+    self.select("COUNT(*) as count, location.name as value").joins(
+             "INNER JOIN locations ON location.location_id = value_location AND location.retired = 0").where(
+      ["obs.concept_id = ? AND location.name LIKE ?", concept_question, "%#{answer_string}%"]).group(:value_location).order(
+      "COUNT(*) DESC").limit(limit).map{|o| o.value }
   end
 
   def self.find_most_common_value(concept_question, answer_string, value_column = :value_text, limit = 10)
     answer_string = "%#{answer_string}%" if value_column == :value_text
-    self.find(:all, 
-      :select => "COUNT(*) as count, #{value_column} as value", 
-      :conditions => ["obs.concept_id = ? AND #{value_column} LIKE ?", concept_question, answer_string],
-      :group => value_column, 
-      :order => "COUNT(*) DESC",
-      :limit => limit).map{|o| o.value }
+    self.select("COUNT(*) as count, #{value_column} as value").where(["obs.concept_id = ? AND #{value_column} LIKE ?",
+                                                                      concept_question, answer_string]).group(value_column).order ("COUNT(*) DESC").limit(limit).map{|o| o.value }
   end
 
   def to_s(tags=[])
@@ -140,7 +130,8 @@ class Observation < ActiveRecord::Base
   end
 
   def self.new_accession_number
-    last_accn_number = Observation.find(:last, :conditions => ["accession_number IS NOT NULL" ], :order => "accession_number + 0").accession_number.to_s rescue "00" #the rescue is for the initial accession number start up
+    last_accn_number = Observation.where("accession_number IS NOT NULL"
+                       ).order("accession_number + 0").last.accession_number.to_s rescue "00" #the rescue is for the initial accession number start up
     last_accn_number_with_no_chk_dgt = last_accn_number.chop.to_i
     new_accn_number_with_no_chk_dgt = last_accn_number_with_no_chk_dgt + 1
     chk_dgt = PatientIdentifier.calculate_checkdigit(new_accn_number_with_no_chk_dgt)

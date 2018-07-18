@@ -397,7 +397,8 @@ EOF
       :group => "drug_id").total_physical_count.to_f rescue 0
   end
 
-  def self.latest_physical_counted(drug_id, latest_date)
+  def self.latest_phys
+    ical_counted(drug_id, latest_date)
     pharmacy_encounter_type = PharmacyEncounterType.find_by_name('Tins currently in stock')
 
     latest_physical_count = Pharmacy.find_by_sql(
