@@ -1,5 +1,5 @@
 class Observation < ActiveRecord::Base
- self.table_name = "obs"
+  self.table_name = "obs"
   self.primary_key = "obs_id"
   #include Openmrs
 
@@ -17,9 +17,9 @@ class Observation < ActiveRecord::Base
 
 
   #named_scope :question, lambda {|concept|
-    #concept_id = concept.to_i
-    #concept_id = ConceptName.first(:conditions => {:name => concept}).concept_id rescue 0 if concept_id == 0
-    #{:conditions => {:concept_id => concept_id}}
+  #concept_id = concept.to_i
+  #concept_id = ConceptName.first(:conditions => {:name => concept}).concept_id rescue 0 if concept_id == 0
+  #{:conditions => {:concept_id => concept_id}}
   #}
 
 
@@ -52,8 +52,8 @@ class Observation < ActiveRecord::Base
   
   def concept_name=(concept_name)
     self.concept_id = ConceptName.find_by_name(concept_name).concept_id
-    rescue
-      raise "\"#{concept_name}\" does not exist in the concept_name table"
+  rescue
+    raise "\"#{concept_name}\" does not exist in the concept_name table"
   end
 
   def value_coded_or_text=(value_coded_or_text)
@@ -127,16 +127,16 @@ class Observation < ActiveRecord::Base
     return coded_name unless coded_name.blank?
     answer = Concept.find_by_concept_id(self.value_coded).shortname rescue nil
 	
-	if answer.nil?
-		answer = Concept.find_by_concept_id(self.value_coded).fullname rescue nil
-	end
+    if answer.nil?
+      answer = Concept.find_by_concept_id(self.value_coded).fullname rescue nil
+    end
 
-	if answer.nil?
-		answer = Concept.find_with_voided(self.value_coded).fullname rescue ""
-    answer = answer + ' - retired'
-	end
+    if answer.nil?
+      answer = Concept.find_with_voided(self.value_coded).fullname rescue ""
+      answer = answer + ' - retired'
+    end
 	
-	return answer
+    return answer
   end
 
   def self.new_accession_number

@@ -1,4 +1,4 @@
-#require "will_paginate"
+require "will_paginate"
 class Encounter < ActiveRecord::Base
   self.table_name = "encounter"
   self.primary_key = "encounter_id"
@@ -13,11 +13,8 @@ class Encounter < ActiveRecord::Base
   belongs_to :patient, -> { where voided: 0 }
 
   # TODO, this needs to account for current visit, which needs to account for possible retrospective entry
-  #named_scope :current, :conditions => 'DATE(encounter.encounter_datetime) = CURRENT_DATE()'
+  scope :current, -> {where('DATE(encounter.encounter_datetime) = CURRENT_DATE()')}
 
-  def self.current
-    self.where("DATE(encounter.encounter_datetime) = CURRENT_DATE()")
-  end
 
   def after_void(reason = nil)
     unless self.name.upcase == 'ART ADHERENCE'
@@ -70,27 +67,21 @@ EOF
   end
 
   def self.statistics(encounter_types, opts={})
-
-    encounter_types = EncounterType.all(:conditions => ['name IN (?)', encounter_types])
+    encounter_types = EncounterType.where(['name IN (?)', encounter_types])
     encounter_types_hash = encounter_types.inject({}) {|result, row| result[row.encounter_type_id] = row.name; result }
-    with_scope(:find => opts) do
-      rows = self.all(
-        :select => 'count(*) as number, encounter_type',
-        :group => 'encounter.encounter_type',
-        :conditions => ['encounter_type IN (?)', encounter_types.map(&:encounter_type_id)])
-      return rows.inject({}) {|result, row| result[encounter_types_hash[row['encounter_type']]] = row['number']; result }
-    end     
+    rows = self.where(['encounter_type IN (?)', encounter_types.map(&:encounter_type_id)]).where(opts[:conditions]).group("encounter_type").select("count(*) as number, encounter_type")
+    return rows.inject({}) {|result, row| result[encounter_types_hash[row['encounter_type']]] = row['number']; result }
   end
 
   def self.fast_track_patient_encounters(start_date, end_date, page_number)
     fast_track_concept_id = Concept.find_by_name("FAST").concept_id
     yes_concept_id = Concept.find_by_name("YES").concept_id
-    fast_track_encounters = Encounter.paginate(:joins => [:observations],
-      :conditions =>["DATE(encounter_datetime) >= ? AND
+
+    fast_track_encounters = Encounter.joins(:observations).where(["DATE(encounter_datetime) >= ? AND
         DATE(encounter_datetime) <= ? AND concept_id =? AND value_coded =?",
-        start_date.to_date, end_date.to_date, fast_track_concept_id, yes_concept_id],
-      :page => page_number, :per_page => 20,
-      :group => "patient_id")
+        start_date.to_date, end_date.to_date, fast_track_concept_id, yes_concept_id]
+    ).paginate(page: page_number, per_page: 20).group("patient_id")
+
     return fast_track_encounters
   end
   
