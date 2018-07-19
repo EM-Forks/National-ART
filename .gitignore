@@ -25,3 +25,4 @@ vendor/plugins/htn/*
 config/*.yml
 public/data/disaggregated_cohort/*
 tmp/*
+.project
