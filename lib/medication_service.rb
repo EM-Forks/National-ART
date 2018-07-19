@@ -7,7 +7,7 @@ module MedicationService
 
 	def self.arv_drugs
 		arv_concept       = ConceptName.find_by_name("ANTIRETROVIRAL DRUGS").concept_id
-		arv_drug_concepts = ConceptSet.all(:conditions => ['concept_set = ?', arv_concept])
+		arv_drug_concepts = ConceptSet.where(['concept_set = ?', arv_concept])
 		arv_drug_concepts
 	end
 
@@ -17,7 +17,7 @@ module MedicationService
 
 	def self.tb_drugs
 		tb_medication_concept       = ConceptName.find_by_name("Tuberculosis treatment drugs").concept_id
-		tb_medication_drug_concepts = ConceptSet.all(:conditions => ['concept_set = ?', tb_medication_concept])
+		tb_medication_drug_concepts = ConceptSet.where(['concept_set = ?', tb_medication_concept])
 		tb_medication_drug_concepts
 	end
 	
@@ -27,16 +27,15 @@ module MedicationService
 	
 	def self.diabetes_drugs
 		diabetes_medication_concept       = ConceptName.find_by_name("DIABETES MEDICATION").concept_id
-		diabetes_medication_drug_concepts = ConceptSet.all(:conditions => ['concept_set = ?', diabetes_medication_concept])
+		diabetes_medication_drug_concepts = ConceptSet.where(['concept_set = ?', diabetes_medication_concept])
 		diabetes_medication_drug_concepts
 	end
 
   # Generate a given list of Regimen+s for the given +Patient+ <tt>weight</tt>
   # into select options. 
 	def self.regimen_options(weight, program)
-		regimens = Regimen.find(	:all,
-      :order => 'regimen_index',
-      :conditions => ['? >= min_weight AND ? < max_weight AND program_id = ?', weight, weight, program.program_id])
+		regimens = Regimen.where(['? >= min_weight AND ? < max_weight AND program_id = ?', weight, weight, program.program_id]
+    ).order("regimen_index")
 
 		options = regimens.map { |r|
 			concept_name = (r.concept.concept_names.typed("SHORT").first ||	r.concept.concept_names.typed("FULLY_SPECIFIED").first).name
@@ -51,9 +50,7 @@ module MedicationService
 	end
 
   def self.all_regimen_options(program)
-		regimens = Regimen.find(	:all,
-      :order => 'regimen_index',
-      :conditions => ['program_id = ?', program.program_id])
+		regimens = Regimen.where(['program_id = ?', program.program_id]).order("regimen_index")
 
 		options = regimens.map { |r|
 			concept_name = (r.concept.concept_names.typed("SHORT").first ||	r.concept.concept_names.typed("FULLY_SPECIFIED").first).name
@@ -116,7 +113,7 @@ module MedicationService
   
 	def self.fully_specified_frequencies
 		concept_id = ConceptName.find_by_name('DRUG FREQUENCY CODED').concept_id
-		set = ConceptSet.find_all_by_concept_set(concept_id, :order => 'sort_weight')
+		set = ConceptSet.where(["concept_set =?", concept_id]).order('sort_weight')
 		frequencies = []
 		options = set.each{ | item | 
 			next if item.concept.blank?
@@ -126,14 +123,14 @@ module MedicationService
 	end
   
 	def self.dosages(generic_drug_concept_id)    
-		Drug.find(:all, :conditions => ["concept_id = ?", generic_drug_concept_id]).collect {|d|
+		Drug.where(["concept_id = ?", generic_drug_concept_id]).collect {|d|
 			["#{d.name.upcase rescue ""}", "#{d.dose_strength.to_f rescue 1}", "#{d.units.upcase rescue ""}"]
 		}.uniq.compact rescue []
 	end
 	
   def self.concept_set(concept_name)
     concept_id = ConceptName.find(:first, :conditions =>["name = ?", concept_name]).concept_id
-    set = ConceptSet.find_all_by_concept_set(concept_id, :order => 'sort_weight')
+    set = ConceptSet.where(["concept_set =?", concept_id]).order('sort_weight')
     options = set.map{|item|next if item.concept.blank? ; [item.concept.fullname, item.concept.concept_id] }
     return options
   end
@@ -211,8 +208,7 @@ module MedicationService
     end
 
     moh_regimens = {}
-    moh_regimen_lookup = MohRegimenLookup.find(:all, 
-      :conditions => ["drug_inventory_id IN(?)", regimen_ingrients])
+    moh_regimen_lookup = MohRegimenLookup.where(["drug_inventory_id IN(?)", regimen_ingrients])
 
     (moh_regimen_lookup || []).each do |lookup|
       moh_regimens[lookup.regimen_name] = [] if moh_regimens[lookup.regimen_name].blank?
@@ -233,9 +229,9 @@ module MedicationService
 
       valid_medication_ids = []
       (regimen_possible_drug_ids).each do |drug_id|
-        medication = MohRegimenIngredient.find(:first, :conditions =>["drug_inventory_id = ? 
+        medication = MohRegimenIngredient.where(["drug_inventory_id = ?
           AND #{current_weight.to_f} >= FORMAT(min_weight,2) 
-          AND #{current_weight.to_f} <= FORMAT(max_weight,2)", drug_id])
+          AND #{current_weight.to_f} <= FORMAT(max_weight,2)", drug_id]).first
 
         unless medication.blank?
           valid_medication_ids << drug_id
@@ -290,7 +286,7 @@ module MedicationService
 
   def self.regimen_medications(regimen_index, current_weight, patient_initiated = false, on_tb_treatment = false)
     regimen_index = regimen_index.to_s.gsub('Regimen ','').to_i 
-    regimen_id = MohRegimen.find(:first, :conditions =>['regimen_index = ?', regimen_index]).regimen_id
+    regimen_id = MohRegimen.where(['regimen_index = ?', regimen_index]).first.regimen_id
 
     
     if patient_initiated == true and [0, 2, 6].include?(regimen_index.to_i)
@@ -301,11 +297,12 @@ module MedicationService
       table_name = 'moh_regimen_ingredient' 
     end
 
-    regimen_medications = Drug.find(:all,:joins => "INNER JOIN #{table_name} i 
+    regimen_medications = Drug.joins("INNER JOIN #{table_name} i
       ON i.drug_inventory_id = drug.drug_id AND i.regimen_id = #{regimen_id}
-      INNER JOIN moh_regimen_doses d ON d.dose_id = i.dose_id",
-      :conditions => "#{current_weight.to_f} >= FORMAT(min_weight,2) 
-      AND #{current_weight.to_f} <= FORMAT(max_weight,2)", :select => "drug.*, i.*, d.*").map do |medication|
+      INNER JOIN moh_regimen_doses d ON d.dose_id = i.dose_id").where(
+      "#{current_weight.to_f} >= FORMAT(min_weight,2)
+      AND #{current_weight.to_f} <= FORMAT(max_weight,2) AND #{current_weight.to_f} <= FORMAT(max_weight,2)"
+    ).select("drug.*, i.*, d.*") .map do |medication|
       {
         :drug_name => medication.name,
         :am => medication.am,
@@ -347,7 +344,7 @@ module MedicationService
     regimen_codes.each do |regimen_code, data|
       data.each do |row|
         drugs = [row].flatten
-        drug_ids = Drug.find(:all, :conditions => ["drug_id IN (?)", drugs]).map(&:drug_id)
+        drug_ids = Drug.where(["drug_id IN (?)", drugs]).map(&:drug_id)
         if (drug_ids - medication_ids) == [] and (drug_ids.count == medication_ids.count)
           regimen_name = regimen_code
           break;
@@ -422,12 +419,11 @@ module MedicationService
   def self.other_medications(drug_name, current_weight)
     drug_ids = Drug.find(:all, :conditions =>['name LIKE ?', "%#{drug_name}%"]).map(&:drug_id)
 
-    regimen_medications = (Drug.find(:all,:joins => "INNER JOIN moh_other_medications o 
+    regimen_medications = (Drug.joins("INNER JOIN moh_other_medications o
       ON o.drug_inventory_id = drug.drug_id AND o.drug_inventory_id IN (#{drug_ids.join(',')})
-      INNER JOIN moh_regimen_doses d ON d.dose_id = o.dose_id",
-        :conditions => "#{current_weight.to_f} >= FORMAT(min_weight,2)
-      AND #{current_weight.to_f} <= FORMAT(max_weight,2)",
-        :select => "drug.*, o.*, d.*", :limit => 10, :order => "drug.name DESC") || []).map do |medication|
+      INNER JOIN moh_regimen_doses d ON d.dose_id = o.dose_id").where(
+        "#{current_weight.to_f} >= FORMAT(min_weight,2) AND #{current_weight.to_f} <= FORMAT(max_weight,2)"
+      ).order("drug.name DESC").select("drug.*, o.*, d.*").limit(10) || []).map do |medication|
       {
         :drug_name => medication.name,
         :am => medication.am,
@@ -491,12 +487,12 @@ module MedicationService
   end
 
   def self.calculate_days_base_on_pills(drug_id, current_weight, number_of_pills)
-    doses = Drug.find(:all,:joins => "INNER JOIN moh_regimen_ingredient i 
+    doses = Drug.joins("INNER JOIN moh_regimen_ingredient i
       ON i.drug_inventory_id = drug.drug_id AND i.drug_inventory_id = #{drug_id}
-      INNER JOIN moh_regimen_doses d ON d.dose_id = i.dose_id",
-      :conditions => "#{current_weight.to_f} >= FORMAT(min_weight,2) 
-      AND #{current_weight.to_f} <= FORMAT(max_weight,2)",
-      :select => "drug.*, i.*, d.*").map do |medication|
+      INNER JOIN moh_regimen_doses d ON d.dose_id = i.dose_id").where(
+      "#{current_weight.to_f} >= FORMAT(min_weight,2)
+      AND #{current_weight.to_f} <= FORMAT(max_weight,2)"
+    ).select("drug.*, i.*, d.*").map do |medication|
       {
         :am => medication.am, :pm => medication.pm
       }
@@ -616,15 +612,15 @@ module MedicationService
   end
 
   def self.get_amounts_brought_if_transfer_in(person_id, drug_concept_id, date)
-    amount = Observation.find(:first, :conditions =>["concept_id = ? AND (obs_datetime BETWEEN ? AND ?)
+    amount = Observation.where(["concept_id = ? AND (obs_datetime BETWEEN ? AND ?)
       AND person_id = ?", drug_concept_id , date.strftime('%Y-%m-%d 00:00:00'),
-      date.strftime('%Y-%m-%d 23:59:59'), person_id])
+        date.strftime('%Y-%m-%d 23:59:59'), person_id]).first
     return 0 if amount.blank?
     return amount.value_numeric
   end
 
   def self.amounts_brought_to_clinic(patient, session_date)
-     @amounts_brought_to_clinic = Hash.new(0)
+    @amounts_brought_to_clinic = Hash.new(0)
 
     amounts_brought_to_clinic = ActiveRecord::Base.connection.select_all <<EOF
       SELECT obs.*, drug_order.* FROM obs INNER JOIN drug_order ON obs.order_id = drug_order.order_id
@@ -705,11 +701,11 @@ EOF
   def self.art_drug_given_before(patient, date = Date.today)
     clinic_encounters  =  ['DISPENSING']
 
-    encounter_type_ids = EncounterType.find_all_by_name(clinic_encounters).collect{|e|e.id}
+    encounter_type_ids = EncounterType.where(["name =?", clinic_encounters]).collect{|e|e.id}
 
-    latest_encounter_date = Encounter.find(:first,:conditions =>["patient_id=? AND encounter_datetime < ? AND
+    latest_encounter_date = Encounter.where(["patient_id=? AND encounter_datetime < ? AND
         encounter_type IN(?)",patient.id,date.strftime('%Y-%m-%d 00:00:00'),
-        encounter_type_ids],:order =>"encounter_datetime DESC").encounter_datetime rescue nil
+        encounter_type_ids]).order("encounter_datetime DESC").first.encounter_datetime rescue nil
 
     return [] if latest_encounter_date.blank?
 
@@ -717,11 +713,9 @@ EOF
     end_date = latest_encounter_date.strftime('%Y-%m-%d 23:59:59')
 
     concept_id = Concept.find_by_name('AMOUNT DISPENSED').id
-    orders = Order.find(:all,:joins =>"INNER JOIN obs ON obs.order_id = orders.order_id",
-        :conditions =>["obs.person_id = ? AND obs.concept_id = ?
-        AND obs_datetime >=? AND obs_datetime <=?",
-        patient.id,concept_id,start_date,end_date],
-        :order =>"obs_datetime")
+    orders = Order.joins("INNER JOIN obs ON obs.order_id = orders.order_id").where(
+      ["obs.person_id = ? AND obs.concept_id = ? AND obs_datetime >=? AND obs_datetime <=?",
+        patient.id,concept_id,start_date,end_date]).order("obs_datetime")
 
     (orders || []).reject do |order|
       drug = order.drug_order.drug
@@ -731,13 +725,13 @@ EOF
 
   def self.drug_given_before(patient, date = Date.today)
     clinic_encounters = ['HIV CLINIC REGISTRATION','HIV STAGING','DISPENSING','TREATMENT',
-                      'HIV CLINIC CONSULTATION','ART ADHERENCE','HIV RECEPTION','VITALS']
+      'HIV CLINIC CONSULTATION','ART ADHERENCE','HIV RECEPTION','VITALS']
 
-    encounter_type_ids = EncounterType.find_all_by_name(clinic_encounters).collect{|e|e.id}
+    encounter_type_ids = EncounterType.where(["name =?", clinic_encounters]).collect{|e|e.id}
 
-    latest_encounter_date = Encounter.find(:first,:conditions =>["patient_id=? AND encounter_datetime < ? AND
+    latest_encounter_date = Encounter.where(["patient_id=? AND encounter_datetime < ? AND
         encounter_type IN(?)",patient.id,date.strftime('%Y-%m-%d 00:00:00'),
-        encounter_type_ids],:order =>"encounter_datetime DESC").encounter_datetime rescue nil
+        encounter_type_ids]).order("encounter_datetime DESC").first.encounter_datetime rescue nil
 
     return [] if latest_encounter_date.blank?
 
@@ -745,18 +739,17 @@ EOF
     end_date = latest_encounter_date.strftime('%Y-%m-%d 23:59:59')
 
     concept_id = Concept.find_by_name('AMOUNT DISPENSED').id
-    Order.find(:all,:joins =>"INNER JOIN obs ON obs.order_id = orders.order_id",
-        :conditions =>["obs.person_id = ? AND obs.concept_id = ?
-        AND (obs_datetime BETWEEN ? AND ?)",
-        patient.id,concept_id,start_date,end_date],
-        :order =>"obs_datetime")
+    Order.joins("INNER JOIN obs ON obs.order_id = orders.order_id").where(
+      ["obs.person_id = ? AND obs.concept_id = ? AND (obs_datetime BETWEEN ? AND ?)",
+        patient.id,concept_id,start_date,end_date]).order("obs_datetime")
+   
   end
 
   def self.drugs_given_on(patient, date = Date.today)
     clinic_encounters = ['HIV CLINIC REGISTRATION','HIV STAGING','DISPENSING','TREATMENT',
-                      'HIV CLINIC CONSULTATION','ART ADHERENCE','HIV RECEPTION','VITALS']
+      'HIV CLINIC CONSULTATION','ART ADHERENCE','HIV RECEPTION','VITALS']
 
-    encounter_type_ids = EncounterType.find_all_by_name(clinic_encounters).collect{|e|e.id}
+    encounter_type_ids = EncounterType.where(["name =?", clinic_encounters]).collect{|e|e.id}
 =begin
     latest_encounter_date = Encounter.find(:first,
         :conditions =>["patient_id = ? AND encounter_datetime >= ?
@@ -794,11 +787,11 @@ EOF
 
     clinic_encounters  =  ['TREATMENT']
 
-    encounter_type_ids = EncounterType.find_all_by_name(clinic_encounters).collect{|e|e.id}
+    encounter_type_ids = EncounterType.where(["name =?", clinic_encounters]).collect{|e|e.id}
 
-    latest_encounter_date = Encounter.find(:first,:conditions =>["patient_id=? AND encounter_datetime < ? AND
+    latest_encounter_date = Encounter.where(["patient_id=? AND encounter_datetime < ? AND
         encounter_type IN(?)",patient.id,date.strftime('%Y-%m-%d 00:00:00'),
-        encounter_type_ids],:order =>"encounter_datetime DESC").encounter_datetime rescue nil
+        encounter_type_ids]).order("encounter_datetime DESC").first.encounter_datetime rescue nil
 
     return [] if latest_encounter_date.blank?
 
@@ -806,10 +799,10 @@ EOF
     end_date = latest_encounter_date.strftime('%Y-%m-%d 23:59:59')
 
     encounter_type = EncounterType.find_by_name('TREATMENT').id
-    orders = Order.find(:all,:joins =>"INNER JOIN drug_order d ON d.order_id = orders.order_id
-        INNER JOIN encounter e ON e.encounter_id = orders.encounter_id AND e.encounter_type = #{encounter_type}",
-        :conditions =>["e.patient_id = ? AND (encounter_datetime BETWEEN ? AND ?)",
-        patient.id, start_date, end_date], :order =>"encounter_datetime")
+    orders = Order.joins("INNER JOIN drug_order d ON d.order_id = orders.order_id
+        INNER JOIN encounter e ON e.encounter_id = orders.encounter_id AND e.encounter_type = #{encounter_type}").where(
+      ["e.patient_id = ? AND (encounter_datetime BETWEEN ? AND ?)", patient.id, start_date, end_date]
+    ).order("encounter_datetime")
 
     (orders || []).reject do |order|
       drug = order.drug_order.drug
@@ -844,8 +837,8 @@ EOF
         type = EncounterType.find_by_name("DISPENSING")
         obs_datetime = order.encounter.encounter_datetime.to_time.strftime('%Y-%m-%d %H:%M:%S')
 
-        dispension_enc = order.patient.encounters.find(:first,
-          :conditions =>["DATE(encounter_datetime) = ? AND encounter_type = ?",start_date.to_date,type.id])
+        dispension_enc = order.patient.encounters.where(["DATE(encounter_datetime) = ? AND encounter_type = ?",
+            start_date.to_date,type.id]).first
         dispension_enc ||= order.patient.encounters.create(:encounter_type => type.id,
           :encounter_datetime => obs_datetime)
     
@@ -871,8 +864,8 @@ EOF
 
         unless current_state['state'].to_i == 7
           patient = order.patient
-          patient.patient_programs.find_last_by_program_id(Program.find_by_name("HIV PROGRAM")).transition(
-             :state => "On antiretrovirals", :start_date => obs_datetime.to_time)
+          patient.patient_programs.where(["program_id =?", Program.find_by_name("HIV PROGRAM").program_id]).last.transition(
+            :state => "On antiretrovirals", :start_date => obs_datetime.to_time)
         end
 
       end
@@ -881,7 +874,7 @@ EOF
 
     exact_discontinued_dates = []
 
-    orders = Order.find(:all, :conditions => ["order_id IN(?)", orders.map(&:id)])
+    orders = Order.where(["order_id IN(?)", orders.map(&:id)])
 
     (orders || []).each do |order|
       drug = order.drug_order.drug
@@ -929,11 +922,12 @@ EOF
 
     arv_drug_concepts = self.arv_drugs.map(&:concept_id)
 
-    orders = Order.find(:all,:joins =>"INNER JOIN drug_order d ON d.order_id = orders.order_id
+    orders = Order.joins("INNER JOIN drug_order d ON d.order_id = orders.order_id
       INNER JOIN encounter e ON e.encounter_id = orders.encounter_id AND e.encounter_type = #{encounter_type}
-      INNER JOIN drug ON drug.drug_id = d.drug_inventory_id",
-      :conditions =>["e.patient_id = ? AND (encounter_datetime BETWEEN ? AND ?) AND drug.concept_id IN(?)",
-      patient_id, start_date, end_date, arv_drug_concepts], :order =>"encounter_datetime")
+      INNER JOIN drug ON drug.drug_id = d.drug_inventory_id").where(
+      ["e.patient_id = ? AND (encounter_datetime BETWEEN ? AND ?) AND drug.concept_id IN(?)",
+        patient_id, start_date, end_date, arv_drug_concepts]
+    ).order("encounter_datetime")
 
     return [] if orders.blank?
     amount_dispensed = {}
@@ -957,10 +951,11 @@ EOF
     end_date = date.strftime('%Y-%m-%d 23:59:59')
     concept_id = ConceptName.find_by_name('Amount dispensed').concept_id
 
-    orders = Order.find(:all,:joins =>"INNER JOIN drug_order d ON d.order_id = orders.order_id
-      INNER JOIN encounter e ON e.encounter_id = orders.encounter_id AND e.encounter_type = #{encounter_type}",
-      :conditions =>["e.patient_id = ? AND (encounter_datetime BETWEEN ? AND ?)",
-      patient_id, start_date, end_date], :order =>"encounter_datetime")
+    orders = Order.joins("INNER JOIN drug_order d ON d.order_id = orders.order_id
+      INNER JOIN encounter e ON e.encounter_id = orders.encounter_id AND e.encounter_type = #{encounter_type}").where(
+      ["e.patient_id = ? AND (encounter_datetime BETWEEN ? AND ?)",
+        patient_id, start_date, end_date]
+    ).order("encounter_datetime")
 
     return [] if orders.blank?
     amount_dispensed = {}
@@ -984,9 +979,10 @@ EOF
     end_date = date.strftime('%Y-%m-%d 23:59:59')
     patient = Patient.find(patient_id)
 
-    orders = Order.find(:all,:joins =>"INNER JOIN encounter e ON e.encounter_id = orders.encounter_id 
-        AND e.encounter_type = #{encounter_type}", :conditions =>["e.patient_id = ? 
-        AND (encounter_datetime BETWEEN ? AND ?)", patient_id, start_date, end_date])
+    orders = Order.joins("INNER JOIN encounter e ON e.encounter_id = orders.encounter_id
+        AND e.encounter_type = #{encounter_type}").where(
+      ["e.patient_id = ? AND (encounter_datetime BETWEEN ? AND ?)", patient_id, start_date, end_date]
+    )
 
     amount_prescriped = {}
     return [] if orders.blank?
@@ -1009,14 +1005,15 @@ EOF
     end_date = session_date.strftime('%Y-%m-%d 23:59:59')
     drug_orders = {} ; auto_expire_dates = []
    
-    orders = Order.find(:all, :joins =>"INNER JOIN encounter e ON e.encounter_id = orders.encounter_id", 
-      :conditions =>["encounter_type = ? AND e.patient_id = ? AND encounter_datetime BETWEEN (?) AND (?)", 
-      encounter_type, patient.patient_id, start_date, end_date])
+    orders = Order.joins("INNER JOIN encounter e ON e.encounter_id = orders.encounter_id").where(
+      ["encounter_type = ? AND e.patient_id = ? AND encounter_datetime BETWEEN (?) AND (?)",
+        encounter_type, patient.patient_id, start_date, end_date]
+    )
     
-    appointment_type = Observation.find(:first,:conditions =>["
+    appointment_type = Observation.where(["
       obs_datetime BETWEEN ? AND ? AND person_id = ?
       AND concept_id = ?", start_date, end_date, patient.id,
-      ConceptName.find_by_name('Appointment type').concept_id]).value_text rescue ''
+        ConceptName.find_by_name('Appointment type').concept_id]).first.value_text rescue ''
 
     if appointment_type == 'Optimize - including hanging pills'
      

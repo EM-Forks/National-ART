@@ -130,7 +130,7 @@ module PatientService
 
     dde_address = "#{dde_settings["dde_address"]}/v1/search_by_name_and_gender"
     output = RestClient::Request.execute( { :method => :post, :url => dde_address,
-    :payload => passed_params, :headers => {:Authorization => token} } )
+        :payload => passed_params, :headers => {:Authorization => token} } )
 
     results = JSON.parse(output)
     status = results["status"].to_i rescue nil
@@ -1509,8 +1509,8 @@ module PatientService
 
   def self.patient_hiv_status(patient)
     status = Concept.find(Observation.where(["value_coded IS NOT NULL AND person_id = ? AND concept_id = ?",
-            patient.id, ConceptName.find_by_name("HIV STATUS").concept_id]
-        ).order("obs_datetime DESC,date_created DESC").first.value_coded).fullname rescue "UNKNOWN"
+          patient.id, ConceptName.find_by_name("HIV STATUS").concept_id]
+      ).order("obs_datetime DESC,date_created DESC").first.value_coded).fullname rescue "UNKNOWN"
 
     if status.upcase == 'UNKNOWN'
       return patient.patient_programs.collect{|p|p.program.name}.include?('HIV PROGRAM') ? 'Positive' : status
@@ -1746,9 +1746,8 @@ EOF
   #data cleaning :- moved from patient.rb
   def self.current_diagnoses(patient_id)
     patient = Patient.find(patient_id)
-    patient.encounters.current.all(:include => [:observations]).map{|encounter|
-      encounter.observations.all(
-        :conditions => ["obs.concept_id = ? OR obs.concept_id = ?",
+    patient.encounters.current.includes(:observations).map{|encounter|
+      encounter.observations.where(["obs.concept_id = ? OR obs.concept_id = ?",
           ConceptName.find_by_name("DIAGNOSIS").concept_id,
           ConceptName.find_by_name("DIAGNOSIS, NON-CODED").concept_id])
     }.flatten.compact
@@ -1766,14 +1765,12 @@ EOF
     encounter_type = EncounterType.find_by_name('ART VISIT')
     yes_concept = ConceptName.find_by_name('YES').concept_id
     refer_concept = ConceptName.find_by_name('PRESCRIBE ARVS THIS VISIT').concept_id
-    refer_patient = Encounter.find(:first,
-      :joins => 'INNER JOIN obs USING (encounter_id)',
-      :conditions => ["encounter_type = ? AND concept_id = ? AND person_id = ? AND value_coded = ? AND obs_datetime BETWEEN ? AND ?",
+    refer_patient = Encounter.joins("INNER JOIN obs USING (encounter_id)").where(
+      ["encounter_type = ? AND concept_id = ? AND person_id = ? AND value_coded = ? AND obs_datetime BETWEEN ? AND ?",
         encounter_type.id,refer_concept,patient.id,yes_concept,
         date.to_date.strftime('%Y-%m-%d 00:00:00'),
         date.to_date.strftime('%Y-%m-%d 23:59:59')
-      ],
-      :order => 'encounter_datetime DESC,date_created DESC')
+      ]).order("encounter_datetime DESC,date_created DESC")
     return false if refer_patient.blank?
     return true
   end
@@ -1835,8 +1832,7 @@ EOF
   end
 
   def self.art_guardian(patient)
-    person_id = Relationship.find(:first,:order => "date_created DESC",
-      :conditions =>["person_a = ?",patient.person.id]).person_b rescue nil
+    person_id = Relationship.where(["person_a = ?",patient.person.id]).order("date_created DESC").first.person_b rescue nil
     guardian_name = name(Person.find(person_id))
     guardian_name rescue nil
   end
@@ -1961,8 +1957,7 @@ EOF
 =end
       else
         #void current dormant filing number
-        current_filing_numbers =  PatientIdentifier.find(:all,
-          :conditions=>["patient_id=? AND identifier_type = ?",
+        current_filing_numbers =  PatientIdentifier.where(["patient_id=? AND identifier_type = ?",
             current_patient.patient_id,
             PatientIdentifierType.find_by_name("Archived filing Number").id])
 
@@ -2004,8 +1999,7 @@ EOF
     filing_number.save
 
     #void current filing number
-    current_filing_numbers =  PatientIdentifier.find(:all,
-      :conditions=>["patient_id=? AND identifier_type = ?",
+    current_filing_numbers =  PatientIdentifier.where(["patient_id=? AND identifier_type = ?",
         secondary.id,PatientIdentifierType.find_by_name("Filing Number").id])
 
     current_filing_numbers.each do | f_number |
@@ -2382,27 +2376,20 @@ EOF
     family_name = params[:name].squish.split(' ')[1] rescue ''
     identifier = params[:identifier]
 
-    people = Person.find(:all, :limit => 15, :joins =>"INNER JOIN person_name USING(person_id)
-     INNER JOIN patient_identifier i ON i.patient_id = person.person_id AND i.voided = 0", :conditions => [
-        "identifier = ? AND \
-     person_name.given_name LIKE (?) AND \
-     person_name.family_name LIKE (?)",
-        identifier,
-        "%#{given_name}%",
-        "%#{family_name}%"
-      ],:limit => 10,:order => "birthdate DESC")
+    people = Person.joins("INNER JOIN person_name USING(person_id)
+     INNER JOIN patient_identifier i ON i.patient_id = person.person_id AND i.voided = 0"
+    ).where(["identifier = ? AND person_name.given_name LIKE (?) AND
+        person_name.family_name LIKE (?)", identifier, "%#{given_name}%", "%#{family_name}%"]
+    ).order("birthdate DESC").limit(15)
+
 
     if people.length < 15
-      people_like = Person.find(:all, :limit => 15,
-        :joins =>"INNER JOIN person_name_code ON person_name_code.person_name_id = person.person_id
-      INNER JOIN patient_identifier i ON i.patient_id = person.person_id AND i.voided = 0",
-        :conditions => ["identifier = ? AND \
-     ((person_name_code.given_name_code LIKE ? AND \
-     person_name_code.family_name_code LIKE ?))",
-          identifier,
-          (given_name || '').soundex,
-          (family_name || '').soundex
-        ], :order => "birthdate DESC")
+      people_like = Person.joins("INNER JOIN person_name_code ON person_name_code.person_name_id = person.person_id
+      INNER JOIN patient_identifier i ON i.patient_id = person.person_id AND i.voided = 0").where(
+        ["identifier = ? AND ((person_name_code.given_name_code LIKE ? AND person_name_code.family_name_code LIKE ?))",
+          identifier, (given_name || '').soundex, (family_name || '').soundex
+        ]
+      ).order("birthdate DESC").limit(15)
       people = (people + people_like).uniq rescue people
     end
 
@@ -2419,14 +2406,11 @@ EOF
     given_name = params[:given_name].squish unless params[:given_name].blank?
     family_name = params[:family_name].squish unless params[:family_name].blank?
 
-    people = Person.find(:all, :limit => 15, :include => [{:names => [:person_name_code]}, :patient], :conditions => [
-        "gender = ? AND \
-     person_name.given_name = ? AND \
-     person_name.family_name = ?",
-        gender,
-        given_name,
-        family_name
-      ],:limit => 10,:order => "birthdate DESC") if people.blank?
+    people = Person.includes([{:names => [:person_name_code]}, :patient]).where(
+      ["gender = ? AND person_name.given_name = ? AND person_name.family_name = ?",
+        gender, given_name, family_name ]
+    ).order("birthdate DESC").limit(15) if people.blank?
+
 
     if people.length < 15
 =begin
@@ -2436,14 +2420,12 @@ EOF
 
 =end
 
-      people_like = Person.find(:all, :limit => 15, :include => [{:names => [:person_name_code]}, :patient], :conditions => [
-          "gender = ? AND \
-     ((person_name_code.given_name_code LIKE ? AND \
-     person_name_code.family_name_code LIKE ?))",
-          gender,
-          (given_name || '').soundex,
-          (family_name || '').soundex
-        ], :order => "person_name.given_name ASC, person_name_code.family_name_code ASC,birthdate DESC")
+      people_like = Person.includes([{:names => [:person_name_code]}, :patient]).where(
+        ["gender = ? AND ((person_name_code.given_name_code LIKE ? AND person_name_code.family_name_code LIKE ?))",
+          gender, (given_name || '').soundex, (family_name || '').soundex
+        ]
+      ).order("person_name.given_name ASC, person_name_code.family_name_code ASC,birthdate DESC").limit(15)
+
       people = (people + people_like).uniq rescue people
     end
 =begin
@@ -2484,7 +2466,7 @@ people = Person.find(:all, :include => [{:names => [:person_name_code]}, :patien
         id.patient.person
       }
 		else
-			people = PatientIdentifier.find_all_by_identifier(identifier).map{|id|
+			people = PatientIdentifier.where(["identifier =?", identifier]).map{|id|
         id.patient.person
       } unless identifier.blank? rescue nil
 		end
@@ -2637,8 +2619,8 @@ people = Person.find(:all, :include => [{:names => [:person_name_code]}, :patien
   end
 
   def self.get_attribute(person, attribute)
-    PersonAttribute.find(:first,:conditions =>["voided = 0 AND person_attribute_type_id = ? AND person_id = ?",
-        PersonAttributeType.find_by_name(attribute).id, person.id]).value rescue nil
+    PersonAttribute.where(["voided = 0 AND person_attribute_type_id = ? AND person_id = ?",
+        PersonAttributeType.find_by_name(attribute).id, person.id]).first.value rescue nil
   end
 
   def self.is_transfer_in(patient)
@@ -2650,9 +2632,8 @@ people = Person.find(:all, :include => [{:names => [:person_name_code]}, :patien
   def self.next_lab_encounter(patient , encounter = nil , session_date = Date.today)
     if encounter.blank?
       type = EncounterType.find_by_name('LAB ORDERS').id
-      lab_order = Encounter.find(:first,
-        :order => "encounter_datetime DESC,date_created DESC",
-        :conditions =>["patient_id = ? AND encounter_type = ?",patient.id,type])
+      lab_order = Encounter.where(["patient_id = ? AND encounter_type = ?",patient.id,type]
+      ).order("encounter_datetime DESC,date_created DESC").first
       return 'NO LAB ORDERS' if lab_order.blank?
       return
     end
@@ -2660,31 +2641,35 @@ people = Person.find(:all, :include => [{:names => [:person_name_code]}, :patien
     case encounter.name.upcase
     when 'LAB ORDERS'
       type = EncounterType.find_by_name('SPUTUM SUBMISSION').id
-      sputum_sub = Encounter.find(:first,:joins => "INNER JOIN obs USING(encounter_id)",
-        :conditions =>["obs.accession_number IN (?) AND patient_id = ? AND encounter_type = ?",
-          encounter.observations.map{|r|r.accession_number}.compact,encounter.patient_id,type])
+      sputum_sub = Encounter.joins("INNER JOIN obs USING(encounter_id)").where(
+        ["obs.accession_number IN (?) AND patient_id = ? AND encounter_type = ?",
+          encounter.observations.map{|r|r.accession_number}.compact,encounter.patient_id,type]
+      ).first
 
       return type if sputum_sub.blank?
       return sputum_sub
     when 'SPUTUM SUBMISSION'
       type = EncounterType.find_by_name('LAB RESULTS').id
-      lab_results = Encounter.find(:first,:joins => "INNER JOIN obs USING(encounter_id)",
-        :conditions =>["obs.accession_number IN (?) AND patient_id = ? AND encounter_type = ?",
-          encounter.observations.map{|r|r.accession_number}.compact,encounter.patient_id,type])
+      lab_results = Encounter.joins("INNER JOIN obs USING(encounter_id)").where(
+        ["obs.accession_number IN (?) AND patient_id = ? AND encounter_type = ?",
+          encounter.observations.map{|r|r.accession_number}.compact,encounter.patient_id,type]
+      ).first
 
       type = EncounterType.find_by_name('LAB ORDERS').id
-      lab_order = Encounter.find(:first,:joins => "INNER JOIN obs USING(encounter_id)",
-        :conditions =>["obs.accession_number IN (?) AND patient_id = ? AND encounter_type = ?",
-          encounter.observations.map{|r|r.accession_number}.compact,encounter.patient_id,type])
+      lab_order = Encounter.joins("INNER JOIN obs USING(encounter_id)").where(
+        ["obs.accession_number IN (?) AND patient_id = ? AND encounter_type = ?",
+          encounter.observations.map{|r|r.accession_number}.compact,encounter.patient_id,type]
+      ).first
 
       return lab_order if lab_results.blank? and not lab_order.blank?
       return if lab_results.blank?
       return lab_results
     when 'LAB RESULTS'
       type = EncounterType.find_by_name('SPUTUM SUBMISSION').id
-      sputum_sub = Encounter.find(:first,:joins => "INNER JOIN obs USING(encounter_id)",
-        :conditions =>["obs.accession_number IN (?) AND patient_id = ? AND encounter_type = ?",
-          encounter.observations.map{|r|r.accession_number}.compact,encounter.patient_id,type])
+      sputum_sub = Encounter.joins("INNER JOIN obs USING(encounter_id)").where(
+        ["obs.accession_number IN (?) AND patient_id = ? AND encounter_type = ?",
+          encounter.observations.map{|r|r.accession_number}.compact,encounter.patient_id,type]
+      ).first
 
       return if sputum_sub.blank?
       return sputum_sub
@@ -2695,13 +2680,13 @@ people = Person.find(:all, :include => [{:names => [:person_name_code]}, :patien
 
     #..............................................................................
     if self.current_program_location == 'TB program'
-      reception = Encounter.find(:first,:conditions =>["patient_id = ? AND
+      reception = Encounter.where(["patient_id = ? AND
         DATE(encounter_datetime) = ? AND encounter_type = ?",patient.id,session_date,
-          EncounterType.find_by_name('TB RECEPTION').id]).observations.collect{| r | r.to_s}.join(',') rescue ''
+          EncounterType.find_by_name('TB RECEPTION').id]).first.observations.collect{| r | r.to_s}.join(',') rescue ''
     else
-      reception = Encounter.find(:first,:conditions =>["patient_id = ? AND
+      reception = Encounter.where(["patient_id = ? AND
         DATE(encounter_datetime) = ? AND encounter_type = ?",patient.id,session_date,
-          EncounterType.find_by_name('HIV RECEPTION').id]).observations.collect{| r | r.to_s}.join(',') rescue ''
+          EncounterType.find_by_name('HIV RECEPTION').id]).first.observations.collect{| r | r.to_s}.join(',') rescue ''
     end
 
     if reception.match(/PATIENT PRESENT FOR CONSULTATION:  NO/i)
@@ -2710,24 +2695,21 @@ people = Person.find(:all, :include => [{:names => [:person_name_code]}, :patien
     #..............................................................................
 
 
-    first_vitals = Encounter.find(:first,:order => "encounter_datetime DESC",
-      :conditions =>["patient_id = ? AND encounter_type = ?",
-        patient.id,EncounterType.find_by_name('VITALS').id])
+    first_vitals = Encounter.where(["patient_id = ? AND encounter_type = ?",
+        patient.id,EncounterType.find_by_name('VITALS').id]).order("encounter_datetime DESC").first
 
 
     if first_vitals.blank?
-      encounter = Encounter.find(:first,:order => "encounter_datetime DESC",
-        :conditions =>["patient_id = ? AND encounter_type = ?",patient.id,
-          EncounterType.find_by_name('LAB ORDERS').id])
+      encounter = Encounter.where(["patient_id = ? AND encounter_type = ?",patient.id,
+          EncounterType.find_by_name('LAB ORDERS').id]).order("encounter_datetime DESC").first
 
       sup_result = self.next_lab_encounter(patient , encounter, session_date)
 
-      reception = Encounter.find(:first,:order => "encounter_datetime DESC",
-        :conditions =>["encounter_datetime BETWEEN ? AND ? AND patient_id = ? AND encounter_type = ?",
+      reception = Encounter.where(["encounter_datetime BETWEEN ? AND ? AND patient_id = ? AND encounter_type = ?",
           session_date.to_date.strftime('%Y-%m-%d 00:00:00'),
           session_date.to_date.strftime('%Y-%m-%d 23:59:59'),
           patient.id,
-          EncounterType.find_by_name('TB RECEPTION').id])
+          EncounterType.find_by_name('TB RECEPTION').id]).order("encounter_datetime DESC").first
 
       if reception.blank? and not sup_result.blank?
         if user_selected_activities.match(/Manage TB Reception Visits/i)
@@ -2754,12 +2736,11 @@ people = Person.find(:all, :include => [{:names => [:person_name_code]}, :patien
 
     return if self.patient_tb_status(patient).match(/treatment/i) and not self.patient_hiv_status(patient).match(/Positive/i)
 
-    vitals = Encounter.find(:first,:order => "encounter_datetime DESC",
-      :conditions =>["encounter_datetime BETWEEN ? AND ? AND patient_id = ? AND encounter_type = ?",
+    vitals = Encounter.where(["encounter_datetime BETWEEN ? AND ? AND patient_id = ? AND encounter_type = ?",
         session_date.to_date.strftime('%Y-%m-%d 00:00:00'),
         session_date.to_date.strftime('%Y-%m-%d 23:59:59'),
         patient.id,
-        EncounterType.find_by_name('VITALS').id])
+        EncounterType.find_by_name('VITALS').id]).order("encounter_datetime DESC").first
 
     if vitals.blank? and user_selected_activities.match(/Manage Vitals/i)
       task.encounter_type = 'VITALS'
@@ -2775,18 +2756,17 @@ people = Person.find(:all, :include => [{:names => [:person_name_code]}, :patien
   def self.need_art_enrollment(task,patient,location,session_date,user_selected_activities,reason_for_art)
     return unless self.patient_hiv_status(patient).match(/Positive/i)
 
-    enrolled_in_hiv_program = Concept.find(Observation.find(:first,
-        :order => "obs_datetime DESC,date_created DESC",
-        :conditions => ["person_id = ? AND concept_id = ?",patient.id,
-          ConceptName.find_by_name("Patient enrolled in IMB HIV program").concept_id]).value_coded).concept_names.map{|c|c.name}[0].upcase rescue nil
+    enrolled_in_hiv_program = Concept.find(Observation.where(["person_id = ? AND concept_id = ?",patient.id,
+          ConceptName.find_by_name("Patient enrolled in IMB HIV program").concept_id]
+      ).order("obs_datetime DESC,date_created DESC").first.value_coded).concept_names.map{|c|c.name}[0].upcase rescue nil
 
     return unless enrolled_in_hiv_program == 'YES'
 
     #return if not reason_for_art.upcase == 'UNKNOWN' and not reason_for_art.blank?
 
-    art_initial = Encounter.find(:first,:conditions =>["patient_id = ? AND encounter_type = ?",
-        patient.id,EncounterType.find_by_name('ART_INITIAL').id],
-      :order =>'encounter_datetime DESC,date_created DESC',:limit => 1)
+    art_initial = Encounter.where(["patient_id = ? AND encounter_type = ?",
+        patient.id,EncounterType.find_by_name('ART_INITIAL').id]
+    ).order("encounter_datetime DESC,date_created DESC").limit(1).first
 
     if art_initial.blank? and user_selected_activities.match(/Manage HIV first visits/i)
       task.encounter_type = 'ART_INITIAL'
@@ -2798,9 +2778,8 @@ people = Person.find(:all, :include => [{:names => [:person_name_code]}, :patien
       return task
     end
 
-    hiv_staging = Encounter.find(:first,:order => "encounter_datetime DESC",
-      :conditions =>["patient_id = ? AND encounter_type = ?",
-        patient.id,EncounterType.find_by_name('HIV STAGING').id])
+    hiv_staging = Encounter.where(["patient_id = ? AND encounter_type = ?",
+        patient.id,EncounterType.find_by_name('HIV STAGING').id]).order("encounter_datetime DESC").first
 
     if hiv_staging.blank? and user_selected_activities.match(/Manage HIV staging visits/i)
       extended_staging_questions = CoreService.get_global_property_value('use.extended.staging.questions')
@@ -2815,9 +2794,8 @@ people = Person.find(:all, :include => [{:names => [:person_name_code]}, :patien
       return task
     end
 
-    pre_art_visit = Encounter.find(:first,:order => "encounter_datetime DESC",
-      :conditions =>["patient_id = ? AND encounter_type = ?",
-        patient.id,EncounterType.find_by_name('PART_FOLLOWUP').id])
+    pre_art_visit = Encounter.where(["patient_id = ? AND encounter_type = ?",
+        patient.id,EncounterType.find_by_name('PART_FOLLOWUP').id]).order("encounter_datetime DESC").first
 
     if pre_art_visit.blank? and user_selected_activities.match(/Manage pre ART visits/i)
       task.encounter_type = 'Pre ART visit'
@@ -2830,9 +2808,8 @@ people = Person.find(:all, :include => [{:names => [:person_name_code]}, :patien
     end if reason_for_art.upcase ==  'UNKNOWN' or reason_for_art.blank?
 
 
-    art_visit = Encounter.find(:first,:order => "encounter_datetime DESC",
-      :conditions =>["patient_id = ? AND encounter_type = ?",
-        patient.id,EncounterType.find_by_name('ART VISIT').id])
+    art_visit = Encounter.where(["patient_id = ? AND encounter_type = ?",
+        patient.id,EncounterType.find_by_name('ART VISIT').id]).order("encounter_datetime DESC").first
 
     if art_visit.blank? and user_selected_activities.match(/Manage ART visits/i)
       task.encounter_type = 'ART VISIT'
@@ -2844,10 +2821,10 @@ people = Person.find(:all, :include => [{:names => [:person_name_code]}, :patien
       return task
     end
 
-    treatment_encounter = Encounter.find(:first,:order => "encounter_datetime DESC",
-      :joins =>"INNER JOIN obs USING(encounter_id)",
-      :conditions =>["patient_id = ? AND encounter_type = ? AND concept_id = ?",
-        patient.id,EncounterType.find_by_name('TREATMENT').id,ConceptName.find_by_name('ARV regimen type').concept_id])
+    treatment_encounter = Encounter.joins("INNER JOIN obs USING(encounter_id)").where(
+      ["patient_id = ? AND encounter_type = ? AND concept_id = ?",
+        patient.id,EncounterType.find_by_name('TREATMENT').id,ConceptName.find_by_name('ARV regimen type').concept_id]
+    ).order("encounter_datetime DESC").first
 
     prescribe_drugs = art_visit.observations.map{|obs| obs.to_s.squish.strip.upcase }.include? 'Prescribe arvs this visit: Yes'.upcase rescue false
 
@@ -2944,13 +2921,13 @@ people = Person.find(:all, :include => [{:names => [:person_name_code]}, :patien
 
   def self.date_antiretrovirals_started(patient)
     concept_id = ConceptName.find_by_name('ART START DATE').concept_id
-    start_date = Observation.find(:first, :conditions => ["concept_id = ? AND
-    person_id = ?", concept_id, patient.id]).value_datetime rescue ""
+    start_date = Observation.where(["concept_id = ? AND
+    person_id = ?", concept_id, patient.id]).first.value_datetime rescue ""
 
     if start_date.blank? || start_date == ""
       concept_id = ConceptName.find_by_name('Date antiretrovirals started').concept_id
-      start_date = Observation.find(:first, :conditions => ["concept_id = ? AND
-      person_id = ?", concept_id, patient.id]).value_text rescue ""
+      start_date = Observation.where(["concept_id = ? AND
+      person_id = ?", concept_id, patient.id]).first.value_text rescue ""
       art_start_date = start_date
       if art_start_date.blank? || art_start_date == ""
         start_date = ActiveRecord::Base.connection.select_value "
@@ -3004,7 +2981,8 @@ people = Person.find(:all, :include => [{:names => [:person_name_code]}, :patien
 
   def self.previous_referral_section(person_obj,session_date)
 
-    services = Observation.find(:all, :conditions => ["person_id = ? AND concept_id = ?", person_obj.id, ConceptName.find_by_name("SERVICES").concept_id], :order => "obs_datetime desc").uniq.reverse.first(5) rescue []
+    services = Observation.where(["person_id = ? AND concept_id = ?", person_obj.id,
+        ConceptName.find_by_name("SERVICES").concept_id]).order("obs_datetime desc").uniq.reverse.first(5) rescue []
 
 		previous_services = []
 		services.map do |service|
@@ -3031,11 +3009,11 @@ people = Person.find(:all, :include => [{:names => [:person_name_code]}, :patien
 
     clinic_encounters  =  ['DISPENSING']
 
-    encounter_type_ids = EncounterType.find_all_by_name(clinic_encounters).collect{|e|e.id}
+    encounter_type_ids = EncounterType.where(["name =?", clinic_encounters]).collect{|e|e.id}
 
-    latest_encounter_date = Encounter.find(:first,:conditions =>["patient_id=? AND encounter_datetime < ? AND
+    latest_encounter_date = Encounter.where(["patient_id=? AND encounter_datetime < ? AND
         encounter_type IN(?)",patient.id,date.strftime('%Y-%m-%d 00:00:00'),
-        encounter_type_ids],:order =>"encounter_datetime DESC").encounter_datetime rescue nil
+        encounter_type_ids]).order("encounter_datetime DESC").first.encounter_datetime rescue nil
 
     return [] if latest_encounter_date.blank?
 
@@ -3043,11 +3021,10 @@ people = Person.find(:all, :include => [{:names => [:person_name_code]}, :patien
     end_date = latest_encounter_date.strftime('%Y-%m-%d 23:59:59')
 
     concept_id = Concept.find_by_name('AMOUNT DISPENSED').id
-    orders = Order.find(:all,:joins =>"INNER JOIN obs ON obs.order_id = orders.order_id",
-      :conditions =>["obs.person_id = ? AND obs.concept_id = ?
-        AND obs_datetime >=? AND obs_datetime <=?",
-        patient.id,concept_id,start_date,end_date],
-      :order =>"obs_datetime")
+    orders = Order.joins("INNER JOIN obs ON obs.order_id = orders.order_id").where(
+      ["obs.person_id = ? AND obs.concept_id = ? AND obs_datetime >=? AND obs_datetime <=?",
+        patient.id,concept_id,start_date,end_date]
+    ).order("obs_datetime")
 
     (orders || []).reject do |order|
       !MedicationService.tb_medication(order.drug_order.drug)
@@ -3092,10 +3069,10 @@ people = Person.find(:all, :include => [{:names => [:person_name_code]}, :patien
   def self.appointment_type(patient, session_date)
     appointment_type_id = ConceptName.find_by_name('Appointment type').concept_id
 
-    Observation.find(:first, :conditions => ["concept_id = ? AND person_id = ?
+    Observation.where(["concept_id = ? AND person_id = ?
       AND obs_datetime BETWEEN ? AND ?", appointment_type_id, patient.id,
         session_date.strftime('%Y-%m-%d 00:00:00'),
-        session_date.strftime('%Y-%m-%d 23:59:59')])
+        session_date.strftime('%Y-%m-%d 23:59:59')]).first
   end
 
   def self.patient_initiated(patient_id, session_date)
@@ -3109,10 +3086,10 @@ EOF
   
    
 
-    hiv_clinic_registration = Encounter.find(:last,:conditions =>["encounter_type = ? AND 
+    hiv_clinic_registration = Encounter.where(["encounter_type = ? AND
       patient_id = ? AND (encounter_datetime BETWEEN ? AND ?)",
         EncounterType.find_by_name("HIV CLINIC REGISTRATION").id, patient_id,
-        end_date.to_date.strftime('%Y-%m-%d 00:00:00'), end_date])
+        end_date.to_date.strftime('%Y-%m-%d 00:00:00'), end_date]).last
 
     (hiv_clinic_registration.observations || []).map do | obs |
       concept_name = obs.to_s.split(':')[0].strip rescue nil
@@ -3133,8 +3110,8 @@ EOF
  
   
    
-    dispensed_arvs = Observation.find(:all, :conditions =>["person_id = ? 
-      AND concept_id = ? AND obs_datetime <= ?", patient_id, concept_id, end_date]).map(&:value_drug)
+    dispensed_arvs = Observation.where(["person_id = ?
+      AND concept_id = ? AND obs_datetime <= ?", patient_id, concept_id, end_date]).last.map(&:value_drug)
 
     return 'Initiation' if dispensed_arvs.blank?
     arv_drug_concepts = MedicationService.arv_drugs.map(&:concept_id) 

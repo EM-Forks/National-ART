@@ -8,6 +8,7 @@ gem 'rails', '~> 5.2.0'
 gem 'composite_primary_keys'
 gem 'devise'
 gem 'will_paginate'
+gem 'settingslogic'
 # Use mysql as the database for Active Record
 gem 'mysql2', '>= 0.4.4', '< 0.6.0'
 # Use Puma as the app server

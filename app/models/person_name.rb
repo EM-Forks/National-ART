@@ -2,9 +2,9 @@ class PersonName < ActiveRecord::Base
   before_save
   self.table_name = "person_name"
   self.primary_key = "person_name_id"
-  include Openmrs
+  #include Openmrs
   belongs_to :person, ->{where(voided:0)},foreign_key: :person_id
-  has_one :person_name_code,->{where(voided:0)}, foreign_key: :person_name_id # no default scope
+  has_one :person_name_code, foreign_key: :person_name_id # no default scope
 
   def before_save
     self.build_person_name_code(
