@@ -1,19 +1,19 @@
 class Pharmacy < ActiveRecord::Base
-  set_table_name "pharmacy_obs"
-  set_primary_key "pharmacy_module_id"
+  self.table_name = "pharmacy_obs"
+  self.primary_key = "pharmacy_module_id"
   include Openmrs
   #before_create :update_stock_record
   
-  named_scope :active, :conditions => ['voided = 0']
+  scope :active, ->{where(voided: 0)}
 
   def self.total_removed(drug_id , start_date = Date.today , end_date = Date.today)
     pharmacy_encounter_type = PharmacyEncounterType.find_by_name('Tins removed')
 
-    self.active.find(:first,:select => "SUM(value_numeric) total_removed",
-      :conditions => ["pharmacy_encounter_type = ? AND drug_id = ?
-                      AND encounter_date >= ? AND encounter_date <= ?",
-        pharmacy_encounter_type.id , drug_id , start_date , end_date],
-      :group => "drug_id").total_removed.to_f rescue 0
+    self.active.select("SUM(value_numeric) total_removed").where(
+                       ["pharmacy_encounter_type = ? AND drug_id = ?
+                       AND encounter_date >= ? AND encounter_date <= ?",
+                       pharmacy_encounter_type.id , drug_id , start_date , end_date]
+                     ).group(:drug_id).first.total_removed.to_f rescue 0
   end
 
   def self.drug_dispensed_stock_adjustment(drug_id,quantity,encounter_date,reason = nil, expiring_units = nil)
@@ -47,13 +47,11 @@ class Pharmacy < ActiveRecord::Base
     start_date = start_date.to_date.strftime('%Y-%m-%d 00:00:00') rescue nil
     end_date = end_date.to_date.strftime('%Y-%m-%d 23:59:59') rescue nil
 
-    Encounter.find(:first,:joins => "INNER JOIN obs USING(encounter_id)",
-      :select => "SUM(value_numeric) total_dispensed" ,
-      :conditions => ["concept_id = ? AND encounter_type = ?
+    Encounter.select("SUM(value_numeric) total_dispensed").where(["concept_id = ? AND encounter_type = ?
                    AND obs_datetime >= ? AND obs_datetime <= ? AND value_drug = ? AND obs.voided=0",
-        amount_dispensed_concept_id,dispensed_encounter.id,
-        start_date,end_date,drug_id],
-      :group => "value_drug").total_dispensed.to_f rescue 0
+                   amount_dispensed_concept_id,dispensed_encounter.id,
+                    start_date,end_date,drug_id]).joins("INNER JOIN obs USING(encounter_id"
+                  ).group(:value_drug).total_dispensed.to_f rescue 0
   end
 
   def Pharmacy.dispensed_drugs_to_date(drug_id)
@@ -397,7 +395,8 @@ EOF
       :group => "drug_id").total_physical_count.to_f rescue 0
   end
 
-  def self.latest_physical_counted(drug_id, latest_date)
+  def self.latest_phys
+    ical_counted(drug_id, latest_date)
     pharmacy_encounter_type = PharmacyEncounterType.find_by_name('Tins currently in stock')
 
     latest_physical_count = Pharmacy.find_by_sql(

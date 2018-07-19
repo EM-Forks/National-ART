@@ -1,4 +1,5 @@
 class PatientIdentifier < ActiveRecord::Base
+  after_save
   self.table_name = "patient_identifier"
   self.primary_key = "patient_identifier_id"
   include Openmrs
@@ -39,7 +40,7 @@ class PatientIdentifier < ActiveRecord::Base
   def self.next_available_arv_number
     current_arv_code = self.site_prefix
     type = PatientIdentifierType.find_by_name('ARV Number').id
-    current_arv_number_identifiers = PatientIdentifier.find(:all,:conditions => ["identifier_type = ? AND voided = 0",type])
+    current_arv_number_identifiers = PatientIdentifier.where(["identifier_type = ? AND voided = 0",type])
 
     assigned_arv_ids = current_arv_number_identifiers.collect{|identifier|
       $1.to_i if identifier.identifier.match(/#{current_arv_code}-ARV- *(\d+)/)
@@ -89,14 +90,13 @@ class PatientIdentifier < ActiveRecord::Base
   end
   
   def self.identifier(patient_id, patient_identifier_type_id)
-    patient_identifier = self.find(:first, :select => "identifier",
-      :conditions  =>["patient_id = ? and identifier_type = ?", patient_id, patient_identifier_type_id])
+    patient_identifier = self.select(:identifier).where(
+        ["patient_id = ? and identifier_type = ?", patient_id, patient_identifier_type_id]).first
     return patient_identifier
   end
 
   def self.next_filing_number(type = 'Filing Number')
-    available_numbers = PatientIdentifier.find(:all,
-      :conditions => ['identifier_type = ?',
+    available_numbers = PatientIdentifier.where(['identifier_type = ?',
         PatientIdentifierType.find_by_name(type).id]).map{ | i | i.identifier }
     
     filing_number_prefix = CoreService.get_global_property_value("filing.number.prefix") rescue "FN101,FN102" 

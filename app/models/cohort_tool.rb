@@ -64,8 +64,8 @@ class CohortTool < ActiveRecord::Base
     earliest_start_date = {}
     return if regimen_ids.blank?
     concept_name = ConceptName.find_all_by_name("Pre-art (continue)")
-    state = ProgramWorkflowState.find( :first, :conditions => ["concept_id IN (?)",
-        concept_name.map{|c|c.concept_id}]).program_workflow_state_id
+    state = ProgramWorkflowState.where(["concept_id IN (?)",
+        concept_name.map{|c|c.concept_id}]).first.program_workflow_state_id
     PatientProgram.find_by_sql(
       "SELECT p.patient_id, p.date_enrolled FROM patient_program p
           INNER JOIN person pe ON pe.person_id = p.patient_id
