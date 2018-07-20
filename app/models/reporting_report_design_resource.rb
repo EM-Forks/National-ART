@@ -131,9 +131,8 @@ class ReportingReportDesignResource < ActiveRecord::Base
 
 		(cohort_attributes || {}).each do |name,count|
 			#raise "#{name} #{count}"
-			resource = ReportingReportDesignResource.find(:first, 
-				:conditions =>["name = ? AND report_design_id = ?",
-				@cohort_indicators[name], report_design.id])
+			resource = ReportingReportDesignResource.where(["name = ? AND report_design_id = ?",
+				@cohort_indicators[name], report_design.id]).first
 
 			resource = ReportingReportDesignResource.new() if resource.blank?
 			resource.name = @cohort_indicators[name]

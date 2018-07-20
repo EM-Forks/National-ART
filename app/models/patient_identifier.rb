@@ -66,7 +66,7 @@ class PatientIdentifier < ActiveRecord::Base
   def self.next_available_hcc_number
     current_hcc_code = self.site_prefix
     type = PatientIdentifierType.find_by_name('HCC Number').id
-    current_hcc_number_identifiers = PatientIdentifier.find(:all,:conditions => ["identifier_type = ? AND voided = 0",type])
+    current_hcc_number_identifiers = PatientIdentifier.where(["identifier_type = ? AND voided = 0",type])
 
     assigned_hcc_ids = current_hcc_number_identifiers.collect{|identifier|
       $1.to_i if identifier.identifier.match(/#{current_hcc_code}-HCC- *(\d+)/)

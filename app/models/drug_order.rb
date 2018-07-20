@@ -47,11 +47,11 @@ class DrugOrder < ActiveRecord::Base
     joins = "INNER JOIN orders ON orders.order_id = drug_order.order_id AND orders.voided = 0
              INNER JOIN obs ON orders.obs_id = obs.obs_id AND obs.value_coded = #{diagnosis_concept_id} AND obs.voided = 0
              INNER JOIN drug ON drug.drug_id = drug_order.drug_inventory_id"             
-    self.all( 
-      :joins => joins, 
-      :select => "*, MIN(drug_order.order_id) as order_id, COUNT(*) as number, CONCAT(drug.name, ':', dose, ' ', drug_order.units, ' ', frequency, ' for ', DATEDIFF(auto_expire_date, start_date), ' days', IF(prn=1, ' prn', '')) as script", 
-      :group => ['drug.name, dose, drug_order.units, frequency, prn, DATEDIFF(start_date, auto_expire_date)'], 
-      :order => "COUNT(*) DESC")
+    self.joins(joins).select(
+      "*, MIN(drug_order.order_id) as order_id, COUNT(*) as number, CONCAT(drug.name, ':', dose, ' ', drug_order.units, ' ', frequency, ' for ', DATEDIFF(auto_expire_date, start_date), ' days', IF(prn=1, ' prn', '')) as script"
+    ).group(
+      ['drug.name, dose, drug_order.units, frequency, prn, DATEDIFF(start_date, auto_expire_date)']
+    ).order("COUNT(*) DESC")
   end
   
   def self.clone_order(encounter, patient, obs, drug_order)
@@ -62,7 +62,7 @@ class DrugOrder < ActiveRecord::Base
 
   # Eventually it would be good for this to not be hard coded, and the data available in the concept table
   def self.doses_per_day(frequency)
-	frequency = frequency.squish
+    frequency = frequency.squish
     return 1 if frequency.upcase == "ONCE A DAY" || frequency.upcase == "OD" || frequency.upcase == "ONCE A DAY (OD)"
     return 2 if frequency.upcase == "TWICE A DAY" || frequency.upcase == "BD" || frequency.upcase == "TWICE A DAY (BD)"
     return 3 if frequency.upcase == "THREE A DAY" || frequency.upcase == "TDS" || frequency.upcase == "THREE A DAY (TDS)"
@@ -140,10 +140,10 @@ class DrugOrder < ActiveRecord::Base
   def total_drug_supply(patient, encounter = nil, session_date = Date.today)
     if encounter.blank?  
       type = EncounterType.find_by_name("DISPENSING")
-      encounter = Encounter.find(:first,:conditions =>["encounter_datetime BETWEEN ? AND ? AND encounter_type = ?",
-                                  session_date.to_date.strftime('%Y-%m-%d 00:00:00'),
-                                  session_date.to_date.strftime('%Y-%m-%d 23:59:59'),
-                                  type.id])
+      encounter = Encounter.where(["encounter_datetime BETWEEN ? AND ? AND encounter_type = ?",
+          session_date.to_date.strftime('%Y-%m-%d 00:00:00'),
+          session_date.to_date.strftime('%Y-%m-%d 23:59:59'),
+          type.id]).first
     end
     
     return [] if encounter.blank?
@@ -167,7 +167,8 @@ class DrugOrder < ActiveRecord::Base
 
     #total_brought = amounts_brought.sum{|amount| amount.value_numeric}
 
-    amounts_dispensed = Observation.all(:conditions => ['concept_id = ? AND order_id = ? AND encounter_id = ?', ConceptName.find_by_name("AMOUNT DISPENSED").concept_id, self.order_id, encounter.encounter_id])
+    amounts_dispensed = Observation.where(['concept_id = ? AND order_id = ? AND encounter_id = ?',
+        ConceptName.find_by_name("AMOUNT DISPENSED").concept_id, self.order_id, encounter.encounter_id])
     total_dispensed = amounts_dispensed.sum{|amount| amount.value_numeric}
     self.quantity = total_dispensed + total_brought
     self.save
@@ -207,10 +208,9 @@ class DrugOrder < ActiveRecord::Base
 
   def self.prescription_dates(patient,date)
     type = EncounterType.find_by_name('TREATMENT').id                           
-    all = Encounter.find(:all,                                                  
-      :conditions =>["patient_id = ? AND encounter_datetime BETWEEN ? AND ?           
+    all = Encounter.where(["patient_id = ? AND encounter_datetime BETWEEN ? AND ?
       AND encounter_type = ?",patient.id , date.to_date.strftime('%Y-%m-%d 00:00:00'),                     
-                      date.to_date.strftime('%Y-%m-%d 23:59:59')  , type])                        
+        date.to_date.strftime('%Y-%m-%d 23:59:59')  , type])
                                                                                 
     start_date = nil ; end_date = nil                                        
     (all || []).each do |encounter|                                             
@@ -228,12 +228,11 @@ class DrugOrder < ActiveRecord::Base
   def self.all_orders_complete(patient, encounter_date)                            
     type = EncounterType.find_by_name('TREATMENT').id                         
                                                                               
-    current_treatment_encounters = Encounter.find(:all,                       
-      :conditions =>["patient_id = ? AND encounter_datetime BETWEEN ? AND ?           
+    current_treatment_encounters = Encounter.where(["patient_id = ? AND encounter_datetime BETWEEN ? AND ?
       AND encounter_type = ?",patient.id ,                                    
-      encounter_date.to_date.strftime('%Y-%m-%d 00:00:00'),                   
-      encounter_date.to_date.strftime('%Y-%m-%d 23:59:59'),                   
-      type])                                                                  
+        encounter_date.to_date.strftime('%Y-%m-%d 00:00:00'),
+        encounter_date.to_date.strftime('%Y-%m-%d 23:59:59'),
+        type])
                                                                               
     complete = true                                                           
     (current_treatment_encounters || []).each do | encounter |                

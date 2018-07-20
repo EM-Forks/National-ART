@@ -1,8 +1,8 @@
 class GeneralSet < ActiveRecord::Base
-  set_table_name "dset"
-  set_primary_key "set_id"
+  self.table_name = "dset"
+  self.primary_key = "set_id"
 
-  has_many :drug_sets, :foreign_key => :set_id, :conditions => {:voided => 0}
+  has_many :drug_sets, -> {where(voided: 0)}, foreign_key: :set_id
 
   def activate(date)
 

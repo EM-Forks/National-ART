@@ -1,5 +1,5 @@
 class TableLabResult < ActiveRecord::Base
-  set_table_name "tblLabResults"
+  self.table_name = "tblLabResults"
 
   def self.lab_results
     self.where("TestResult IS NOT NULL")

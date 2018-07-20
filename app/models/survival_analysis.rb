@@ -6,8 +6,9 @@ class SurvivalAnalysis
     survival_end_date = cohort.end_date.to_date ;
     survival_start_date = cohort.start_date.to_date
     displayed_date = survival_end_date
-    first_registration_date = PatientProgram.find(:first,:conditions =>["program_id = ? AND voided = 0",program_id],
-                                                  :order => 'date_enrolled ASC').date_enrolled.to_date rescue nil
+    first_registration_date = PatientProgram.where(
+      ["program_id = ? AND voided = 0",program_id]
+    ).order("date_enrolled ASC").first.date_enrolled.to_date rescue nil
     return if first_registration_date.blank?
 
     date_ranges = []
