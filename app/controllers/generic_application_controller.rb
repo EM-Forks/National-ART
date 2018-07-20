@@ -23,21 +23,21 @@ class GenericApplicationController < ActionController::Base
 
 	helper :all
 	helper_method :next_task
-	filter_parameter_logging :password
-	before_filter :authenticate_user!, :except => ['normal_visits','transfer_in_visits', 're_initiation_visits','patients_without_any_encs','login', 'logout','remote_demographics','art_stock_info',
-    'create_remote', 'mastercard_printable', 'get_token',
-    'cohort','demographics_remote', 'export_on_art_patients', 'art_summary',
-    'art_summary_dispensation', 'print_rules', 'rule_variables', 'print',
-    'new_prescription', 'search_for_drugs','mastercard_printable',
-    'remote_app_search', 'remotely_reassign_new_identifier',
-    'create_person_from_anc', 'create_person_from_dmht',
-    'find_person_from_dmht', 'reassign_remote_identifier',
-    'revised_cohort_to_print', 'revised_cohort_survival_analysis_to_print',
-    'revised_women_cohort_survival_analysis_to_print',
-    'revised_children_cohort_survival_analysis_to_print', 'create', 'render_date_enrolled_in_art', 'search_remote_people'
+	#filter_parameter_logging :password => this method is depricated
+	before_action :authenticate_user!, except: [:normal_visits,:transfer_in_visits, :re_initiation_visits,:patients_without_any_encs,:login, :logout,:remote_demographics,:art_stock_info,
+    :create_remote, :mastercard_printable, :get_token,
+    :cohort,:demographics_remote, :export_on_art_patients, :art_summary,
+    :art_summary_dispensation, :print_rules, :rule_variables, :print,
+    :new_prescription, :search_for_drugs,:mastercard_printable,
+    :remote_app_search, :remotely_reassign_new_identifier,
+    :create_person_from_anc, :create_person_from_dmht,
+    :find_person_from_dmht, :reassign_remote_identifier,
+    :revised_cohort_to_print,:revised_cohort_survival_analysis_to_print,
+    :revised_women_cohort_survival_analysis_to_print,
+    :revised_children_cohort_survival_analysis_to_print, :create, :render_date_enrolled_in_art, :search_remote_people
   ]
 
-  before_filter :set_current_user, :except => ['login', 'logout','remote_demographics','art_stock_info',
+  before_action :set_current_user, except: ['login', 'logout','remote_demographics','art_stock_info',
     'create_remote', 'mastercard_printable', 'get_token',
     'cohort','demographics_remote', 'export_on_art_patients', 'art_summary',
     'art_summary_dispensation', 'print_rules', 'rule_variables',
@@ -51,7 +51,7 @@ class GenericApplicationController < ActionController::Base
     'revised_children_cohort_survival_analysis_to_print', 'render_date_enrolled_in_art', 'search_remote_people'
   ]
 
-	before_filter :location_required, :except => ['patients_without_any_encs','login', 'logout', 'location',
+	before_action :location_required, except: ['patients_without_any_encs','login', 'logout', 'location',
     'demographics','create_remote',
     'mastercard_printable','art_stock_info',
     'remote_demographics', 'get_token',
@@ -66,10 +66,10 @@ class GenericApplicationController < ActionController::Base
     'revised_children_cohort_survival_analysis_to_print', 'render_date_enrolled_in_art', 'search_remote_people'
   ]
 
-	before_filter :set_return_uri, :except => ['create_person_from_anc', 'create_person_from_dmht',
+	before_action :set_return_uri, except:  ['create_person_from_anc', 'create_person_from_dmht',
     'find_person_from_dmht', 'reassign_remote_identifier', 'create', 'render_date_enrolled_in_art', 'search_remote_people']
 
-  before_filter :set_dde_token
+  before_action :set_dde_token
 
   def set_dde_token
     if create_from_dde_server
@@ -95,16 +95,16 @@ class GenericApplicationController < ActionController::Base
 		@backtrace = exception.backtrace.join("\n") unless exception.nil?
 		logger.info @message
 		logger.info @backtrace
-		render :file => "#{RAILS_ROOT}/app/views/errors/error.rhtml", :layout=> false, :status => 404
-	end if RAILS_ENV == 'development' || RAILS_ENV == 'test'
+		render :file => "#{Rails.root}/app/views/errors/error.rhtml", :layout=> false, :status => 404
+	end if Rails.env == 'development' || Rails.env == 'test'
 
   def rescue_action(exception)
     @message = exception.message
     @backtrace = exception.backtrace.join("\n") unless exception.nil?
     logger.info @message
     logger.info @backtrace
-    render :file => "#{RAILS_ROOT}/app/views/errors/error.rhtml", :layout=> false, :status => 404
-  end if RAILS_ENV == 'production'
+    render :file => "#{Rails.env}/app/views/errors/error.rhtml", :layout=> false, :status => 404
+  end if Rails.env == 'production'
 
   def print_and_redirect(print_url, redirect_url, message = "Printing, please wait...", show_next_button = false, patient_id = nil)
     @print_url = print_url
@@ -269,7 +269,7 @@ class GenericApplicationController < ActionController::Base
   #
   # We can return to this location by calling #redirect_back_or_default.
   def store_location
-    session[:return_to] = request.request_uri
+    session[:return_to] = request.original_url   #request_uri
   end
 
   # Redirect to the URI stored by the most recent store_location call or

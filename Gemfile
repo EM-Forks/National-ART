@@ -7,6 +7,7 @@ ruby '2.5.0'
 gem 'rails', '~> 5.2.0'
 gem 'composite_primary_keys'
 gem 'devise'
+gem 'warden'
 gem 'will_paginate'
 gem 'settingslogic'
 gem 'rest-client'
@@ -65,3 +66,4 @@ end
 
 # Windows does not include zoneinfo files, so bundle the tzinfo-data gem
 gem 'tzinfo-data', platforms: [:mingw, :mswin, :x64_mingw, :jruby]
+gem 'fastercsv'

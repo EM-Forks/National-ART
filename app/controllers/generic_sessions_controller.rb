@@ -1,6 +1,6 @@
 class GenericSessionsController < ApplicationController
-	skip_before_filter :authenticate_user!, :except => [:location, :update]
-	skip_before_filter :location_required
+	skip_before_action :authenticate_user!, except: [:location, :update]
+	skip_before_action :location_required
 
 	def new
 	end
