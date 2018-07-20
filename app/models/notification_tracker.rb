@@ -1,8 +1,8 @@
 class NotificationTracker < ActiveRecord::Base
-  set_table_name "notification_tracker"
-  set_primary_key "tracker_id"
+  self.table_name = "notification_tracker"
+  self.primary_key =  "tracker_id"
 
-  belongs_to :user, :foreign_key => :user_id
+  belongs_to :user, foreign_key: :user_id
 
   def self.create_notification(name, response, patient_id)
     self.create(:notification_name => name,

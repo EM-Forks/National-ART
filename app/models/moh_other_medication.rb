@@ -1,6 +1,6 @@
 class MohOtherMedication < ActiveRecord::Base
-  set_table_name "moh_other_medications"
-  set_primary_key "medication_id"
+  self.table_name = "moh_other_medications"
+  self.primary_key = "medication_id"
 
 
 end

@@ -69,9 +69,9 @@ class Person < ActiveRecord::Base
     patient_identifier_type = PatientIdentifierType.find_by_name("DDE person document ID")
     patient_identifier_type_id = patient_identifier_type.id
 
-    patient_identifier =  PatientIdentifier.find(:last, :conditions => ["identifier_type =? AND patient_id =?",
+    patient_identifier =  PatientIdentifier.where(["identifier_type =? AND patient_id =?",
         patient_identifier_type_id, self.person_id
-      ])
+      ]).last
     return nil if patient_identifier.blank?
     return patient_identifier.identifier
   end

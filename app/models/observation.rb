@@ -3,9 +3,9 @@ class Observation < ActiveRecord::Base
   self.primary_key = "obs_id"
   #include Openmrs
 
-  belongs_to :encounter, -> { where voided: 0 }
-  belongs_to :order, -> { where voided: 0 }
-  belongs_to :concept, -> { where retired: 0 }
+  belongs_to :encounter, -> {where(voided: 0)}
+  belongs_to :order, -> {where(voided: 0)}
+  belongs_to :concept, -> {where(retired: 0)}
   belongs_to :concept_name
   belongs_to :answer_concept, -> { where retired: 0 },  class_name: "Concept", foreign_key: "value_coded"
   belongs_to :answer_concept_name, -> { where voided: 0 }, class_name: "ConceptName", foreign_key: "value_coded_name_id"

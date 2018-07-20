@@ -9,11 +9,9 @@ class Pharmacy < ActiveRecord::Base
   def self.total_removed(drug_id , start_date = Date.today , end_date = Date.today)
     pharmacy_encounter_type = PharmacyEncounterType.find_by_name('Tins removed')
 
-    self.active.select("SUM(value_numeric) total_removed").where(
-                       ["pharmacy_encounter_type = ? AND drug_id = ?
+    self.active.where(["pharmacy_encounter_type = ? AND drug_id = ?
                        AND encounter_date >= ? AND encounter_date <= ?",
-                       pharmacy_encounter_type.id , drug_id , start_date , end_date]
-                     ).group(:drug_id).first.total_removed.to_f rescue 0
+                           pharmacy_encounter_type.id , drug_id , start_date , end_date]).sum(:value_numeric) rescue 0
   end
 
   def self.drug_dispensed_stock_adjustment(drug_id,quantity,encounter_date,reason = nil, expiring_units = nil)
@@ -46,23 +44,19 @@ class Pharmacy < ActiveRecord::Base
     amount_dispensed_concept_id = ConceptName.find_by_name('AMOUNT DISPENSED').concept_id
     start_date = start_date.to_date.strftime('%Y-%m-%d 00:00:00') rescue nil
     end_date = end_date.to_date.strftime('%Y-%m-%d 23:59:59') rescue nil
+    total_dispensed = Encounter.joins(:observations).where(["concept_id = ? AND encounter_type=? AND obs_datetime >= ? AND obs_datetime <= ? AND value_drug = ?",
+                                                      amount_dispensed_concept_id,dispensed_encounter,start_date,end_date,drug_id]
+                                                    ).sum(:value_numeric)
 
-    Encounter.select("SUM(value_numeric) total_dispensed").where(["concept_id = ? AND encounter_type = ?
-                   AND obs_datetime >= ? AND obs_datetime <= ? AND value_drug = ? AND obs.voided=0",
-                   amount_dispensed_concept_id,dispensed_encounter.id,
-                    start_date,end_date,drug_id]).joins("INNER JOIN obs USING(encounter_id"
-                  ).group(:value_drug).total_dispensed.to_f rescue 0
   end
 
   def Pharmacy.dispensed_drugs_to_date(drug_id)
     dispensed_encounter = EncounterType.find_by_name('DISPENSING')
     amount_dispensed_concept_id = ConceptName.find_by_name('AMOUNT DISPENSED').concept_id
 
-    Encounter.find(:first,:joins => "INNER JOIN obs USING(encounter_id)",
-      :select => "SUM(value_numeric) total_dispensed" ,
-      :conditions => ["concept_id = ? AND encounter_type = ? AND value_drug = ? AND obs.voided=0",
-        amount_dispensed_concept_id,dispensed_encounter.id,drug_id],
-      :group => "value_drug").total_dispensed.to_f rescue 0
+    total_dispensed = Encounter.joins(:observations).where(["concept_id = ? AND encounter_type=? AND value_drug = ?",
+                                          amount_dispensed_concept_id,dispensed_encounter,drug_id]
+                                          ).sum(:value_numeric)
   end
 
   def self.current_stock(drug_id)
@@ -81,9 +75,7 @@ class Pharmacy < ActiveRecord::Base
     return [] if drug_id.blank? || start_date.blank? || end_date.blank?
     
     encounter_type = PharmacyEncounterType.find_by_name("New deliveries").id
-    return Pharmacy.all(
-      :select => ["value_numeric, value_text, encounter_date AS value_date"],
-      :conditions => ["pharmacy_encounter_type = ? AND (DATE(encounter_date) BETWEEN (?) AND (?)) AND drug_id = ?",
+    return Pharmacy.select("value_numeric, value_text, encounter_date AS value_date").where(["pharmacy_encounter_type = ? AND (DATE(encounter_date) BETWEEN (?) AND (?)) AND drug_id = ?",
         encounter_type, start_date.to_date, end_date.to_date, drug_id
       ]).collect{|del| [del.value_numeric, del.value_date, del.value_text]}
   end
@@ -135,26 +127,22 @@ class Pharmacy < ActiveRecord::Base
   def self.total_delivered(drug_id, start_date = Date.today ,end_date = Date.today)
     pharmacy_encounter_type = PharmacyEncounterType.find_by_name('New deliveries')
 
-    self.active.find(:first,:select => "SUM(value_numeric) total_delivered",
-      :conditions => ["pharmacy_encounter_type = ? AND drug_id = ?
+       self.active.where(["pharmacy_encounter_type = ? AND drug_id = ?
                       AND encounter_date >= ? AND encounter_date <= ?",
-        pharmacy_encounter_type.id , drug_id , start_date , end_date],
-      :group => "drug_id").total_delivered.to_f rescue 0
+                       pharmacy_encounter_type.id , drug_id , start_date , end_date]).sum(:value_numeric) rescue 0
   end
 
   def self.first_delivery_date(drug_id)
     encounter_type = PharmacyEncounterType.find_by_name("New deliveries").id
-    Pharmacy.active.find(:first,:conditions => ["drug_id=? AND pharmacy_encounter_type=?",drug_id,encounter_type],
-      :order => "encounter_date ASC,date_created ASC").encounter_date rescue nil
+    Pharmacy.active.where(["drug_id=? AND pharmacy_encounter_type=?",drug_id,encounter_type]
+                    ).order("encounter_date ASC,date_created ASC").first.encounter_date rescue nil
   end
 
   def self.expiring_drugs(start_date , end_date)
     pharmacy_encounter_type = PharmacyEncounterType.find_by_name('New deliveries')
 
-    expiring_drugs = self.active.find(:all,
-      :conditions => ["pharmacy_encounter_type = ?
-                     AND expiry_date >= ? AND expiry_date <= ?",
-        pharmacy_encounter_type.id , start_date , end_date])
+    expiring_drugs = self.active.where(["pharmacy_encounter_type = ?
+                     AND expiry_date >= ? AND expiry_date <= ?", pharmacy_encounter_type.id , start_date , end_date])
      
     expiring_drugs_hash = {}
     (expiring_drugs || []).each do | expiring |
@@ -174,10 +162,9 @@ class Pharmacy < ActiveRecord::Base
     pharmacy_encounter_type = PharmacyEncounterType.find_by_name('New deliveries')
 
     end_date = start_date + 3.months
-    expiring_drugs = self.active.find(:all,
-      :conditions => ["pharmacy_encounter_type = ?
+    expiring_drugs = self.active.where(["pharmacy_encounter_type = ?
                      AND expiry_date >= ? AND expiry_date <= ? AND drug_id = ?",
-        pharmacy_encounter_type.id , start_date , end_date, drug_id])
+                     pharmacy_encounter_type.id , start_date , end_date, drug_id])
 
     expiring_drugs_hash = {}
     (expiring_drugs || []).each do | expiring |
@@ -196,10 +183,8 @@ class Pharmacy < ActiveRecord::Base
   def self.removed_from_shelves(start_date , end_date)
     pharmacy_encounter_type = PharmacyEncounterType.find_by_name('Tins removed')
 
-    removed_from_shelves = self.active.find(:all,
-      :conditions => ["pharmacy_encounter_type = ?
-                     AND encounter_date >= ? AND encounter_date <= ?",
-        pharmacy_encounter_type.id , start_date , end_date])
+    removed_from_shelves = self.active.where(["pharmacy_encounter_type = ?
+                     AND encounter_date >= ? AND encounter_date <= ?", pharmacy_encounter_type.id , start_date , end_date])
      
     removed_from_shelves_hash = {}
     (removed_from_shelves || []).each do | removed |
@@ -216,14 +201,12 @@ class Pharmacy < ActiveRecord::Base
 
   def Pharmacy.prescribed_drugs_since(drug_id,start_date,end_date = Date.today)
     treatment_encounter_type = EncounterType.find_by_name('TREATMENT')
-    drug_orders = DrugOrder.find(:all,
-      :joins => "INNER JOIN orders ON drug_order.order_id = orders.order_id
-                                 INNER JOIN encounter e ON e.encounter_id = orders.encounter_id",
-      :conditions => ["encounter_type = ? AND drug_inventory_id = ?
-                                 AND encounter_datetime >= ? AND encounter_datetime <= ?" ,
+    drug_orders = DrugOrder.where(["encounter_type = ? AND drug_inventory_id = ?
+                                 AND encounter_datetime >= ? AND encounter_datetime <= ?",
         treatment_encounter_type.id , drug_id ,
         start_date.to_date.strftime('%Y-%m-%d 00:00:00') ,
-        end_date.to_date.strftime('%Y-%m-%d 23:59:59') ])
+                                   end_date.to_date.strftime('%Y-%m-%d 23:59:59') ]).joins(
+        "INNER JOIN orders ON drug_order.order_id = orders.order_id INNER JOIN encounter e ON e.encounter_id = orders.encounter_id")
 
     return 0 if drug_orders.blank?
     prescribed_drugs = 0
@@ -298,9 +281,9 @@ EOF
   end
 
   def self.expected(drug_id,start_date,end_date)                                
-    encounter_type_ids = PharmacyEncounterType.find(:all).collect{|e|e.id}      
-    start_date = Pharmacy.active.find(:first,:conditions =>["pharmacy_encounter_type IN (?)",
-        encounter_type_ids],:order =>'encounter_date ASC,date_created ASC').encounter_date rescue start_date
+    encounter_type_ids = PharmacyEncounterType.all.collect{|e|e.id}
+    start_date = Pharmacy.active.where(["pharmacy_encounter_type IN (?)",
+        encounter_type_ids]).order('encounter_date ASC,date_created ASC').first.encounter_date rescue start_date
                                                                                 
     dispensed_drugs = self.dispensed_drugs_since(drug_id,start_date,end_date)   
     relocated = self.relocated(drug_id,start_date,end_date)                     
@@ -314,11 +297,9 @@ EOF
       condition = " AND value_text = '#{type}'"
     end
     encounter_type_id = PharmacyEncounterType.find_by_name('Tins currently in stock').id
-    stock = Pharmacy.active.find(:first,
-      :conditions =>["pharmacy_encounter_type = ? AND  encounter_date > ? AND encounter_date <= ?
+    stock = Pharmacy.active.where(["pharmacy_encounter_type = ? AND  encounter_date > ? AND encounter_date <= ?
                         AND drug_id = ? #{condition}",
-        encounter_type_id, start_date, end_date, drug_id],
-      :order =>'encounter_date DESC,date_created DESC')
+        encounter_type_id, start_date, end_date, drug_id]).order('encounter_date DESC,date_created DESC').first
 
     if with_date
       return [stock.value_numeric, stock.encounter_date] rescue [0, nil]
@@ -333,10 +314,8 @@ EOF
       condition = " AND value_text = '#{type}'"
     end
     encounter_type_id = PharmacyEncounterType.find_by_name('Tins currently in stock').id
-    start_date = Pharmacy.active.find(:first,
-      :conditions =>["pharmacy_encounter_type = ? AND encounter_date <= ? AND drug_id = ? AND #{condition}",
-        encounter_type_id, start_date,drug_id],
-      :order =>'encounter_date DESC,date_created DESC').value_numeric rescue 0
+    start_date = Pharmacy.active.where(["pharmacy_encounter_type = ? AND encounter_date <= ? AND drug_id = ? AND #{condition}",
+        encounter_type_id, start_date,drug_id]).order('encounter_date DESC,date_created DESC').value_numeric rescue 0
     #raise start_date.to_yaml
   end
 
@@ -388,11 +367,9 @@ EOF
           ) LIMIT 1;"
     ).last.value_text rescue nil #To avoid double count of clinic and supervision data
 
-    self.active.find(:first,:select => "SUM(value_numeric) total_physical_count",
-      :conditions => ["pharmacy_encounter_type = ? AND drug_id = ?
+    total = self.active.where(["pharmacy_encounter_type = ? AND drug_id = ?
                       AND encounter_date >= ? AND encounter_date <= ? AND value_text = '#{latest_supervision_type}'",
-        pharmacy_encounter_type.id , drug_id , start_date , end_date],
-      :group => "drug_id").total_physical_count.to_f rescue 0
+                      pharmacy_encounter_type.id , drug_id , start_date , end_date]).sum(:value_numeric) rescue 0
   end
 
   def self.latest_phys
@@ -476,7 +453,7 @@ EOF
     edited_stock_encounter_id = PharmacyEncounterType.find_by_name('Edited stock').pharmacy_encounter_type_id
     current_drug_stock = Pharmacy.current_drug_stock(drug_id)
 
-    pharmacy_obs = Pharmacy.find(:last, :conditions => ["pharmacy_encounter_type =? AND drug_id =? AND 
+    pharmacy_obs = Pharmacy.where(["pharmacy_encounter_type =? AND drug_id =? AND
         value_text = ?", edited_stock_encounter_id, drug_id, 'Current Stock'])
 
     if pharmacy_obs.blank?
@@ -500,8 +477,8 @@ EOF
     consumption_rate = (total_drug_dispensations_within_ninety_days/total_days)#Three months average consumption
 
     edited_stock_encounter_id = PharmacyEncounterType.find_by_name('Edited stock').pharmacy_encounter_type_id
-    pharmacy_obs = Pharmacy.find(:last, :conditions => ["pharmacy_encounter_type =? AND drug_id =? AND
-        value_text = ?", edited_stock_encounter_id, drug_id, 'Drug Rate'])
+    pharmacy_obs = Pharmacy.where(["pharmacy_encounter_type =? AND drug_id =? AND
+        value_text = ?", edited_stock_encounter_id, drug_id, 'Drug Rate']).last
 
     if pharmacy_obs.blank?
       pharmacy_obs =  Pharmacy.new()
@@ -518,8 +495,8 @@ EOF
   def self.average_drug_consumption(drug_id)
     #Added these methods for the purpose of speed
     edited_stock_encounter_id = PharmacyEncounterType.find_by_name('Edited stock').pharmacy_encounter_type_id
-    pharmacy_obs = Pharmacy.find(:last, :conditions => ["pharmacy_encounter_type =? AND drug_id =? AND
-        value_text = ?", edited_stock_encounter_id, drug_id, 'Drug Rate'])
+    pharmacy_obs = Pharmacy.where(["pharmacy_encounter_type =? AND drug_id =? AND
+        value_text = ?", edited_stock_encounter_id, drug_id, 'Drug Rate']).last
     return pharmacy_obs.value_numeric unless pharmacy_obs.blank?
     return 0
   end
@@ -527,8 +504,8 @@ EOF
   def self.latest_drug_stock(drug_id, date=Date.today)
     #Added these methods for the purpose of speed
     edited_stock_encounter_id = PharmacyEncounterType.find_by_name('Edited stock').pharmacy_encounter_type_id
-    pharmacy_obs = Pharmacy.find(:last, :conditions => ["pharmacy_encounter_type =? AND drug_id =? AND
-        value_text = ? AND encounter_date <= ?", edited_stock_encounter_id, drug_id, 'Current Stock', date.to_date])
+    pharmacy_obs = Pharmacy.where(["pharmacy_encounter_type =? AND drug_id =? AND
+        value_text = ? AND encounter_date <= ?", edited_stock_encounter_id, drug_id, 'Current Stock', date.to_date]).last
     return pharmacy_obs.value_numeric unless pharmacy_obs.blank?
     return 0
   end
@@ -536,8 +513,8 @@ EOF
   def self.latest_drug_rate(drug_id, date=Date.today)
     #Added these methods for the purpose of speed
     edited_stock_encounter_id = PharmacyEncounterType.find_by_name('Edited stock').pharmacy_encounter_type_id
-    pharmacy_obs = Pharmacy.find(:last, :conditions => ["pharmacy_encounter_type =? AND drug_id =? AND
-        value_text = ? AND encounter_date <= ?", edited_stock_encounter_id, drug_id, 'Drug Rate', date.to_date])
+    pharmacy_obs = Pharmacy.where(["pharmacy_encounter_type =? AND drug_id =? AND
+        value_text = ? AND encounter_date <= ?", edited_stock_encounter_id, drug_id, 'Drug Rate', date.to_date]).last
     return pharmacy_obs.value_numeric unless pharmacy_obs.blank?
     return 0
   end

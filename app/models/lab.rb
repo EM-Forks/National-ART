@@ -1,5 +1,5 @@
 class Lab < ActiveRecord::Base
-  set_table_name "map_lab_panel"
+  self.table_name = "map_lab_panel"
 
   def self.results(patient, patient_ids)
     results = self.find_by_sql(["

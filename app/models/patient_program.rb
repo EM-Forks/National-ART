@@ -18,7 +18,7 @@ class PatientProgram < ActiveRecord::Base
   validates_presence_of :date_enrolled, :program_id
 
   def validate
-    PatientProgram.find_all_by_patient_id(self.patient_id).each{|patient_program|
+    PatientProgram.where(patient_id: self.patient_id).each{|patient_program|
       next if self.program == patient_program.program
       if self.program == patient_program.program and self.location and self.location.related_to_location?(patient_program.location) and patient_program.date_enrolled <= self.date_enrolled and (patient_program.date_completed.nil? or self.date_enrolled <= patient_program.date_completed)
         errors.add_to_base "Patient already enrolled in program #{self.program.name rescue nil} at #{self.date_enrolled.to_date} at #{self.location.parent.name rescue self.location.name}"
@@ -98,7 +98,7 @@ class PatientProgram < ActiveRecord::Base
   # obs must be the current health center, not the station!
   def current_regimen
     location_id = Location.current_health_center.location_id
-		obs = patient.person.observations.recent(1).all(:joins => :encounter, :conditions => ['value_coded IN (?) AND encounter.location_id = ?', regimens, location_id])
+		obs = patient.person.observations.recent(1).where(['value_coded IN (?) AND encounter.location_id = ?', regimens, location_id]).joins(:encounter)
     obs.first.value_coded rescue nil
   end
 
@@ -112,7 +112,7 @@ class PatientProgram < ActiveRecord::Base
   end
 
   def current_state(date = Date.today)
-   state = PatientState.find(:last, :conditions => ["patient_program_id = ? AND start_date <= ? ", self.patient_program_id, date]) rescue nil
-   return ConceptName.find_by_concept_id(state.program_workflow_state.concept_id).name.upcase rescue ""
+   state = PatientState.where(["patient_program_id = ? AND start_date <= ? ", self.patient_program_id, date]) rescue nil
+   return ConceptName.find_by_concept_id(state.program_workflow_state.concept_id).last.name.upcase rescue ""
   end
 end

@@ -1,8 +1,7 @@
 class ReportingReportDesignResource < ActiveRecord::Base
-	set_table_name :reporting_report_design_resource
-	set_primary_key :id
+	self.table_name = "reporting_report_design_resource"
+	self.primary_key = "id"
 	include Openmrs
-
 
 	def self.save_cohort_attributes(cohort_year,cohort_quarter,cohort_attributes)
 		report_design = ReportingReportDesign.find_by_name("Q#{cohort_quarter} #{cohort_year}")

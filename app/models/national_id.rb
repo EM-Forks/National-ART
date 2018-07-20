@@ -1,6 +1,6 @@
 class NationalId < ActiveRecord::Base
-  set_table_name "national_id"
-  named_scope :active, :conditions => ['assigned = 0']
+  self.table_name = "national_id"
+  scope :active, ->{where(assigned:0)}
 
   def self.next_id(patient_id = nil)
     id = self.active.find(:first) rescue nil
@@ -15,7 +15,7 @@ class NationalId < ActiveRecord::Base
   end
 
   def self.next_ids_available_label(location_name = nil)
-    id = self.active.find(:first,:order => "id DESC")
+    id = self.active.first.order("id DESC")
     return "" if id.blank?
     national_id = id.national_id[0..2] + "-" + id.national_id[3..-1]
     label = ZebraPrinter::StandardLabel.new

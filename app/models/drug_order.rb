@@ -1,8 +1,8 @@
 class DrugOrder < ActiveRecord::Base
-  set_table_name :drug_order
-  set_primary_key :order_id
+  self.table_name = "drug_order"
+  self.primary_key = "order_id"
   include Openmrs
-  belongs_to :drug, :foreign_key => :drug_inventory_id, :conditions => {:retired => 0}
+  belongs_to :drug,->{where(retired: 0)}, foreign_key: :drug_inventory_id
 
   def order
     @order ||= Order.find(order_id)
