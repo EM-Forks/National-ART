@@ -4,8 +4,8 @@ class PatientIdentifier < ActiveRecord::Base
   self.primary_key = "patient_identifier_id"
   include Openmrs
 
-  belongs_to :type, ->{where(retired:0)},class_name: :PatientIdentifierType, foreign_key: :identifier_type
-  belongs_to :patient,->{where(retired:0)}, class_name: :Patient, foreign_key: :patient_id
+  belongs_to :type, ->{where(voided:0)},class_name: :PatientIdentifierType, foreign_key: :identifier_type
+  belongs_to :patient,->{where(voided:0)}, class_name: :Patient, foreign_key: :patient_id
 
   def self.calculate_checkdigit(number)
     # This is Luhn's algorithm for checksums

@@ -1494,7 +1494,9 @@ module PatientService
   end
 
   def self.hiv_test_date(patient_id)
-    test_date = Observation.find(:last, :conditions => ["person_id = ? AND concept_id = ?", patient_id, ConceptName.find_by_name("HIV test date").concept_id]).value_datetime rescue nil
+    test_date = Observation.where(["person_id = ? AND concept_id = ?",
+        patient_id, ConceptName.find_by_name("HIV test date"
+        ).concept_id]).last.value_datetime rescue nil
     return test_date
   end
 
@@ -2408,7 +2410,7 @@ EOF
     given_name = params[:given_name].squish unless params[:given_name].blank?
     family_name = params[:family_name].squish unless params[:family_name].blank?
 
-    people = Person.includes([{:names => [:person_name_code]}, :patient]).where(
+    people = Person.joins([{:names => [:person_name_code]}, :patient]).where(
       ["gender = ? AND person_name.given_name = ? AND person_name.family_name = ?",
         gender, given_name, family_name ]
     ).order("birthdate DESC").limit(15) if people.blank?
@@ -2422,7 +2424,7 @@ EOF
 
 =end
 
-      people_like = Person.includes([{:names => [:person_name_code]}, :patient]).where(
+      people_like = Person.joins([{:names => [:person_name_code]}, :patient]).where(
         ["gender = ? AND ((person_name_code.given_name_code LIKE ? AND person_name_code.family_name_code LIKE ?))",
           gender, (given_name || '').soundex, (family_name || '').soundex
         ]
@@ -3036,25 +3038,25 @@ people = Person.find(:all, :include => [{:names => [:person_name_code]}, :patien
   def self.earliest_start_date_patient_data(patient_id)
     record = ActiveRecord::Base.connection.select_all("
     select
-        `p`.`patient_id` AS `patient_id`,
-        cast(patient_start_date(`p`.`patient_id`) as date) AS `date_enrolled`,
-        date_antiretrovirals_started(`p`.`patient_id`, min(`s`.`start_date`)) AS `earliest_start_date`,
-        `person`.`death_date` AS `death_date`, `person`.`birthdate`,
-         TIMESTAMPDIFF(YEAR,`person`.`birthdate`,  min(`s`.`start_date`)) AS `age_at_initiation`,
-         TIMESTAMPDIFF(DAY,`person`.`birthdate`,  min(`s`.`start_date`)) AS `age_in_days`
+        p.patient_id AS patient_id,
+        cast(patient_start_date(p.patient_id) as date) AS date_enrolled,
+        date_antiretrovirals_started(p.patient_id, min(s.start_date)) AS earliest_start_date,
+        person.death_date AS death_date, person.birthdate,
+         TIMESTAMPDIFF(YEAR,person.birthdate,  min(s.start_date)) AS age_at_initiation,
+         TIMESTAMPDIFF(DAY,person.birthdate,  min(s.start_date)) AS age_in_days
     from
-        ((`patient_program` `p`
-        left join `patient_state` `s` ON ((`p`.`patient_program_id` = `s`.`patient_program_id`)))
-        left join `person` ON ((`person`.`person_id` = `p`.`patient_id`)))
+        ((patient_program p
+        left join patient_state s ON ((p.patient_program_id = s.patient_program_id)))
+        left join person ON ((person.person_id = p.patient_id)))
     where
         (
-          (`p`.`voided` = 0)
-          and (`s`.`voided` = 0)
-          and (`p`.`program_id` = 1)
-          and (`s`.`state` = 7)
-          and `p`.`patient_id` = #{patient_id}
+          (p.voided = 0)
+          and (s.voided = 0)
+          and (p.program_id = 1)
+          and (s.state = 7)
+          and p.patient_id = #{patient_id}
         )
-    group by `p`.`patient_id`").collect do |p|
+    group by p.patient_id").collect do |p|
       {
         :birthdate => (p['birthdate'].to_date rescue nil),
         :date_enrolled => (p['date_enrolled'].to_date rescue nil),
