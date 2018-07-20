@@ -1833,11 +1833,11 @@ EOF
 
   def self.art_guardian(patient)
     person_id = Relationship.where(["person_a = ?",patient.person.id]).order("date_created DESC").first.person_b rescue nil
-    guardian_name = name(Person.find(person_id))
+    guardian_name = person_name(Person.find(person_id))
     guardian_name rescue nil
   end
 
-  def self.name(person)
+  def self.person_name(person)
     "#{person.names.first.given_name} #{person.names.first.family_name}".titleize rescue nil
   end
 

@@ -1,6 +1,6 @@
 class MohRegimenIngredient < ActiveRecord::Base
-  set_table_name "moh_regimen_ingredient"
-  set_primary_key "ingredient_id"
+  self.table_name = "moh_regimen_ingredient"
+  self.primary_key = "ingredient_id"
 
   belongs_to :regimen, :class_name => 'MohRegimen', :foreign_key => :regimen_id
 

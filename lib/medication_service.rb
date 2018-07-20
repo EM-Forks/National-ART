@@ -417,7 +417,7 @@ module MedicationService
   end
 
   def self.other_medications(drug_name, current_weight)
-    drug_ids = Drug.find(:all, :conditions =>['name LIKE ?', "%#{drug_name}%"]).map(&:drug_id)
+    drug_ids = Drug.where(['name LIKE ?', "%#{drug_name}%"]).map(&:drug_id)
 
     regimen_medications = (Drug.joins("INNER JOIN moh_other_medications o
       ON o.drug_inventory_id = drug.drug_id AND o.drug_inventory_id IN (#{drug_ids.join(',')})
@@ -701,7 +701,7 @@ EOF
   def self.art_drug_given_before(patient, date = Date.today)
     clinic_encounters  =  ['DISPENSING']
 
-    encounter_type_ids = EncounterType.where(["name =?", clinic_encounters]).collect{|e|e.id}
+    encounter_type_ids = EncounterType.where(["name IN (?)", clinic_encounters]).collect{|e|e.id}
 
     latest_encounter_date = Encounter.where(["patient_id=? AND encounter_datetime < ? AND
         encounter_type IN(?)",patient.id,date.strftime('%Y-%m-%d 00:00:00'),
@@ -727,7 +727,7 @@ EOF
     clinic_encounters = ['HIV CLINIC REGISTRATION','HIV STAGING','DISPENSING','TREATMENT',
       'HIV CLINIC CONSULTATION','ART ADHERENCE','HIV RECEPTION','VITALS']
 
-    encounter_type_ids = EncounterType.where(["name =?", clinic_encounters]).collect{|e|e.id}
+    encounter_type_ids = EncounterType.where(["name IN (?)", clinic_encounters]).collect{|e|e.id}
 
     latest_encounter_date = Encounter.where(["patient_id=? AND encounter_datetime < ? AND
         encounter_type IN(?)",patient.id,date.strftime('%Y-%m-%d 00:00:00'),
@@ -749,7 +749,7 @@ EOF
     clinic_encounters = ['HIV CLINIC REGISTRATION','HIV STAGING','DISPENSING','TREATMENT',
       'HIV CLINIC CONSULTATION','ART ADHERENCE','HIV RECEPTION','VITALS']
 
-    encounter_type_ids = EncounterType.where(["name =?", clinic_encounters]).collect{|e|e.id}
+    encounter_type_ids = EncounterType.where(["name IN (?)", clinic_encounters]).collect{|e|e.id}
 =begin
     latest_encounter_date = Encounter.find(:first,
         :conditions =>["patient_id = ? AND encounter_datetime >= ?
@@ -787,7 +787,7 @@ EOF
 
     clinic_encounters  =  ['TREATMENT']
 
-    encounter_type_ids = EncounterType.where(["name =?", clinic_encounters]).collect{|e|e.id}
+    encounter_type_ids = EncounterType.where(["name IN (?)", clinic_encounters]).collect{|e|e.id}
 
     latest_encounter_date = Encounter.where(["patient_id=? AND encounter_datetime < ? AND
         encounter_type IN(?)",patient.id,date.strftime('%Y-%m-%d 00:00:00'),
