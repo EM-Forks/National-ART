@@ -1277,7 +1277,9 @@ module PatientService
 
     #services = Observation.find(:all, :conditions => ["DATE(obs_datetime) = ? AND concept_id = ?", Date.today.to_date, ConceptName.find_by_name("SERVICES").concept_id], :order => "obs_datetime desc")
 
-    services = Observation.find(:all, :conditions => ["DATE(obs_datetime) = ? AND concept_id = ? AND creator = ?", session_date.to_date, ConceptName.find_by_name("SERVICES").concept_id, current_user_id], :order => "obs_datetime desc")#.uniq.reverse.first(5) rescue []
+    services = Observation.where(["DATE(obs_datetime) = ? AND concept_id = ? AND creator = ?",
+        session_date.to_date, ConceptName.find_by_name("SERVICES").concept_id, current_user_id]
+    ).order("obs_datetime desc")#.uniq.reverse.first(5) rescue []
 
     ( services || [] ).each do | service |
       if service.value_text.capitalize == 'Casualty'

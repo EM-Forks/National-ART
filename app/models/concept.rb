@@ -1,4 +1,4 @@
-oclass Concept < ActiveRecord::Base
+class Concept < ActiveRecord::Base
   self.table_name = "concept"
   self.primary_key = "concept_id"
 
@@ -25,18 +25,19 @@ oclass Concept < ActiveRecord::Base
   has_many :concept_members, :class_name => 'ConceptSet', :foreign_key => :concept_set
 
   def self.find_by_name(concept_name)
-     Concept.joins(:concept_names).where(["concept_name.name =?", "#{concept_name}"]).first
+    Concept.joins(:concept_names).where(["concept_name.name =?", "#{concept_name}"]).first
   end
 
   def shortname
-	name = self.concept_names.typed('SHORT').first.name rescue nil
-	return name unless name.blank?
+    name = self.concept_names.typed('SHORT').first.name rescue nil
+    return name unless name.blank?
     return self.concept_names.first.name rescue nil
   end
 
   def fullname
-	name = self.concept_names.typed('FULLY_SPECIFIED').first.name rescue nil
-	return name unless name.blank?
+    name = self.concept_names.typed('FULLY_SPECIFIED').first.name rescue nil
+    return name unless name.blank?
     return self.concept_names.first.name rescue nil
   end
+  
 end
