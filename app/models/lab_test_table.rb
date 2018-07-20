@@ -1,5 +1,5 @@
 	class LabTestTable < ActiveRecord::Base 
-	  set_table_name "LabTestTable"
-    set_primary_key "AccessionNum"
+	  self.table_name = "LabTestTable"
+    self.primary_key = "AccessionNum"
    
   end 

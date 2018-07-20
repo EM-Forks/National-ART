@@ -1,6 +1,6 @@
 class NotificationTrackerUserActivities < ActiveRecord::Base
-  set_table_name "notification_tracker_user_activities"
-  set_primary_key "id"
+  self.table_name = "notification_tracker_user_activities"
+  self.primary_key = "id"
 
   def self.create_selected_activity(activities)
     self.create(:user_id => User.current.id,

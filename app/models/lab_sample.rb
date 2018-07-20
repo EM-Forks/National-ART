@@ -1,8 +1,8 @@
 	class LabSample < ActiveRecord::Base
-	  set_table_name "Lab_Sample"
-    set_primary_key "Sample_ID"
+	  self.table_name = "Lab_Sample"
+    self.primary_key = "Sample_ID"
 
-    has_many :lab_parameter, :foreign_key => :Sample_ID 
+    has_many :lab_parameter, foreign_key: :Sample_ID
    
     def self.cd4_trail(patient_identifier)
       #sample_ids_and_test_dates = self.lab_samples(patient_identifier)
@@ -19,10 +19,10 @@
     end 
 
     def self.lab_samples(patient_identifier)
-      accession_num = self.find(:all,:conditions=>["patientid IN (?)",patient_identifier]).collect{|sample|sample.AccessionNum.to_i} rescue nil 
-      accession_num_from_lab_test_table = LabTestTable.find(:all,:conditions=>["PAT_ID IN (?)",patient_identifier]).collect{|sample|sample.AccessionNum.to_i} rescue nil
+      accession_num = self.where(["patientid IN (?)",patient_identifier]).collect{|sample|sample.AccessionNum.to_i} rescue nil
+      accession_num_from_lab_test_table = LabTestTable.where(["PAT_ID IN (?)",patient_identifier]).collect{|sample|sample.AccessionNum.to_i} rescue nil
       accession_num =  accession_num + accession_num_from_lab_test_table unless accession_num_from_lab_test_table.blank?
-      LabSample.find(:all,:conditions=>["AccessionNum IN (?)",accession_num]).collect{|sample|[sample.Sample_ID,sample.DATE]} rescue nil 
+      LabSample.where(["AccessionNum IN (?)",accession_num]).collect{|sample|[sample.Sample_ID,sample.DATE]} rescue nil
     end
 
     def self.last_cd4_by_patient(patient_identifier = nil)

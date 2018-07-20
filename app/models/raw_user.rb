@@ -2,8 +2,8 @@ require 'digest/sha1'
 require 'digest/sha2'
 
 class RawUser < ActiveRecord::Base
-  set_table_name :users
-  set_primary_key :user_id
+  self.table_name = "users"
+  self.primary_key = "user_id"
   include Openmrs
 
   before_save :set_password, :before_create
@@ -11,16 +11,13 @@ class RawUser < ActiveRecord::Base
   cattr_accessor :current_user
   attr_accessor :plain_password
 
-  belongs_to :person, :foreign_key => :person_id, :conditions => {:voided => 0}
-  has_many :user_properties, :foreign_key => :user_id # no default scope
-  has_many :user_roles, :foreign_key => :user_id, :dependent => :delete_all # no default scope
+  belongs_to :person, ->{where(voided:0)}, foreign_key: :person_id
+  has_many :user_properties,foreign_key: :user_id # no default scope
+  has_many :user_roles, foreign_key: :user_id, dependent: :delete_all # no default scope
   #has_many :names, :class_name => 'PersonName', :foreign_key => :person_id, :dependent => :destroy, :order => 'person_name.preferred DESC', :conditions => {:voided =>  0}
 
 
-   has_one :activities_property,
-          :class_name => 'UserProperty',
-          :foreign_key => :user_id,
-          :conditions => ['property = ?', 'Activities'] 
+   has_one :activities_property, ->{where(voided:0)}, class_name: 'UserProperty',foreign_key: :user_id
 
 
   def first_name
@@ -46,7 +43,7 @@ class RawUser < ActiveRecord::Base
   end
    
   def self.authenticate(login, password)
-    u = find :first, :conditions => {:username => login} 
+    u = where(username: login).first
     u && u.authenticated?(password) ? u : nil
   end
       

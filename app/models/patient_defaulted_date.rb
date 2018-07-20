@@ -1,5 +1,5 @@
 class PatientDefaultedDate < ActiveRecord::Base
-  set_table_name :patient_defaulted_dates
+  self.table_name = "patient_defaulted_dates"
   belongs_to :patient
 
   def self.reset
