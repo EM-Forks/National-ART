@@ -3,6 +3,7 @@ Rails.application.routes.draw do
   devise_for :users
   #get '/location', controller: :sessions, action: :location
   get '/location', to: "sessions#location"
+  get '/user/programs/:id', to: 'user#programs'
   get  '/admin', controller: 'admin', action: 'index'
   get  '/login', controller: 'sessions', action: 'new'
   post '/logout', controller:  'sessions', action:  'destroy'

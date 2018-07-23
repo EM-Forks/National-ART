@@ -129,7 +129,7 @@ class GenericClinicController < ApplicationController
     @user = User.find(current_user.user_id).person.name rescue ""
 
     if simple_overview
-      render :template => 'clinic/overview_simple.rhtml' , :layout => false
+      render :template => 'clinic/overview_simple.html.erb' , :layout => false
       return
     end
     render :layout => false
