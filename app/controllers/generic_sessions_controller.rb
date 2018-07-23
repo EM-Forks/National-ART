@@ -1,7 +1,7 @@
 class GenericSessionsController < ApplicationController
 	skip_before_action :authenticate_user!, except: [:location, :update]
 	#skip_before_action :location_required
-  skip_before_action :verify_authenticity_token
+  #skip_before_action :verify_authenticity_token
 
 	def new
 	end
