@@ -2,7 +2,7 @@ require 'digest/sha1'
 require 'digest/sha2'
 
 class User < ActiveRecord::Base
-	devise :database_authenticatable, :authentication_keys => [:login]
+	devise :database_authenticatable #:authentication_keys => [:login]
 
 	self.table_name = "users"
 	self.primary_key = "user_id"
@@ -28,13 +28,24 @@ class User < ActiveRecord::Base
 	has_many :user_properties, foreign_key: :user_id # no default scope
 	has_many :user_roles, foreign_key: :user_id, dependent: :delete_all # no default scope
 	#has_many :names, :class_name => 'PersonName', :foreign_key => :person_id, :dependent => :destroy, :order => 'person_name.preferred DESC', :conditions => {:voided =>  0}
-
+  # a method that saves a new authentication token when called
+	def reset_authentication_token!
+		update_column(:authentication_token, Devise.friendly_token)
+	end
 	def set_password
 		# We expect that the default OpenMRS interface is used to create users
 		#self.password = self.encrypted_password
 		self.password = encrypt(self.plain_password, self.salt) if self.plain_password
 	end
-  
+	#An effort to remove email field requirement
+	def email_required?
+		false
+	end
+
+	def email_changed?
+		false
+	end
+
 	has_one :activities_property, -> { where (['property = ?', 'Activities'])}, class_name: :UserProperty, foreign_key: :user_id
 
 	# Custom search method for our custom login attribute

@@ -354,10 +354,10 @@ on the rest of the stations %>
     if(!show_feedback)
       return;
 
-    var shown_already = <%=  NotificationTracker.find(:first,
-  :conditions =>["notification_name = 'Daily summary shown'
+    var shown_already = <%=  NotificationTracker.where(
+    ["notification_name = 'Daily summary shown'
     AND DATE(notification_datetime) = ? AND user_id = ?",
-    Date.today, User.current.id]).blank? != true  %>;
+    Date.today, User.current.id]).first.blank? != true  %>;
 
     if(shown_already)
       return;

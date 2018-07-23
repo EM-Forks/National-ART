@@ -70,6 +70,7 @@ class GenericApplicationController < ActionController::Base
     'find_person_from_dmht', 'reassign_remote_identifier', 'create', 'render_date_enrolled_in_art', 'search_remote_people']
 
   before_action :set_dde_token
+  skip_before_action :location_required
 
   def set_dde_token
     if create_from_dde_server
@@ -260,7 +261,7 @@ class GenericApplicationController < ActionController::Base
     respond_to do |format|
       format.html do
         store_location
-        redirect_to '/location'
+        redirect_to '/location' #--This was commented because it was creating confusion
       end
     end
   end

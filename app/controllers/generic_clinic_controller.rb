@@ -30,7 +30,7 @@ class GenericClinicController < ApplicationController
     portal_port = CoreService.get_global_property_value("portal.port").to_s rescue ""
     @portal_uri = "http://#{portal_address}:#{portal_port}" rescue ""
     
-    render :template => 'clinic/index', :layout => false
+    render layout: false
   end
 
   def reports
