@@ -10,6 +10,7 @@ Rails.application.routes.draw do
   get '/:controller/:action'
   get '/:controller/:action/:id'
   post '/:controller/:action'
+  get '/logout', controller: 'sessions', action: 'destroy'
   resource :session
 	root "people#index"
 end

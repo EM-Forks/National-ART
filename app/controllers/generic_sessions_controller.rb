@@ -34,7 +34,7 @@ class GenericSessionsController < ApplicationController
 		else
 			note_failed_signin
 			@login = params[:login]
-			#render :action => 'new'
+      render action: new, template: '/users/sessions/new'
 		end
 	end
 
@@ -48,7 +48,7 @@ class GenericSessionsController < ApplicationController
 
     @activate_drug_management = CoreService.get_global_property_value('activate.drug.management').to_s == "true" rescue false
   end
-  
+
   def stock_levels_graph
     @current_heath_center_name = Location.current_health_center.name rescue '?'
     @list = {}
