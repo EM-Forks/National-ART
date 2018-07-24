@@ -67,7 +67,7 @@ class GenericSessionsController < ApplicationController
 
       active = (disp_rate.to_i == 0 && stock_level.to_i != 0)? false : true
       drug_cms_name = drug_cms.name
-      
+
       @list[drug_cms_name] = {
         "month_of_stock" => month_of_stock,
         "stock_level" => stock_level,
@@ -77,7 +77,7 @@ class GenericSessionsController < ApplicationController
       }
 
     end
-    
+
     @list = @list.sort_by{|k, v|k}
 
     render :layout => false
@@ -111,17 +111,17 @@ class GenericSessionsController < ApplicationController
       unless stock_expiry_date.blank? #Date diff in months
         date_diff_in_months = (stock_expiry_date.year * 12 + stock_expiry_date.month) - (Date.today.year * 12 + Date.today.month)
         if (date_diff_in_months > 0 && date_diff_in_months < month_of_stock)
-          
+
         else
           date_diff_in_months = 0
           #raise stock_expiry_date.inspect
         end
 
       end
-      
+
       date_diff_in_months = 0 if disp_rate.to_i == 0
       month_of_stock = month_of_stock - date_diff_in_months
-      
+
       @list[drug_cms_name] = {
         "month_of_stock" => month_of_stock,
         "stock_level" => stock_level,
@@ -176,7 +176,7 @@ class GenericSessionsController < ApplicationController
       end
       date_diff_in_months = 0 if disp_rate.to_i == 0
       month_of_stock = month_of_stock - date_diff_in_months
-      
+
       @list[drug_cms_name] = {
         "month_of_stock" => month_of_stock,
         "stock_level" => stock_level,
@@ -193,7 +193,7 @@ class GenericSessionsController < ApplicationController
   end
 
 	# Update the session with the location information
-	def update    
+	def update
 		# First try by id, then by name
 		location = Location.find(params[:location]) rescue nil
 		location ||= Location.find_by_name(params[:location]) rescue nil
@@ -209,7 +209,7 @@ class GenericSessionsController < ApplicationController
 			else
 				render controller: :sessions, :action => 'location'
 			end
-			return    
+			return
 		end
 
 		self.current_location = location
@@ -237,7 +237,7 @@ class GenericSessionsController < ApplicationController
       flash[:notice] = "You have been logged out."
       redirect_back_or_default('/') and return
     end
-		
+
 	end
 
 	protected
