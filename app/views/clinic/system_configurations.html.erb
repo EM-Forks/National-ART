@@ -1,12 +1,12 @@
 
 <html>
   <head>
-    <%= javascript_include_tag "prototype" %>
-    <%= javascript_include_tag 'jquery' %>
-    <%= stylesheet_link_tag 'extra_buttons' %>
-    <%= javascript_include_tag 'jquery_data_table.js' %>
-    <%= stylesheet_link_tag 'jquery.dataTables' %>
-    <%=javascript_include_tag "jquery.table2CSV.min" %>
+    <%= javascript_include_tag "/javascripts/prototype" %>
+    <%= javascript_include_tag '/javascripts/jquery' %>
+    <%= stylesheet_link_tag '/stylesheets/extra_buttons' %>
+    <%= javascript_include_tag '/javascripts/jquery_data_table.js' %>
+    <%= stylesheet_link_tag '/stylesheets/jquery.dataTables' %>
+    <%=javascript_include_tag "/javascripts/jquery.table2CSV.min" %>
     <script type="text/javascript" charset="utf8" src="/javascripts/jquery.dataTables.min.js"></script>
 
 
@@ -353,12 +353,12 @@
         </tr>
         <tr>
           <td style="background-color: #FFF68F; font-size: 14pt">Set Clinic Days</td>
-          <td style="text-align:center; background-color: #FFF68F; font-size: 14pt"><%= @clinic_days.join("<br />") rescue "Not Set" %></td>
+          <td style="text-align:center; background-color: #FFF68F; font-size: 14pt"><%= @clinic_days.join("<br />").html_safe rescue "Not Set" %></td>
           <td id="number" style="text-align:center" onclick="changeProperty('/properties/clinic_days')">Change</td>
         </tr>
         <tr>
           <td style="background-color: #FFF68F; font-size: 14pt">Set Clinic Holidays</td>
-          <td style="text-align:center; background-color: #FFF68F; font-size: 14pt"><%= @clinic_holidays.join("<br />") || "Not Set" %></td>
+          <td style="text-align:center; background-color: #FFF68F; font-size: 14pt"><%= @clinic_holidays.join("<br />").html_safe || "Not Set" %></td>
           <td id="number" style="text-align:center" onclick="changeProperty('/properties/set_clinic_holidays')">Change</td>
         </tr>
         <tr>

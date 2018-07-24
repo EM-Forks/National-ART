@@ -34,8 +34,7 @@ class GenericApplicationController < ActionController::Base
     :find_person_from_dmht, :reassign_remote_identifier,:location,
     :revised_cohort_to_print,:revised_cohort_survival_analysis_to_print,
     :revised_women_cohort_survival_analysis_to_print,
-    :revised_children_cohort_survival_analysis_to_print, :create, :render_date_enrolled_in_art, :search_remote_people,
-    :location_required
+    :revised_children_cohort_survival_analysis_to_print, :create, :render_date_enrolled_in_art, :search_remote_people
   ]
   skip_before_action :verify_authenticity_token
 
