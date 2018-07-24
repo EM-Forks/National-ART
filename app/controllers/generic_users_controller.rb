@@ -1,4 +1,4 @@
-class GenericUserController < ApplicationController
+class GenericUsersController < ApplicationController
 
   def login
     if request.get?
@@ -33,7 +33,7 @@ class GenericUserController < ApplicationController
   def programs
     if request.post?
       redirect_to(:action => "activities", 
-        :id => params[:user_id],:selected_program => params[:program]) 
+        :id => params[:user_id],:selected_program => params[:program])
     else
 			program_selection = CoreService.get_global_property_value("select_program") rescue true
 			if program_selection == true
@@ -306,8 +306,8 @@ class GenericUserController < ApplicationController
   def activities
     # Don't show tasks that have been disabled
     #user_roles = UserRole.find(:all,:conditions =>["user_id = ?", current_user.id]).collect{|r|r.role}
-    role_privileges = RolePrivilege.find(:all,:conditions => ["role IN (?)", current_user_roles])
-    @privileges = Privilege.find(:all,:conditions => ["privilege IN (?)", role_privileges.collect{|r|r.privilege}])
+    role_privileges = RolePrivilege.where(["role IN (?)", current_user_roles])
+    @privileges = Privilege.where(["privilege IN (?)", role_privileges.collect{|r|r.privilege}])
 
     #raise @privileges.to_yaml
 
@@ -340,8 +340,8 @@ class GenericUserController < ApplicationController
     #.gsub('Hiv','HIV') .gsub('Tb','TB').gsub('Art','ART').gsub('hiv','HIV')
     #.gsub('Hiv','HIV').gsub('Tb','TB').gsub('Art','ART').gsub('hiv','HIV')
     
-    @encounter_types = EncounterType.find(:all).map{|enc|enc.name.gsub(/.*\//,"").gsub(/\..*/,"").humanize}
-    @available_encounter_types = Dir.glob(RAILS_ROOT+"/app/views/encounters/*.rhtml").map{|file|file.gsub(/.*\//,"").gsub(/\..*/,"").humanize}
+    @encounter_types = EncounterType.all.map{|enc|enc.name.gsub(/.*\//,"").gsub(/\..*/,"").humanize}
+    @available_encounter_types = Dir.glob(Rails.root.to_s+"/app/views/encounters/*.rhtml").map{|file|file.gsub(/.*\//,"").gsub(/\..*/,"").humanize}
     @available_encounter_types -= @available_encounter_types - @encounter_types
 
     available_privileges_not_from_encounters_folder = []

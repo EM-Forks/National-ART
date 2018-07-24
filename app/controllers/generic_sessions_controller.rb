@@ -1,7 +1,6 @@
 class GenericSessionsController < ApplicationController
-	skip_before_action :authenticate_user!, except: [:location, :update]
+	skip_before_action :authenticate_user!,except: [:location, :update]
 	#skip_before_action :location_required
-  skip_before_action :verify_authenticity_token
 
 	def new
 	end
@@ -30,7 +29,8 @@ class GenericSessionsController < ApplicationController
       #end
       #end
 
-			redirect_to '/clinic'
+			redirect_to '/clinic' if session[:location_id].present?
+      redirect_to '/location' unless session[:location_id].present?
 		else
 			note_failed_signin
 			@login = params[:login]
@@ -39,15 +39,6 @@ class GenericSessionsController < ApplicationController
 	end
 
 	# Form for entering the location information
-
-  def location
-    @login_wards = (CoreService.get_global_property_value('facility.login_wards')).split(',') rescue []
-    if (CoreService.get_global_property_value('select_login_location').to_s == "true" rescue false)
-      render :template => 'sessions/select_location'
-    end
-
-    @activate_drug_management = CoreService.get_global_property_value('activate.drug.management').to_s == "true" rescue false
-  end
 
   def stock_levels_graph
     @current_heath_center_name = Location.current_health_center.name rescue '?'
@@ -216,16 +207,15 @@ class GenericSessionsController < ApplicationController
 			if (CoreService.get_global_property_value('select_login_location').to_s == "true" rescue false)
 				render :template => 'sessions/select_location'
 			else
-				render :action => 'location'
+				render controller: :sessions, :action => 'location'
 			end
 			return    
 		end
 
 		self.current_location = location
 		role = current_user.user_roles.map{|r|r.role}
-
 		if use_user_selected_activities and not location.name.match(/Outpatient/i) and not role.include?("Pharmacist")
-			redirect_to "/user/programs/#{current_user.id}"
+			redirect_to "/users/programs/#{current_user.id}"
 		else
 			redirect_to '/clinic'
 		end

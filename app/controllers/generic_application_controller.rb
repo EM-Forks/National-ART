@@ -24,53 +24,20 @@ class GenericApplicationController < ActionController::Base
 	helper :all
 	helper_method :next_task
 	#filter_parameter_logging :password => this method is depricated
-	before_action :authenticate_user!, except: [:normal_visits,:transfer_in_visits, :re_initiation_visits,:patients_without_any_encs,:login, :logout,:remote_demographics,:art_stock_info,
+	before_action :authenticate_user!,:set_current_user,:set_return_uri, except: [:normal_visits,:transfer_in_visits, :re_initiation_visits,:patients_without_any_encs,:login, :logout,:remote_demographics,:art_stock_info,
     :create_remote, :mastercard_printable, :get_token,
     :cohort,:demographics_remote, :export_on_art_patients, :art_summary,
     :art_summary_dispensation, :print_rules, :rule_variables, :print,
     :new_prescription, :search_for_drugs,:mastercard_printable,
     :remote_app_search, :remotely_reassign_new_identifier,
     :create_person_from_anc, :create_person_from_dmht,
-    :find_person_from_dmht, :reassign_remote_identifier,
+    :find_person_from_dmht, :reassign_remote_identifier,:location,
     :revised_cohort_to_print,:revised_cohort_survival_analysis_to_print,
     :revised_women_cohort_survival_analysis_to_print,
-    :revised_children_cohort_survival_analysis_to_print, :create, :render_date_enrolled_in_art, :search_remote_people
+    :revised_children_cohort_survival_analysis_to_print, :create, :render_date_enrolled_in_art, :search_remote_people,
+    :location_required
   ]
-
-  before_action :set_current_user, except: ['login', 'logout','remote_demographics','art_stock_info',
-    'create_remote', 'mastercard_printable', 'get_token',
-    'cohort','demographics_remote', 'export_on_art_patients', 'art_summary',
-    'art_summary_dispensation', 'print_rules', 'rule_variables',
-    'print','new_prescription', 'search_for_drugs',
-    'mastercard_printable', 'remote_app_search',
-    'remotely_reassign_new_identifier', 'create_person_from_anc',
-    'create_person_from_dmht', 'find_person_from_dmht',
-    'reassign_remote_identifier','revised_cohort_to_print',
-    'revised_cohort_survival_analysis_to_print',
-    'revised_women_cohort_survival_analysis_to_print',
-    'revised_children_cohort_survival_analysis_to_print', 'render_date_enrolled_in_art', 'search_remote_people'
-  ]
-
-	before_action :location_required, except: ['patients_without_any_encs','login', 'logout', 'location',
-    'demographics','create_remote',
-    'mastercard_printable','art_stock_info',
-    'remote_demographics', 'get_token',
-    'cohort','demographics_remote', 'export_on_art_patients', 'art_summary',
-    'art_summary_dispensation', 'print_rules', 'rule_variables',
-    'print','new_prescription', 'search_for_drugs','mastercard_printable',
-    'remote_app_search', 'remotely_reassign_new_identifier',
-    'create_person_from_anc', 'create_person_from_dmht',
-    'find_person_from_dmht', 'reassign_remote_identifier',
-    'revised_cohort_to_print', 'revised_cohort_survival_analysis_to_print',
-    'revised_women_cohort_survival_analysis_to_print',
-    'revised_children_cohort_survival_analysis_to_print', 'render_date_enrolled_in_art', 'search_remote_people'
-  ]
-
-	before_action :set_return_uri, except:  ['create_person_from_anc', 'create_person_from_dmht',
-    'find_person_from_dmht', 'reassign_remote_identifier', 'create', 'render_date_enrolled_in_art', 'search_remote_people']
-
-  before_action :set_dde_token
-  skip_before_action :location_required
+  skip_before_action :verify_authenticity_token
 
   def set_dde_token
     if create_from_dde_server
@@ -211,8 +178,8 @@ class GenericApplicationController < ActionController::Base
   end
 
   def current_user_roles
-    user_roles = UserRole.find(:all,:conditions =>["user_id = ?", current_user.id]).collect{|r|r.role}
-    RoleRole.find(:all,:conditions => ["child_role IN (?)", user_roles]).collect{|r|user_roles << r.parent_role}
+    user_roles = UserRole.where(["user_id = ?", current_user.id]).collect{|r|r.role}
+    RoleRole.where(["child_role IN (?)", user_roles]).collect{|r|user_roles << r.parent_role}
     return user_roles.uniq
   end
 
@@ -261,7 +228,7 @@ class GenericApplicationController < ActionController::Base
     respond_to do |format|
       format.html do
         store_location
-        redirect_to '/location' #--This was commented because it was creating confusion
+        redirect_to '/location' and return #--This was commented because it was creating confusion
       end
     end
   end
