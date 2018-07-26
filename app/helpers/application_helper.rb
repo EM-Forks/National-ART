@@ -258,7 +258,7 @@ module ApplicationHelper
   end
 
   def development_environment?
-    ENV['RAILS_ENV'] == 'development'
+    Rails.env == 'development'
   end
 
   def generic_locations
@@ -299,9 +299,8 @@ module ApplicationHelper
 	end
 
   def preferred_user_keyboard
-    UserProperty.find(:first,
-      :conditions =>["property = ? AND user_id = ?",'preferred.keyboard',
-      current_user.id]).property_value rescue 'abc'
+    UserProperty.where(["property = ? AND user_id = ?",'preferred.keyboard',
+      current_user.id]).first.property_value rescue 'abc'
   end
 
   def create_from_dde_server
@@ -309,8 +308,8 @@ module ApplicationHelper
   end
 
   def current_user_roles
-    user_roles = UserRole.find(:all,:conditions =>["user_id = ?", current_user.id]).collect{|r|r.role}
-    RoleRole.find(:all,:conditions => ["child_role IN (?)", user_roles]).collect{|r|user_roles << r.parent_role}
+    user_roles = UserRole.where(["user_id = ?", current_user.id]).collect{|r|r.role}
+    RoleRole.where(["child_role IN (?)", user_roles]).collect{|r|user_roles << r.parent_role}
     return user_roles.uniq
 
   end
@@ -395,7 +394,7 @@ module ApplicationHelper
     end
     if (second_line_art_start_date.blank? || second_line_art_start_date == "")
       if (duration >= 6)
-        obs = Observation.find(:all, :conditions => ["person_id = ? and concept_id = ?",
+        obs = Observation.where(["person_id = ? and concept_id = ?",
             patient.patient_id, Concept.find_by_name("Viral load").concept_id])
         return true if obs == []
         if !(obs.empty?)
@@ -424,7 +423,7 @@ module ApplicationHelper
     else
       if (duration >= 6)
         second_line_art_start_date = second_line_art_start_date.to_date
-        obs = Observation.find(:all, :conditions => ["person_id = ? and concept_id = ?",
+        obs = Observation.where(["person_id = ? and concept_id = ?",
             patient.patient_id, Concept.find_by_name("Viral load").concept_id])
         return true if obs == []
         if !(obs.empty?)
@@ -463,7 +462,7 @@ module ApplicationHelper
                   216 => (216..218), 240 => (240..242), 260 => (260..262)
                  }
 
-    viral_loads = Observation.find(:all, :conditions => ["person_id = ? and concept_id = ?",
+    viral_loads = Observation.where(["person_id = ? and concept_id = ?",
             patient.patient_id, Concept.find_by_name("Viral load").concept_id])
 
     latest_viral_load = viral_loads.last.obs_datetime.to_date rescue nil
@@ -656,12 +655,12 @@ module ApplicationHelper
       if (period_on_art >= key && period_on_art <= value)
         first_date = art_start_date + key.months
         second_date = art_start_date + value.months
-        viral_loads_request = Observation.find(:all, :conditions => ["person_id = ? AND concept_id = ?
+        viral_loads_request = Observation.where(["person_id = ? AND concept_id = ?
             AND DATE(obs_datetime) >= ? AND DATE(obs_datetime) <= ? AND value_coded IS NOT NULL",
             patient.patient_id, Concept.find_by_name("Viral load").concept_id, first_date, second_date])
         return true unless viral_loads_request.blank?
         if (viral_loads_request.blank?)
-          viral_loads_request = Observation.find(:all, :conditions => ["person_id = ? AND concept_id = ?
+          viral_loads_request = Observation.where(["person_id = ? AND concept_id = ?
               AND value_coded IS NOT NULL",
             patient.patient_id, Concept.find_by_name("Viral load").concept_id])
           return true unless viral_loads_request.blank?
@@ -690,8 +689,8 @@ module ApplicationHelper
                   216 => [216,219], 240 => [240,243], 260 => [260,263]
                  }
     #yes_concept_id = ConceptName.find_by_name('yes').concept_id
-    vl_request = Observation.find(:last, :conditions => ["person_id = ? AND concept_id = ?",
-            patient.patient_id, Concept.find_by_name("Viral load").concept_id])
+    vl_request = Observation.where(["person_id = ? AND concept_id = ?",
+            patient.patient_id, Concept.find_by_name("Viral load").concept_id]).last
     latest_viral_results_date = vl_request.obs_datetime.to_date rescue nil
 
     milestone_exceeded = true
@@ -749,11 +748,9 @@ module ApplicationHelper
                  }
 
     identifier_types = ["Legacy Pediatric id","National id","Legacy National id","Old Identification Number"]
-    identifier_types = PatientIdentifierType.find(:all,
-      :conditions=>["name IN (?)",identifier_types]).collect{| type |type.id }
+    identifier_types = PatientIdentifierType.where(["name IN (?)",identifier_types]).collect{| type |type.id }
 
-    patient_identifiers = PatientIdentifier.find(:all,
-      :conditions=>["patient_id=? AND identifier_type IN (?)",
+    patient_identifiers = PatientIdentifier.where(["patient_id=? AND identifier_type IN (?)",
       patient.id,identifier_types]).collect{| i | i.identifier }
 
     results = Lab.latest_result_by_test_type(patient, 'HIV_viral_load', patient_identifiers) rescue nil
@@ -819,9 +816,9 @@ module ApplicationHelper
       if (period_on_art >= key && period_on_art <= value)
         first_date = art_start_date + key.months
         second_date = art_start_date + value.months
-        vl_request = Observation.find(:last, :conditions => ["person_id = ? AND concept_id = ?
+        vl_request = Observation.where(["person_id = ? AND concept_id = ?
             AND DATE(obs_datetime) >= ? AND DATE(obs_datetime) <= ? AND value_coded IS NOT NULL",
-            patient.patient_id, Concept.find_by_name("Viral load").concept_id, first_date, second_date])
+            patient.patient_id, Concept.find_by_name("Viral load").concept_id, first_date, second_date]).last
         answer_string = vl_request.answer_string.squish rescue nil
         return false if answer_string.blank?
         return true unless answer_string.blank?
@@ -881,11 +878,13 @@ module ApplicationHelper
         ORDER BY DATE(TESTDATE) DESC",national_ids,'HIV_viral_load'
     ]).first rescue nil
 
-   vl_lab_sample_obs = Observation.find(:last, :readonly => false, :joins => [:encounter], :conditions => ["
+   vl_lab_sample_obs = Observation.where(["
         person_id =? AND encounter_type =? AND concept_id =? AND accession_number =?
         AND value_text LIKE (?)",
-        patient.id, encounter_type, viral_load, vl_lab_sample.Sample_ID.to_i, '%Result given to patient%']) rescue nil
-    #raise "x" if vl_lab_sample.blank?
+        patient.id, encounter_type, viral_load, vl_lab_sample.Sample_ID.to_i,
+                                                                                      '%Result given to patient%']).joins(:encounter
+         ).readonly(false).last rescue nil
+    #raise "x" if vl_lab_sample.blank
     #raise "y" if vl_lab_sample_obs.blank?
     return false if vl_lab_sample.blank?
     return false if vl_lab_sample_obs.blank?
@@ -914,9 +913,9 @@ module ApplicationHelper
     results = Lab.latest_result_by_test_type(patient, 'HIV_viral_load', patient_identifiers) rescue nil
     latest_viral_results_date = results[0].split('::')[0].to_date rescue nil
 
-    repeat_vl_request = Observation.find(:last, :conditions => ["person_id = ? AND concept_id = ?
+    repeat_vl_request = Observation.where(["person_id = ? AND concept_id = ?
               AND value_text =?", patient.patient_id, Concept.find_by_name("Viral load").concept_id,
-              "Repeat"]) rescue nil
+              "Repeat"]).last rescue nil
     unless repeat_vl_request.blank?
       repeat_vl_obs_date = repeat_vl_request.obs_datetime.to_date
       return false if repeat_vl_obs_date == Date.today
@@ -937,10 +936,10 @@ module ApplicationHelper
     encounter_type = EncounterType.find_by_name("REQUEST").id
     viral_load = Concept.find_by_name("Hiv viral load").concept_id
 
-    second_line_obs = Observation.find(:last, :joins => [:encounter], :conditions => ["
+    second_line_obs = Observation.where(["
         person_id =? AND encounter_type =? AND concept_id =?
         AND value_text LIKE (?)", patient.id, encounter_type, viral_load,
-        '%Patient switched to second line%']) rescue nil
+        '%Patient switched to second line%']).joins(:encounter).last rescue nil
 
     return false unless second_line_obs.blank? #Already switched to second line. No need for reminder
     
@@ -999,10 +998,10 @@ module ApplicationHelper
   def patient_present(patient_id, date = Date.today)
    start_date = date.strftime("%Y-%m-%d 00:00:00")
    end_date = date.strftime("%Y-%m-%d 23:59:59")
-   reception = Encounter.find(:first,:order => "encounter_datetime DESC,date_created DESC",
-                              :conditions =>["patient_id = ? AND encounter_type = ?
+   reception = Encounter.where(["patient_id = ? AND encounter_type = ?
 	AND encounter_datetime >= ? AND encounter_datetime <=?",patient_id,
-                                             EncounterType.find_by_name('HIV RECEPTION').id,start_date,end_date])
+                                             EncounterType.find_by_name('HIV RECEPTION').id,
+                                start_date,end_date]).order("encounter_datetime DESC,date_created DESC").first
 
    reception = reception.observations.collect{|r|r.to_s.squish}.join(',') rescue ''
    patient_present = (reception.match(/PATIENT PRESENT FOR CONSULTATION: YES/i) ? true : false)

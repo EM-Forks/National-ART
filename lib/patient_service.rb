@@ -1593,15 +1593,14 @@ module PatientService
 
   def self.reason_for_art_eligibility(patient)
 
-    reasons = patient.person.observations.recent(1).question("REASON FOR ART ELIGIBILITY").all rescue nil
-    reason = reasons.map{|c|ConceptName.find(c.value_coded_name_id).name}.join(',') rescue nil
+    #reasons = patient.person.observations.recent(1).question("REASON FOR ART ELIGIBILITY").all rescue nil
+    #reason = reasons.map{|c|ConceptName.find(c.value_coded_name_id).name}.join(',') rescue nil
 
-    #reason_for_art = ActiveRecord::Base.connection.select_one <<EOF
-      #SELECT patient_reason_for_starting_art_text(#{patient.patient_id}) reason;
-    #EOF
+    reason_for_art = ActiveRecord::Base.connection.select_one <<EOF
+      SELECT patient_reason_for_starting_art_text(#{patient.patient_id}) reason;
+EOF
 
-
-    return reason
+    return reason_for_art["reason"]
   end
 
   def self.patient_appointment_dates(patient, start_date, end_date = nil)

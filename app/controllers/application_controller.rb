@@ -212,7 +212,7 @@ class ApplicationController < GenericApplicationController
     dbp_threshold = CoreService.get_global_property_value("htn.diastolic.threshold").to_i
 
     if vl_routine_check_activated
-      if (@template.improved_viral_load_check(patient) == true)
+      if (helpers.improved_viral_load_check(patient) == true)
         #WORKFLOW FOR HIV VIRAL LOAD GOES HERE
         #This is the path "/patients/hiv_viral_load?patient_id=patient_id"
         concept_id = ConceptName.find_by_name("Prescribe drugs").concept_id
