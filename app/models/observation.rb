@@ -1,7 +1,10 @@
 class Observation < ActiveRecord::Base
+  before_save :before_save
+  before_create :before_create
+
   self.table_name = "obs"
   self.primary_key = "obs_id"
-  #include Openmrs
+  include Openmrs
 
   belongs_to :encounter, -> {where(voided: 0)}
   belongs_to :order, -> {where(voided: 0)}

@@ -103,13 +103,12 @@ class GenericLabController < ApplicationController
 
   def id_identifiers(patient)
     identifier_type = ["Legacy Pediatric id","National id","Legacy National id","Old Identification Number"]
-    identifier_types = PatientIdentifierType.find(:all,
-      :conditions=>["name IN (?)",identifier_type]
+    identifier_types = PatientIdentifierType.where(["name IN (?)",identifier_type]
     ).collect{| type |type.id }
 
     identifiers = []
-    PatientIdentifier.find(:all,
-      :conditions=>["patient_id=? AND identifier_type IN (?)",
+    PatientIdentifier.where(
+      ["patient_id=? AND identifier_type IN (?)",
         patient.id,identifier_types]).each{| i | identifiers << i.identifier }
 
     patient_obj = PatientService.get_patient(patient.person)

@@ -150,8 +150,7 @@ module ApplicationHelper
 	def get_global_property_value(global_property)
 		property_value = Settings[global_property]
 		if property_value.nil?
-			property_value = GlobalProperty.find(:first, :conditions => {:property => "#{global_property}"}
-													).property_value rescue nil
+			property_value = GlobalProperty.where(property: global_property).first.property_value rescue nil
 		end
 		return property_value
 	end
@@ -595,11 +594,9 @@ module ApplicationHelper
                  }
 
     identifier_types = ["Legacy Pediatric id","National id","Legacy National id","Old Identification Number"]
-    identifier_types = PatientIdentifierType.find(:all,
-      :conditions=>["name IN (?)",identifier_types]).collect{| type |type.id }
+    identifier_types = PatientIdentifierType.where(["name IN (?)",identifier_types]).collect{| type |type.id }
 
-    patient_identifiers = PatientIdentifier.find(:all,
-      :conditions=>["patient_id=? AND identifier_type IN (?)",
+    patient_identifiers = PatientIdentifier.where(["patient_id=? AND identifier_type IN (?)",
       patient.id,identifier_types]).collect{| i | i.identifier }
 
     results = Lab.latest_result_by_test_type(patient, 'HIV_viral_load', patient_identifiers) rescue nil

@@ -4,8 +4,8 @@
     <title>Patient Dashboard</title>
     <script type="text/javascript" language="javascript"
     src="/touchscreentoolkit/lib/javascripts/touchScreenToolkit.js" defer  ></script>
-    <%= javascript_include_tag("jquery") %>
-    <%= javascript_include_tag "notification_tracker" %>
+    <%= javascript_include_tag("/javascripts/jquery") %>
+    <%= javascript_include_tag "/javascripts/notification_tracker" %>
     <meta http-equiv='content-type' content='text/html;charset=UTF-8' />
     <script language="javascript">
       tstUsername = "";
@@ -672,12 +672,11 @@ function checkIfAllTaskDone() {
   }
 
   <%if current_program_location.match(/HIV/i) %>
-     var appointment_not_done = <%= Encounter.find(:first, 
-      :conditions => ["patient_id = ? AND encounter_type = ?
+     var appointment_not_done = <%= Encounter.where(["patient_id = ? AND encounter_type = ?
       AND encounter_datetime BETWEEN ? AND ?",
       params[:id],EncounterType.find_by_name('Appointment').id,
       session_date.to_date.strftime('%Y-%m-%d 00:00:00'),
-      session_date.to_date.strftime('%Y-%m-%d 23:59:59')]).blank? == true%>
+      session_date.to_date.strftime('%Y-%m-%d 23:59:59')]).first.blank? == true%>
 
     if(nextTask.match(/None/i) && appointment_not_done) {
       for(var i = 0; i < user_activities.length; i++){

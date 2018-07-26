@@ -1,4 +1,6 @@
 class Relationship < ActiveRecord::Base
+  before_save :before_save
+  before_create :before_create
   self.table_name = "relationship"
   self.primary_key = "relationship_id"
   include Openmrs

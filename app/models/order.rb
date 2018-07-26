@@ -1,7 +1,10 @@
 class Order < ActiveRecord::Base
+  before_save :before_save
+  before_create :before_create
+
   self.table_name = "orders"
   self.primary_key = "order_id"
-
+  include Openmrs
   belongs_to :order_type, -> { where retired: 0 }
   belongs_to :concept, -> { where retired: 0 }
   belongs_to :encounter, -> { where voided: 0 }
@@ -10,8 +13,8 @@ class Order < ActiveRecord::Base
   belongs_to :observation, -> { where voided: 0 }, foreign_key: :obs_id, class_name: :Observation
   has_one :drug_order # no default scope
   
-  scope :current,-> { include(:encounter).where('DATE(encounter.encounter_datetime) = CURRENT_DATE()') }
-  scope :historical, -> { include(:encounter).where('DATE(encounter.encounter_datetime) <> CURRENT_DATE()') }
+  scope :current,-> { includes(:encounter).where('DATE(encounter.encounter_datetime) = CURRENT_DATE()') }
+  scope :historical, -> { includes(:encounter).where('DATE(encounter.encounter_datetime) <> CURRENT_DATE()') }
   scope :unfinished, -> {where("discontinued = 0 AND auto_expire_date > NOW()")}
   scope :finished, -> {where("discontinued = 1 OR auto_expire_date < NOW()")}
   scope :arv, lambda {|order|
@@ -19,8 +22,8 @@ class Order < ActiveRecord::Base
     arv_drug_concepts = ConceptSet.where(['concept_set = ?', arv_concept])
     where(['concept_id IN (?)', arv_drug_concepts.map(&:concept_id)])
   }
-  scope :labs, -> {include(:drug_order).where('drug_order.drug_inventory_id is NULL')}
-  scope :prescriptions, -> {include(:drug_order).where("drug_order.drug_inventory_id is NOT NULL")}
+  scope :labs, -> {includes(:drug_order).where('drug_order.drug_inventory_id is NULL')}
+  scope :prescriptions, -> {includes(:drug_order).where("drug_order.drug_inventory_id is NOT NULL")}
   
   after_save do |o|
     drug_order = DrugOrder.where(["order_id =?", o.order_id]).last

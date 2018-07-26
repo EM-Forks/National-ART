@@ -1,4 +1,6 @@
 class Role < ActiveRecord::Base
+  before_save :before_save
+  before_create :before_create
   self.table_name = "role"
   self.primary_key = "role"
   include Openmrs

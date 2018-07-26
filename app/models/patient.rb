@@ -1,6 +1,6 @@
 class Patient < ActiveRecord::Base
-  before_save
-  after_save
+  before_save :before_save
+  before_create :before_create
   self.table_name = "patient"
   self.primary_key ="patient_id"
   include Openmrs
@@ -11,6 +11,7 @@ class Patient < ActiveRecord::Base
   has_many :programs, through: :patient_programs
   has_many :relationships,->{where(voided: 0)}, foreign_key: :person_a, dependent: :destroy
   has_many :orders, ->{where(voided:0)}
+  #belongs_to :person, ->{where(voided:0)}, foreign_key: :person_id
   has_many :encounters,->{where(voided:0)} do
 
     def find_by_date(encounter_date)
@@ -20,7 +21,8 @@ class Patient < ActiveRecord::Base
           encounter_date.to_date.strftime('%Y-%m-%d 23:59:59')
        ) # Use the SQL DATE function to compare just the date part
     end
- end
+  end
+
 
   def after_void(reason = nil)
     self.person.void(reason) rescue nil

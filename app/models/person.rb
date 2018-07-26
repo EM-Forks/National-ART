@@ -1,6 +1,9 @@
 class Person < ActiveRecord::Base
+
   self.table_name = "person"
   self.primary_key  = "person_id"
+  before_save :before_save
+  before_create :before_create
   include Openmrs
 
   cattr_accessor :session_datetime
@@ -8,7 +11,7 @@ class Person < ActiveRecord::Base
   cattr_accessor :migrated_creator
   cattr_accessor :migrated_location
 
-  has_one :patient, ->{where(voided:0)}, foreign_key: :patient_id, dependent: :destroy
+  has_one :patient, ->{where(voided:0)},class_name: :Patient, foreign_key: :patient_id, dependent: :destroy
   has_many :names, ->{where(voided:0)},class_name: :PersonName, foreign_key: :person_id, dependent: :destroy #, order: 'person_name.preferred DESC'
   has_many :addresses, ->{where(voided:0)}, class_name: :PersonAddress, foreign_key: :person_id, dependent: :destroy #, order: 'person_address.preferred DESC'
   has_many :relationships,->{where(voided:0)}, class_name: :Relationship, foreign_key: :person_a
@@ -19,6 +22,7 @@ class Person < ActiveRecord::Base
       where('concept_id = ?', concept_name.concept_id) rescue []
     end
   end
+
 
   def after_void(reason = nil)
     self.patient.void(reason) rescue nil

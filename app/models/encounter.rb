@@ -1,9 +1,12 @@
 require "will_paginate"
 class Encounter < ActiveRecord::Base
+  before_save :before_save
+  before_create :before_create
+
   self.table_name = "encounter"
   self.primary_key = "encounter_id"
 
-  #include Openmrs
+  include Openmrs
 
   has_many :observations, -> { where voided: 0 }, dependent: :destroy
   has_many :drug_orders, foreign_key: "order_id", through: "orders"

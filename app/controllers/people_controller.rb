@@ -79,9 +79,9 @@ class PeopleController < GenericPeopleController
       national_id_version = "1"
       national_id_prefix = "P#{national_id_version}#{health_center_id.rjust(3,"0")}"
 
-      last_national_id = PatientIdentifier.find(:first,:order=>"identifier desc", :conditions => ["identifier_type = ? AND left(identifier,5)= ?", 
+      last_national_id = PatientIdentifier.where(["identifier_type = ? AND left(identifier,5)= ?",
           PatientIdentifierType.find_by_name("NATIONAL ID").patient_identifier_type_id, national_id_prefix]
-      )
+      ).order("identifier desc").first
       
       last_national_id_number = last_national_id.identifier rescue "0"
 
@@ -120,11 +120,10 @@ class PeopleController < GenericPeopleController
     User.current = User.first
     Location.current_location = Location.current_health_center
     
-    person = Person.find(:first,:joins => "INNER JOIN patient_identifier i
+    person = Person.where(["identifier = ? AND n.given_name = ? AND n.family_name = ? AND gender = ?",
+        params[:national_id],params[:given_name],params[:family_name],params[:gender]]).joins("INNER JOIN patient_identifier i
       ON i.patient_id = person.person_id AND i.voided = 0 AND person.voided=0
-      INNER JOIN person_name n ON n.person_id=person.person_id AND n.voided = 0",
-      :conditions => ["identifier = ? AND n.given_name = ? AND n.family_name = ? AND gender = ?",
-        params[:national_id],params[:given_name],params[:family_name],params[:gender]])
+      INNER JOIN person_name n ON n.person_id=person.person_id AND n.voided = 0").first
     patient = person.patient
     
     if create_from_dde_server
@@ -138,9 +137,8 @@ class PeopleController < GenericPeopleController
     else
       PatientIdentifierType.find_by_name('National ID').next_identifier({:patient => patient})
     end
-    npid = PatientIdentifier.find(:first,
-      :conditions => ["patient_id = ? AND identifier = ?
-           AND voided = 0", patient.id,params[:national_id]])
+    npid = PatientIdentifier.where(["patient_id = ? AND identifier = ?
+           AND voided = 0", patient.id,params[:national_id]]).first
     npid.voided = 1
     npid.void_reason = "Given another national ID"
     npid.date_voided = Time.now()
