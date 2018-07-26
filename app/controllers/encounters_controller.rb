@@ -89,9 +89,9 @@ class EncountersController < GenericEncountersController
     @confirmatory_hiv_test_type = Patient.type_of_hiv_confirmatory_test(@patient, session_date) rescue ""
     @hiv_clinic_registration_date = Patient.date_of_hiv_clinic_registration(@patient, session_date) rescue ""
 
-    @ever_received_answer = Observation.find(:last, :conditions => ["person_id =? AND concept_id =? AND
+    @ever_received_answer = Observation.where(["person_id =? AND concept_id =? AND
       DATE(obs_datetime) =?", @patient.id, Concept.find_by_name('EVER RECEIVED ART').concept_id, session_date]
-    ).answer_string.squish.upcase rescue ""
+    ).last.answer_string.squish.upcase rescue ""
 
     #@fast_track_patient = false
     #@latest_fast_track_answer = @patient.person.observations.recent(1).question("FAST").first.answer_string.squish.upcase rescue nil
@@ -179,8 +179,7 @@ class EncountersController < GenericEncountersController
       current_user_activities = []
       current_user.activities.each{|a| current_user_activities << a.upcase }
 
-      user_property = UserProperty.find(:first,
-        :conditions =>["property = 'Activities' AND user_id = ?",current_user.id])
+      user_property = UserProperty.where(["property = 'Activities' AND user_id = ?",current_user.id]).first
 
       (bart_activities).each do |activity|
         if not current_user_activities.include?(activity.upcase)
@@ -221,18 +220,15 @@ class EncountersController < GenericEncountersController
     if 'HIV_CLINIC_CONSULTATION' == (params[:encounter_type].upcase rescue '') || 'ART_ADHERENCE' == (params[:encounter_type].upcase rescue '')
       session_date = session[:datetime].to_date rescue Date.today
 
-      @allergic_to_sulphur = Observation.find(Observation.find(:first,
-          :order => "obs_datetime DESC,date_created DESC",
-          :conditions => ["person_id = ? AND concept_id = ?
-                            AND DATE(obs_datetime) <= ?",@patient.id,
-            ConceptName.find_by_name("Allergic to sulphur").concept_id,session_date])).answer_string.strip.squish rescue ''
+      @allergic_to_sulphur = Observation.find(Observation.where(["person_id = ? AND concept_id = ? AND
+          DATE(obs_datetime) <= ?",@patient.id, ConceptName.find_by_name("Allergic to sulphur").concept_id,session_date]
+        ).order("obs_datetime DESC,date_created DESC").first.id).answer_string.strip.squish rescue ''
 
       @use_extended_family_planning = CoreService.get_global_property_value('extended.family.planning') rescue false
 
-      @obs_ans = Observation.find(Observation.find(:first,
-          :order => "obs_datetime DESC,date_created DESC",
-          :conditions => ["person_id = ? AND concept_id = ? AND DATE(obs_datetime) = ?",
-            @patient.id,ConceptName.find_by_name("Prescribe drugs").concept_id,session_date])).to_s.strip.squish rescue ''
+      @obs_ans = Observation.find(Observation.where(["person_id = ? AND concept_id = ? AND DATE(obs_datetime) = ?",
+            @patient.id,ConceptName.find_by_name("Prescribe drugs").concept_id,session_date]
+        ).order("obs_datetime DESC,date_created DESC").first.id).to_s.strip.squish rescue ''
 
       @obs_ans = '' if @patient_has_stopped_fast_track_at_adherence #Just a hack. Do not remove this please.By mangochiman
 
@@ -243,14 +239,12 @@ class EncountersController < GenericEncountersController
       @referred_to_htc = get_todays_observation_answer_for_encounter(@patient.id, "UPDATE HIV STATUS", "Refer to HTC")
     end
     
-		@given_lab_results = Encounter.find(:last,
-			:order => "encounter_datetime DESC,date_created DESC",
-			:conditions =>["encounter_type = ? and patient_id = ?",
-				EncounterType.find_by_name("GIVE LAB RESULTS").id,@patient.id]).observations.map{|o|
+		@given_lab_results = Encounter.where(["encounter_type = ? and patient_id = ?",
+				EncounterType.find_by_name("GIVE LAB RESULTS").id,@patient.id]).order("encounter_datetime DESC,date_created DESC").last.observations.map{|o|
       o.answer_string if o.to_s.include?("Laboratory results given to patient")} rescue nil
    
-		@transfer_to = Encounter.find(:last,:conditions =>["encounter_type = ? and patient_id = ?",
-        EncounterType.find_by_name("TB VISIT").id,@patient.id]).observations.map{|o|
+		@transfer_to = Encounter.where(["encounter_type = ? and patient_id = ?",
+        EncounterType.find_by_name("TB VISIT").id,@patient.id]).last.observations.map{|o|
       o.answer_string if o.to_s.include?("Transfer out to")} rescue nil
       
 		@recent_sputum_results = PatientService.recent_sputum_results(@patient.id) rescue nil
@@ -258,12 +252,14 @@ class EncountersController < GenericEncountersController
     @recent_sputum_submissions = PatientService.recent_sputum_submissions(@patient.id)
     
 		@continue_treatment_at_site = []
-		Encounter.find(:last,:conditions =>["encounter_type = ? and patient_id = ? AND DATE(encounter_datetime) = ?",
+		Encounter.where(["encounter_type = ? and patient_id = ? AND DATE(encounter_datetime) = ?",
         EncounterType.find_by_name("TB CLINIC VISIT").id,
-        @patient.id,session_date.to_date]).observations.map{|o| @continue_treatment_at_site << o.answer_string if o.to_s.include?("Continue treatment")} rescue nil
+        @patient.id,session_date.to_date]).last.observations.map{|o| @continue_treatment_at_site << o.answer_string if o.to_s.include?("Continue treatment")} rescue nil
 
-		@patient_has_closed_TB_program_at_current_location = PatientProgram.find(:all,:conditions =>
-        ["voided = 0 AND patient_id = ? AND location_id = ? AND (program_id = ? OR program_id = ?)", @patient.id, Location.current_health_center.id, Program.find_by_name('TB PROGRAM').id, Program.find_by_name('MDR-TB PROGRAM').id]).last.closed? rescue true
+		@patient_has_closed_TB_program_at_current_location = PatientProgram.where(
+      ["voided = 0 AND patient_id = ? AND location_id = ? AND (program_id = ? OR program_id = ?)",
+        @patient.id, Location.current_health_center.id, Program.find_by_name('TB PROGRAM').id,
+        Program.find_by_name('MDR-TB PROGRAM').id]).last.closed? rescue true
 
 		if (params[:encounter_type].upcase rescue '') == 'IPT CONTACT PERSON'
 			@contacts_ipt = []
@@ -334,7 +330,7 @@ class EncountersController < GenericEncountersController
 		@drug_given_before = MedicationService.drug_given_before(@patient, session[:datetime])
     @patient_ever_had_drugs = true unless @drug_given_before.blank?
 
-    todays_seen_encounters = @patient.encounters.find(:all, :conditions => ["DATE(encounter_datetime) =?",
+    todays_seen_encounters = @patient.encounters.where(["DATE(encounter_datetime) =?",
         session_date]).collect{|e|e.name.upcase}
     @hiv_reception_only_available = false
     if (todays_seen_encounters.count == 1 && todays_seen_encounters.include?('HIV RECEPTION'))
@@ -441,9 +437,9 @@ class EncountersController < GenericEncountersController
 
 		if (params[:encounter_type].upcase rescue '') == 'TB_REGISTRATION'
 
-			tb_clinic_visit_obs = Encounter.find(:first,:order => "encounter_datetime DESC",
-				:conditions => ["DATE(encounter_datetime) = ? AND patient_id = ? AND encounter_type = ?",
-          session_date, @patient.id, EncounterType.find_by_name('TB CLINIC VISIT').id]).observations rescue []
+			tb_clinic_visit_obs = Encounter.where(["DATE(encounter_datetime) = ? AND patient_id = ? AND encounter_type = ?",
+          session_date, @patient.id, EncounterType.find_by_name('TB CLINIC VISIT').id]
+      ).order("encounter_datetime DESC").first.observations rescue []
 
 			(tb_clinic_visit_obs || []).each do | obs | 
 				if obs.concept_id == Concept.find_by_name('EPTB classification').concept_id
@@ -479,7 +475,7 @@ class EncountersController < GenericEncountersController
 			@local_tb_dot_sites_tag = tb_dot_sites_tag 
 			for encounter in @current_encounters.reverse do
 				if encounter.name.humanize.include?('Hiv staging') || encounter.name.humanize.include?('Tb visit') || encounter.name.humanize.include?('Hiv clinic consultation') 
-					encounter = Encounter.find(encounter.id, :include => [:observations])
+					encounter = Encounter.find(encounter.id)
 					for obs in encounter.observations do
 						if obs.concept_id == ConceptName.find_by_name("IS PATIENT PREGNANT?").concept_id
 							@is_patient_pregnant_value = "#{obs.to_s(["short", "order"]).to_s.split(":")[1]}"
@@ -491,7 +487,7 @@ class EncountersController < GenericEncountersController
 					end
 
 					if encounter.name.humanize.include?('Tb visit') || encounter.name.humanize.include?('Hiv clinic consultation')
-						encounter = Encounter.find(encounter.id, :include => [:observations])
+						encounter = Encounter.find(encounter.id)
 						for obs in encounter.observations do
 							if obs.concept_id == ConceptName.find_by_name("CURRENTLY USING FAMILY PLANNING METHOD").concept_id
 								#@currently_using_family_planning_methods = "#{obs.to_s(["short", "order"]).to_s.split(":")[1]}".squish
@@ -515,9 +511,9 @@ class EncountersController < GenericEncountersController
       latest_visit_date = Encounter.find_by_sql("SELECT MAX(encounter_datetime) as encounter_datetime FROM encounter WHERE patient_id = #{@patient.id} AND
         voided = 0 AND DATE(encounter_datetime) < '#{session_date}'").last.encounter_datetime.to_date rescue nil
 
-      latest_family_planning_method_question = @patient.person.observations.question("CURRENTLY USING FAMILY PLANNING METHOD").find(:last,
-        :conditions => ["DATE(obs_datetime) = ?", latest_visit_date], :order => "obs_datetime ASC"
-      ).answer_string.squish.upcase rescue nil
+      latest_family_planning_method_question = @patient.person.observations.question("CURRENTLY USING FAMILY PLANNING METHOD").where(
+        ["DATE(obs_datetime) = ?", latest_visit_date]
+      ).order("obs_datetime ASC").last.answer_string.squish.upcase rescue nil
       @currently_using_family_planning_methods = latest_family_planning_method_question if latest_family_planning_method_question == 'YES'
 
     end
@@ -766,9 +762,8 @@ class EncountersController < GenericEncountersController
 
       @arv_drugs = MedicationService.moh_arv_regimen_options(100) + [["Other", "Other"]]
       @regimen_formulations = MedicationService.regimen_formulations
-      @other_medications = Drug.find(:all,:joins =>"INNER JOIN moh_regimen_ingredient i
-      ON i.drug_inventory_id = drug.drug_id", :select => "drug.*, i.*",
-        :group => 'drug.drug_id').collect{|d|[d.name, d.concept.fullname]}.sort_by{|k, v|k}
+      @other_medications = Drug.joins("INNER JOIN moh_regimen_ingredient i
+      ON i.drug_inventory_id = drug.drug_id").group("drug.drug_id").select("drug.*, i.*").collect{|d|[d.name, d.concept.fullname]}.sort_by{|k, v|k}
 			@require_hiv_clinic_registration = require_hiv_clinic_registration
 		end
 
@@ -805,21 +800,20 @@ class EncountersController < GenericEncountersController
 
       yes_concept_id = Concept.find_by_name('YES').concept_id
 
-      latest_patient_went_for_via_obs = Observation.find(:last, :joins => [:encounter],
-        :conditions => ["person_id =? AND encounter_type =? AND concept_id =?",
+      latest_patient_went_for_via_obs = Observation.joins([:encounter]).where(
+        ["person_id =? AND encounter_type =? AND concept_id =?",
           @patient.id, cervical_cancer_screening_encounter_type_id, patient_went_for_via_concept_id]
-      ).answer_string.squish.upcase rescue nil
+      ).last.answer_string.squish.upcase rescue nil
 
       @patient_went_for_via = true if latest_patient_went_for_via_obs == 'YES'
 
-      via_referral_answer_string = Observation.find(:last, :joins => [:encounter],
-        :conditions => ["person_id =? AND encounter_type =? AND concept_id =?",
+      via_referral_answer_string = Observation.joins([:encounter]).where(
+        ["person_id =? AND encounter_type =? AND concept_id =?",
           @patient.id, cervical_cancer_screening_encounter_type_id, via_referral_concept_id]
-      ).answer_string.squish.upcase rescue ""
+      ).last.answer_string.squish.upcase rescue ""
 
-      @todays_refferals_count = Observation.find(:all, :select => "DISTINCT(person_id)", 
-        :conditions => ["DATE(obs_datetime) =? AND concept_id =? AND value_coded =?",
-          session_date, via_referral_concept_id, yes_concept_id]).count
+      @todays_refferals_count = Observation.where(["DATE(obs_datetime) =? AND concept_id =? AND value_coded =?",
+          session_date, via_referral_concept_id, yes_concept_id]).select("DISTINCT(person_id)").count
 
       daily_referral_limit_concept = "cervical.cancer.daily.referral.limit"
       @daily_referral_limit = GlobalProperty.find_by_property(daily_referral_limit_concept).property_value.to_i rescue 1000
@@ -829,18 +823,21 @@ class EncountersController < GenericEncountersController
       @cervical_cancer_first_visit_patient = false unless cervical_cancer_first_visit_question.blank?
       @via_referred = true if via_referral_answer_string == "YES"
 
-      latest_via_results_obs_date = Observation.find(:last, :joins => [:encounter],
-        :conditions => ["person_id =? AND encounter_type =? AND concept_id =?",
+      latest_via_results_obs_date = Observation.joins([:encounter]).where(
+        ["person_id =? AND encounter_type =? AND concept_id =?",
           @patient.id, cervical_cancer_screening_encounter_type_id, via_results_concept_id]
-      ).obs_datetime.to_date rescue nil
+      ).last.obs_datetime.to_date rescue nil
 
-      cervical_cancer_result_obs = Observation.find(:last, :joins => [:encounter],
-        :conditions => ["person_id =? AND encounter_type =? AND concept_id =? AND DATE(obs_datetime) >= ?",
-          @patient.id, cervical_cancer_screening_encounter_type_id, via_results_concept_id, latest_via_results_obs_date])
+      cervical_cancer_result_obs = Observation.joins([:encounter]).where(
+        ["person_id =? AND encounter_type =? AND concept_id =? AND DATE(obs_datetime) >= ?",
+          @patient.id, cervical_cancer_screening_encounter_type_id, via_results_concept_id, latest_via_results_obs_date]
+      ).last
 
-      via_referral_outcome_obs = Observation.find(:last, :joins => [:encounter],
-        :conditions => ["person_id =? AND encounter_type =? AND concept_id =? AND DATE(obs_datetime) >= ?",
-          @patient.id, cervical_cancer_screening_encounter_type_id, via_referral_outcome_concept_id, latest_via_results_obs_date])
+      via_referral_outcome_obs = Observation.joins([:encounter]).where(
+        ["person_id =? AND encounter_type =? AND concept_id =? AND DATE(obs_datetime) >= ?",
+          @patient.id, cervical_cancer_screening_encounter_type_id, via_referral_outcome_concept_id, latest_via_results_obs_date]
+      ).last
+
       latest_via_referral_outcome = via_referral_outcome_obs.answer_string.squish.upcase rescue nil
       @latest_via_referral_outcome = latest_via_referral_outcome
 
@@ -853,9 +850,10 @@ class EncountersController < GenericEncountersController
       one_year = 365
 
       ############################################################################
-      latest_cryo_result = Observation.find(:last, :joins => [:encounter],
-        :conditions => ["person_id =? AND encounter_type =? AND concept_id =? AND DATE(obs_datetime) >= ?",
-          @patient.id, cervical_cancer_screening_encounter_type_id, positive_cryo_concept_id, latest_via_results_obs_date])
+      latest_cryo_result = Observation.joins([:encounter]).where(
+        ["person_id =? AND encounter_type =? AND concept_id =? AND DATE(obs_datetime) >= ?",
+          @patient.id, cervical_cancer_screening_encounter_type_id, positive_cryo_concept_id, latest_via_results_obs_date]
+      ).last
 
       unless latest_cryo_result.blank?
         cryo_result_answer = latest_cryo_result.answer_string.squish.upcase
@@ -889,26 +887,28 @@ class EncountersController < GenericEncountersController
           if date_gone_in_days >= three_years
             @via_referred = false
             @has_via_results = false
-            next_via_referral_obs = Observation.find(:last, :joins => [:encounter],
-              :conditions => ["person_id =? AND encounter_type =? AND concept_id =? AND DATE(obs_datetime) >= ?",
-                @patient.id, cervical_cancer_screening_encounter_type_id, via_referral_concept_id, next_via_date])
+            next_via_referral_obs = Observation.joins([:encounter]).where(
+              ["person_id =? AND encounter_type =? AND concept_id =? AND DATE(obs_datetime) >= ?",
+                @patient.id, cervical_cancer_screening_encounter_type_id, via_referral_concept_id, next_via_date]
+            ).last
             unless next_via_referral_obs.blank?
               if (next_via_referral_obs.answer_string.squish.upcase == 'YES')
                 @via_referred = true
               end
             end
 
-            next_cervical_cancer_result_obs = Observation.find(:last, :joins => [:encounter],
-              :conditions => ["person_id =? AND encounter_type =? AND concept_id =? AND DATE(obs_datetime) >= ?",
-                @patient.id, cervical_cancer_screening_encounter_type_id, via_results_concept_id, next_via_date])
+            next_cervical_cancer_result_obs = Observation.joins([:encounter]).where(
+              ["person_id =? AND encounter_type =? AND concept_id =? AND DATE(obs_datetime) >= ?",
+                @patient.id, cervical_cancer_screening_encounter_type_id, via_results_concept_id, next_via_date]
+            ).last
             @has_via_results = true unless next_cervical_cancer_result_obs.blank?
           end
         end
       
-        cryo_done_cancer_result_obs = Observation.find(:last, :joins => [:encounter],
-          :conditions => ["person_id =? AND encounter_type =? AND concept_id =? AND DATE(obs_datetime) >= ?",
+        cryo_done_cancer_result_obs = Observation.joins([:encounter]).where(
+          ["person_id =? AND encounter_type =? AND concept_id =? AND DATE(obs_datetime) >= ?",
             @patient.id, cervical_cancer_screening_encounter_type_id, cryo_done_date_concept_id,
-            latest_via_results_obs_date])
+            latest_via_results_obs_date]).last
     
         unless cryo_done_cancer_result_obs.blank?
           cryo_done_date = cryo_done_cancer_result_obs.answer_string.squish.to_date
@@ -918,18 +918,20 @@ class EncountersController < GenericEncountersController
           if (date_gone_after_cryo_is_done >= one_year)
             @via_referred = false
             @has_via_results = false
-            next_via_referral_obs = Observation.find(:last, :joins => [:encounter],
-              :conditions => ["person_id =? AND encounter_type =? AND concept_id =? AND DATE(obs_datetime) >= ?",
-                @patient.id, cervical_cancer_screening_encounter_type_id, via_referral_concept_id, next_via_date])
+            next_via_referral_obs = Observation.joins([:encounter]).where(
+              ["person_id =? AND encounter_type =? AND concept_id =? AND DATE(obs_datetime) >= ?",
+                @patient.id, cervical_cancer_screening_encounter_type_id, via_referral_concept_id, next_via_date]
+            ).last
             unless next_via_referral_obs.blank?
               if (next_via_referral_obs.answer_string.squish.upcase == 'YES')
                 @via_referred = true
               end
             end
 
-            next_cervical_cancer_result_obs = Observation.find(:last, :joins => [:encounter],
-              :conditions => ["person_id =? AND encounter_type =? AND concept_id =? AND DATE(obs_datetime) >= ?",
-                @patient.id, cervical_cancer_screening_encounter_type_id, via_results_concept_id, next_via_date])
+            next_cervical_cancer_result_obs = Observation.joins([:encounter]).where(
+              ["person_id =? AND encounter_type =? AND concept_id =? AND DATE(obs_datetime) >= ?",
+                @patient.id, cervical_cancer_screening_encounter_type_id, via_results_concept_id, next_via_date]
+            ).last
             @has_via_results = true unless next_cervical_cancer_result_obs.blank?
           end
         end
@@ -948,18 +950,20 @@ class EncountersController < GenericEncountersController
               @has_via_results = false
               @no_cancer = false
 
-              next_via_referral_obs = Observation.find(:last, :joins => [:encounter],
-                :conditions => ["person_id =? AND encounter_type =? AND concept_id =? AND DATE(obs_datetime) >= ?",
-                  @patient.id, cervical_cancer_screening_encounter_type_id, via_referral_concept_id, next_via_date])
+              next_via_referral_obs = Observation.joins([:encounter]).where(
+                ["person_id =? AND encounter_type =? AND concept_id =? AND DATE(obs_datetime) >= ?",
+                  @patient.id, cervical_cancer_screening_encounter_type_id, via_referral_concept_id, next_via_date]
+              ).last
               unless next_via_referral_obs.blank?
                 if (next_via_referral_obs.answer_string.squish.upcase == 'YES')
                   @via_referred = true
                 end
               end
 
-              next_cervical_cancer_result_obs = Observation.find(:last, :joins => [:encounter],
-                :conditions => ["person_id =? AND encounter_type =? AND concept_id =? AND DATE(obs_datetime) >= ?",
-                  @patient.id, cervical_cancer_screening_encounter_type_id, via_results_concept_id, next_via_date])
+              next_cervical_cancer_result_obs = Observation.joins([:encounter]).where(
+                ["person_id =? AND encounter_type =? AND concept_id =? AND DATE(obs_datetime) >= ?",
+                  @patient.id, cervical_cancer_screening_encounter_type_id, via_results_concept_id, next_via_date]
+              ).last
               unless next_cervical_cancer_result_obs.blank?
                 @has_via_results = true
               end
@@ -986,8 +990,8 @@ class EncountersController < GenericEncountersController
       end
 
       #>>>>>>>>VIA LOGIC END>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
-      via_referral_outcome_answers = Observation.find(:all, :joins => [:encounter],
-        :conditions => ["person_id =? AND encounter_type =? AND concept_id =?",
+      via_referral_outcome_answers = Observation.joins([:encounter]).where(
+        ["person_id =? AND encounter_type =? AND concept_id =?",
           @patient.id, cervical_cancer_screening_encounter_type_id, via_referral_outcome_concept_id]
       ).collect{|o|o.answer_string.squish.upcase}
     
@@ -1013,8 +1017,7 @@ class EncountersController < GenericEncountersController
       if @patient_bean.age < 5
         @weight_height_for_ages = {}
         age_in_months += 5 if age_in_months < 53
-        weight_heights = WeightHeightForAge.find(:all, 
-          :conditions => ["sex = ? AND age_in_months BETWEEN 0 AND ?", sex, age_in_months])
+        weight_heights = WeightHeightForAge.where(["sex = ? AND age_in_months BETWEEN 0 AND ?", sex, age_in_months])
         (weight_heights || []).each do |data|
 
           m = data.median_weight.to_f
@@ -1057,7 +1060,7 @@ class EncountersController < GenericEncountersController
 
 		if params["staging_conditions"] == "YES"
 			@obs = params["observations"]
-			render :template => 'encounters/normal_staging_summary', :layout => "normal_staging" and return
+			render template: 'encounters/normal_staging_summary', layout: "normal_staging" and return
 		end
 		
 		redirect_to "/" and return unless @patient
@@ -1072,14 +1075,14 @@ class EncountersController < GenericEncountersController
 
     if (params[:encounter_type].upcase rescue '') == 'HIV_STAGING' and  (CoreService.get_global_property_value('use.extended.staging.questions').to_s == "true" rescue false)
       if session[:datetime].blank?
-			  render :template => 'encounters/extended_hiv_staging', :layout => "weight_chart"
+			  render template: 'encounters/extended_hiv_staging', layout: "weight_chart"
       else
-        render :action => params[:encounter_type], :layout => "weight_chart" if params[:encounter_type]
+        render action: params[:encounter_type], layout: "weight_chart" if params[:encounter_type]
       end
       #elsif (params[:encounter_type].upcase rescue '') == 'HIV_STAGING' and  (CoreService.get_global_property_value('use.normal.staging.questions').to_s == "true" rescue false)
       #	render :template => 'encounters/normal_hiv_staging'
 		else
-			render :action => params[:encounter_type], :layout => "weight_chart" if params[:encounter_type]
+			render action: params[:encounter_type], layout: "weight_chart" if params[:encounter_type]
 		end
 		
 	end
@@ -1094,15 +1097,15 @@ class EncountersController < GenericEncountersController
       value = "#{PatientIdentifier.site_prefix}-TB #{session[:datetime].to_date.strftime('%Y')} #{tb_identifier}" rescue  "#{PatientIdentifier.site_prefix}-TB #{Date.today.strftime('%Y')} #{tb_identifier}"
     end
 
-    render :text => ("false".to_json) if ! PatientIdentifier.find_by_identifier(value).blank?
+    render text: ("false".to_json) if ! PatientIdentifier.find_by_identifier(value).blank?
 
-    render :text => ("true".to_json) if  PatientIdentifier.find_by_identifier(value).blank?
+    render text: ("true".to_json) if  PatientIdentifier.find_by_identifier(value).blank?
 	end
+
 	def tb_art_patient(patient,program)
     program_id = Program.find_by_name(program).id
-    enrolled = PatientProgram.find(:first,:conditions =>["program_id = ? AND patient_id = ?",program_id,patient.id]).blank?
+    enrolled = PatientProgram.where(["program_id = ? AND patient_id = ?", program_id,patient.id]).first.blank?
  
-
 		return true if enrolled
     false
   end
@@ -1699,14 +1702,13 @@ EOF
       if params[:change_appointment_date] == "true"
         session_date = session[:datetime].to_date rescue Date.today
         type = EncounterType.find_by_name("APPOINTMENT")
-        appointment_encounter = Observation.find(:first,
-          :order => "encounter_datetime DESC,encounter.date_created DESC",
-          :joins => "INNER JOIN encounter ON obs.encounter_id = encounter.encounter_id",
-          :conditions => ["concept_id = ? AND encounter_type = ? AND patient_id = ?
+        appointment_encounter = Observation.joins("INNER JOIN encounter ON obs.encounter_id = encounter.encounter_id").where(
+          ["concept_id = ? AND encounter_type = ? AND patient_id = ?
       AND encounter_datetime >= ? AND encounter_datetime <= ?",
             ConceptName.find_by_name('Appointment date').concept_id,
             type.id, params[:encounter]["patient_id"],session_date.strftime("%Y-%m-%d 00:00:00"),
-            session_date.strftime("%Y-%m-%d 23:59:59")]).encounter
+            session_date.strftime("%Y-%m-%d 23:59:59")]
+        ).order("encounter_datetime DESC,encounter.date_created DESC").first.encounter
         appointment_encounter.void("Given a new appointment date")
       end
 
@@ -1929,10 +1931,12 @@ EOF
 
           session_date = session[:datetime].to_date rescue Date.today
           encounter_type = EncounterType.find_by_name("HIV CLINIC CONSULTATION")
-          encounter = Encounter.find(:first,:order =>"encounter_datetime DESC,date_created DESC",
-            :conditions =>["encounter_type=? AND patient_id=? AND encounter_datetime >= ?
+
+          encounter = Encounter.where(["encounter_type=? AND patient_id=? AND encounter_datetime >= ?
           AND encounter_datetime <= ?",encounter_type.id,params[:encounter]['patient_id'],
-              session_date.strftime("%Y-%m-%d 00:00:00"),session_date.strftime("%Y-%m-%d 23:59:59")])
+              session_date.strftime("%Y-%m-%d 00:00:00"),session_date.strftime("%Y-%m-%d 23:59:59")]
+          ).order("encounter_datetime DESC,date_created DESC").first
+
           if encounter.blank?
             encounter = Encounter.new()
             encounter.encounter_type = encounter_type.id
@@ -2037,8 +2041,7 @@ EOF
         work_station_concept_id = ConceptName.find_by_name("Workstation location").concept_id
 
         vitals_encounter_id = EncounterType.find_by_name("VITALS").encounter_type_id
-        enc = Encounter.find(:all, 
-          :conditions => ["encounter_type = ? AND patient_id = ? AND voided = 0", 
+        enc = Encounter.where(["encounter_type = ? AND patient_id = ? AND voided = 0",
             vitals_encounter_id, @patient.id])
 
         encounter.observations.each do |o|
@@ -2205,7 +2208,7 @@ EOF
     no_art = @ids - result.keys
 
     dispensing_encounter_type = EncounterType.find_by_name('DISPENSING').id
-    cpt_drug_id = Drug.find(:all, :conditions => ["name LIKE ?", "%Cotrimoxazole%"]).map(&:id)
+    cpt_drug_id = Drug.where(["name LIKE ?", "%Cotrimoxazole%"]).map(&:id)
 
     if @patient_ids.length > 0
 =begin
@@ -2251,8 +2254,7 @@ EOF
 
     hiv_test = {}
 
-    @patient.encounters.find(:first, :order => ["encounter_datetime DESC"],
-      :conditions => ["encounter_type = ?", EncounterType.find_by_name("UPDATE HIV STATUS")]).observations.collect{|obs|
+    @patient.encounters.where(["encounter_type = ?", EncounterType.find_by_name("UPDATE HIV STATUS")]).order(["encounter_datetime DESC"]).first.observations.collect{|obs|
       
       c_name = ConceptName.find_by_concept_id(obs.concept_id).name.strip.upcase
       next if c_name.match(/location/i)
@@ -2263,7 +2265,7 @@ EOF
    
     result.delete_if{|key, value| value.blank?}
     
-    render :text => result.to_json
+    render text: result.to_json
 
   end
 
@@ -2350,8 +2352,8 @@ EOF
     concept_ids = params[:concept_ids].split(",")
     
     ActiveRecord::Base.transaction do
-      encounter = patient.encounters.find(:last, :conditions => ["encounter_type =? AND DATE(encounter_datetime) =?",
-          encounter_type, session_date.to_date])
+      encounter = patient.encounters.where(["encounter_type =? AND DATE(encounter_datetime) =?",
+          encounter_type, session_date.to_date]).last
       encounter.void unless encounter.blank?
       encounter = Encounter.new
       encounter.encounter_type = encounter_type.encounter_type_id
@@ -2387,7 +2389,7 @@ EOF
       :encounter_type => encounter_type.id,
       :encounter_datetime => session_date.strftime('%Y-%m-%d %H:%M:%S'))
 
-    render :text => {:encounter_id => encounter.id, 
+    render text: {:encounter_id => encounter.id,
       :datetime => encounter.encounter_datetime}.to_json and return
   end
 
@@ -2450,9 +2452,9 @@ EOF
   end
 
   def get_amounts_brought_if_transfer_in(person_id, drug_concept_id, date)
-    amount = Observation.find(:first, :conditions =>["concept_id = ? AND (obs_datetime BETWEEN ? AND ?)
+    amount = Observation.where(["concept_id = ? AND (obs_datetime BETWEEN ? AND ?)
       AND person_id = ?", drug_concept_id , date.strftime('%Y-%m-%d 00:00:00'), 
-        date.strftime('%Y-%m-%d 23:59:59'), person_id])
+        date.strftime('%Y-%m-%d 23:59:59'), person_id]).first
     return 0 if amount.blank?
     return amount.value_numeric
   end

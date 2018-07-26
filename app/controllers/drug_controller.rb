@@ -85,9 +85,9 @@ class DrugController < GenericDrugController
     stocks = {}
 
     arv_concepts = MedicationService.arv_drugs.map(&:concept_id)
-    arv_drugs = Drug.find(:all, :conditions => ["concept_id IN (?)", arv_concepts])
+    arv_drugs = Drug.where(["concept_id IN (?)", arv_concepts])
     cotrim_drugs = ["Cotrimoxazole (480mg tablet)", "Cotrimoxazole (960mg)"]
-    arv_drugs += Drug.find(:all, :conditions => ["name IN (?)", cotrim_drugs])
+    arv_drugs += Drug.where(["name IN (?)", cotrim_drugs])
     end_date = params[:date]
     relocations = {}
     
@@ -125,12 +125,12 @@ class DrugController < GenericDrugController
     drug_summary["stock_level"] = stocks
     drug_summary["relocations"] = relocations
 
-    render :text => drug_summary.to_json and return    
+    render text: drug_summary.to_json and return
   end
 
   def art_stock_info
     date = Date.today
-    moh_products = DrugCms.find(:all)
+    moh_products = DrugCms.all
     drug_order_type = OrderType.find_by_name('Drug Order') 
     dispensing_encounter_type = EncounterType.find_by_name("DISPENSING")
     treatment_encounter_type = EncounterType.find_by_name("TREATMENT")
@@ -170,10 +170,8 @@ class DrugController < GenericDrugController
   end
 
   def new_drug_sets
-    @sets = GeneralSet.all(:order => ["date_updated DESC"],
-      :conditions => ["status = 'active'"]) +
-      GeneralSet.all(:order => ["date_updated DESC"],
-      :conditions => ["status = 'inactive'"])
+    @sets = GeneralSet.where(["status = 'active'"]).order(["date_updated DESC"]) +
+      GeneralSet.where(["status = 'inactive'"]).order(["date_updated DESC"])
 
     #raise @sets.to_yaml
     @set_name_ids_map = {}
@@ -201,9 +199,9 @@ class DrugController < GenericDrugController
 
   def add_new_drug_set
 
-    already_selected = DrugSet.find_all_by_set_id(params[:set_id]).collect{|d| d.drug_inventory_id} rescue []
+    already_selected = DrugSet.where(["set_id =?", params[:set_id]]).collect{|d| d.drug_inventory_id} rescue []
     already_selected = [-1] if already_selected.blank?
-    @drugs = [["", ""]] + Drug.all(:conditions => ["drug_id NOT IN (?)",
+    @drugs = [["", ""]] + Drug.where(["drug_id NOT IN (?)",
         already_selected]).collect{|drug| [drug.name, drug.id]}
 
     @frequencies = ["", "Once a day (OD)", "Twice a day (BD)", "Three a day (TDS)",

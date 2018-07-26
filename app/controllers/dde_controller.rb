@@ -475,11 +475,11 @@ class DdeController < ApplicationController
     region_id = Region.find_by_name("#{params[:filter_value]}").id
     region_conditions = ["name LIKE (?) AND region_id = ? ", "#{params[:search_string]}%", region_id]
 
-    districts = District.find(:all,:conditions => region_conditions, :order => 'name')
+    districts = District.where(region_conditions).order("name")
     districts = districts.map do |d|
       "<li value=\"#{d.name}\">#{d.name}</li>"
     end
-    render :text => districts.join('') and return
+    render text: districts.join('') and return
   end
 	
   # List traditional authority containing the string given in params[:value]
@@ -487,11 +487,11 @@ class DdeController < ApplicationController
     district_id = District.find_by_name("#{params[:filter_value]}").id
     traditional_authority_conditions = ["name LIKE (?) AND district_id = ?", "%#{params[:search_string]}%", district_id]
 
-    traditional_authorities = TraditionalAuthority.find(:all,:conditions => traditional_authority_conditions, :order => 'name')
+    traditional_authorities = TraditionalAuthority.where(traditional_authority_conditions).order("name")
     traditional_authorities = traditional_authorities.map do |t_a|
       "<li value=\"#{t_a.name}\">#{t_a.name}</li>"
     end
-    render :text => traditional_authorities.join('') and return
+    render text: traditional_authorities.join('') and return
   end
 
   # Villages containing the string given in params[:value]
@@ -499,11 +499,11 @@ class DdeController < ApplicationController
     traditional_authority_id = TraditionalAuthority.find_by_name("#{params[:filter_value]}").id
     village_conditions = ["name LIKE (?) AND traditional_authority_id = ?", "%#{params[:search_string]}%", traditional_authority_id]
 
-    villages = Village.find(:all,:conditions => village_conditions, :order => 'name')
+    villages = Village.where(village_conditions).order("name")
     villages = villages.map do |v|
       "<li value=\"" + v.name + "\">" + v.name + "</li>"
     end
-    render :text => villages.join('') and return
+    render text: villages.join('') and return
   end
 
   def update_address
@@ -532,7 +532,7 @@ class DdeController < ApplicationController
     output = RestClient::Request.execute( { :method => :post, :url => dde_url,
       :payload => address_params, :headers => {:Authorization => session[:dde_token]} } )
 
-    addresses = PersonAddress.find(:all, :conditions =>["person_id = ?", params[:patient_id]])
+    addresses = PersonAddress.where(["person_id = ?", params[:patient_id]])
     
     (addresses || []).each do |address|
       if params[:address_type] == 'home_district'
