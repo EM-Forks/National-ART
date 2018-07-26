@@ -12,31 +12,28 @@ class CohortController < ActionController::Base
 
   def initialize
 
-		@@first_registration_date = FlatCohortTable.find(
-		  :first,
-		  :order => 'date_enrolled ASC'
-		).date_enrolled.to_date rescue nil
+		@@first_registration_date = FlatCohortTable.order("date_enrolled ASC").first.date_enrolled.to_date rescue nil
 
 	end
 
   def index
     @rules = ValidationRule.rules_xy
-    render :layout => false
+    render layout: false
   end
 
   def select_date
 
-    render :layout => false
+    render layout: false
   end
 
   def cohort
 
     if params[:cohort_type] == "Survival Analysis"
 
-      render :template => "/cohort/survival_analysis", :layout => false
+      render template: "/cohort/survival_analysis", layout: false
     else
 
-      render :layout => false
+      render layout: false
     end
 
   end
@@ -46,13 +43,13 @@ class CohortController < ActionController::Base
   end
 
   def drill_down
-    @patients = CohortPerson.find(:all, :conditions => ["person_id IN (?)",
+    @patients = CohortPerson.where(["person_id IN (?)",
         params[:field].split(",")]).collect{|p|
       [p.person_id, (p.names.first.given_name rescue "&nbsp;"),
         (p.names.first.family_name rescue "&nbsp;"), (p.birthdate rescue "&nbsp;"), p.gender]
     }
 
-    render :layout => false
+    render layout: false
   end
 
   def current_site
@@ -61,7 +58,7 @@ class CohortController < ActionController::Base
                                                 FROM flat_cohort_table
                                                 LIMIT 1").map(&:current_location).first
 
-    render :text => current_site
+    render text: current_site
   end
 
   def quarter(start_date=Time.now.strftime("%Y-%m-%d"), end_date=Time.now.strftime("%Y-%m-%d"), section=nil)
@@ -91,7 +88,7 @@ class CohortController < ActionController::Base
       retstr = startdate.strftime("%d/%b/%Y") + " to " + enddate.strftime("%d/%b/%Y")
     end
 
-    render :text => retstr
+    render text: retstr
   end
 
   def art_defaulters#(start_date=Time.now, end_date=Time.now, section=nil)
@@ -155,7 +152,7 @@ class CohortController < ActionController::Base
     @defaulters ||= art_defaulters#(start_date, end_date)
 
     value = @defaulters unless @defaulters.blank?
-    render :text => value.to_json
+    render text: value.to_json
   end
 
   def total_on_art(start_date=Time.now, end_date=Time.now, section=nil)
@@ -168,7 +165,7 @@ class CohortController < ActionController::Base
 
     value = patients unless patients.blank?
 
-    render :text => value.to_json
+    render text: value.to_json
   end
 
   def new_total_patients_reg(start_date=Time.now, end_date=Time.now, section=nil)
@@ -235,7 +232,7 @@ class CohortController < ActionController::Base
     end
 
     value = patients unless patients.blank?
-    render :text => value.to_json
+    render text: value.to_json
   end
 
   def cum_total_reg(start_date=Time.now, end_date=Time.now, section=nil)
@@ -252,7 +249,7 @@ class CohortController < ActionController::Base
     end
 
     value = patients unless patients.blank?
-    render :text => value.to_json
+    render text: value.to_json
   end
 
   def new_first_time(start_date=Time.now, end_date=Time.now, section=nil)
@@ -388,7 +385,7 @@ class CohortController < ActionController::Base
     patients = new_first_time(start_date, end_date)
 
     value = patients unless patients.blank?
-    render :text => value.to_json
+    render text: value.to_json
   end
 
   def cum_ft(start_date=Time.now, end_date=Time.now, section=nil)
@@ -400,7 +397,7 @@ class CohortController < ActionController::Base
 
     value = patients unless patients.blank?
 
-    render :text => value.to_json
+    render text: value.to_json
   end
 
   def new_re(start_date=Time.now, end_date=Time.now, section=nil)
@@ -413,7 +410,7 @@ class CohortController < ActionController::Base
     patients = new_re_initiated(start_date, end_date) rescue []
 
     value = patients unless patients.blank?
-    render :text => value.to_json
+    render text: value.to_json
   end
 
   def cum_re(start_date=Time.now, end_date=Time.now, section=nil)
@@ -424,7 +421,7 @@ class CohortController < ActionController::Base
     patients = cum_re_initiated(start_date, end_date)
 
     value = patients unless patients.blank?
-    render :text => value.to_json
+    render text: value.to_json
   end
 
   def new_ti(start_date=Time.now, end_date=Time.now, section=nil)
@@ -441,7 +438,7 @@ class CohortController < ActionController::Base
     patients = (@newly_total_registered.to_a - (@newly_first_time.to_a + @newly_re_initied.to_a))
 
     value = patients unless patients.blank?
-    render :text => value.to_json
+    render text: value.to_json
   end
 
   def cum_ti(start_date=Time.now, end_date=Time.now, section=nil)
@@ -457,7 +454,7 @@ class CohortController < ActionController::Base
     patients = (@cum_total_registered.to_a - (@cum_first_time.to_a + @cum_re_initied.to_a))
 
     value = patients unless patients.blank?
-    render :text => value.to_json
+    render text: value.to_json
   end
 
   def new_males(start_date=Time.now, end_date=Time.now, section=nil)
@@ -474,7 +471,7 @@ class CohortController < ActionController::Base
                                             GROUP BY ftc.patient_id").collect{|p| p.patient_id}
 
     value = patients unless patients.blank?
-    render :text => value.to_json
+    render text: value.to_json
   end
 
   def cum_males(start_date=Time.now, end_date=Time.now, section=nil)
@@ -487,7 +484,7 @@ class CohortController < ActionController::Base
                                              OR ftc.gender = 'M' )
                                             GROUP BY ftc.patient_id").collect{|p| p.patient_id}
     value = patients unless patients.blank?
-    render :text => value.to_json
+    render text: value.to_json
   end
 
   def new_patient_pregnant(start_date=Time.now, end_date=Time.now, section=nil)
@@ -571,7 +568,7 @@ class CohortController < ActionController::Base
     patients = (all_women || []) - (pregnant_women || [])
 
     value = patients unless patients.blank?
-    render :text => value.to_json
+    render text: value.to_json
   end
 
   def cum_patient_pregnant(start_date, end_date=Time.now, section=nil)
@@ -650,7 +647,7 @@ class CohortController < ActionController::Base
 
     value = patients unless patients.blank?
 
-    render :text => value.to_json
+    render text: value.to_json
   end
 
   def new_preg_all_age(start_date=Time.now, end_date=Time.now, section=nil)
@@ -664,7 +661,7 @@ class CohortController < ActionController::Base
     pregnant_women = new_patient_pregnant(start_date, end_date)
 
     value = pregnant_women unless pregnant_women.blank?
-    render :text => value.to_json
+    render text:  value.to_json
   end
 
   def cum_preg_all_age(start_date=Time.now, end_date=Time.now, section=nil)
@@ -675,7 +672,7 @@ class CohortController < ActionController::Base
     pregnant_women = cum_patient_pregnant(@@start_date, end_date)
 
     value = pregnant_women unless pregnant_women.blank?
-    render :text => value.to_json
+    render text: value.to_json
   end
 
   def new_infants_reg(start_date=Time.now, end_date=Time.now, section=nil)
@@ -719,7 +716,7 @@ class CohortController < ActionController::Base
     patients = new_infants_reg(start_date,end_date)
 
     value = patients unless patients.blank?
-    render :text => value.to_json
+    render text: value.to_json
   end
 
   def cum_a(start_date=Time.now, end_date=Time.now, section=nil)
@@ -730,7 +727,7 @@ class CohortController < ActionController::Base
     patients = cum_infants_reg(nil,end_date)
 
     value = patients unless patients.blank?
-    render :text => value.to_json
+    render text: value.to_json
   end
 
   def new_children_reg(start_date=Time.now, end_date=Time.now, section=nil)
@@ -773,7 +770,7 @@ class CohortController < ActionController::Base
     patients = new_children_reg(start_date,end_date)
 
     value = patients unless patients.blank?
-    render :text => value.to_json
+    render text: value.to_json
   end
 
   def cum_b(start_date=Time.now, end_date=Time.now, section=nil)
@@ -784,7 +781,7 @@ class CohortController < ActionController::Base
     patients = cum_children_reg(@@first_registration_date,end_date)
 
     value = patients unless patients.blank?
-    render :text => value.to_json
+    render text: value.to_json
   end
 
   def new_adults_reg(start_date=Time.now, end_date=Time.now, section=nil)
@@ -828,7 +825,7 @@ class CohortController < ActionController::Base
     patients = new_adults_reg(start_date,end_date)
 
     value = patients unless patients.blank?
-    render :text => value.to_json
+    render text: value.to_json
   end
 
   def cum_c(start_date=Time.now, end_date=Time.now, section=nil)
@@ -839,7 +836,7 @@ class CohortController < ActionController::Base
     patients = cum_adults_reg(@@first_registration_date,end_date)
 
     value = patients unless patients.blank?
-    render :text => value.to_json
+    render text: value.to_json
   end
 
   def new_unk_age(start_date=Time.now, end_date=Time.now, section=nil)
@@ -858,7 +855,7 @@ class CohortController < ActionController::Base
     patients = (@newly_total_registered - (@newly_total_adults_registered + @newly_total_children_registered + @newly_total_infants_registered))
 
     value = patients unless patients.blank?
-    render :text => value.to_json
+    render text: value.to_json
   end
 
   def cum_unk_age(start_date=Time.now, end_date=Time.now, section=nil)
@@ -872,7 +869,7 @@ class CohortController < ActionController::Base
     patients = (@cum_total_registered - (@cum_total_adults_registered + @cum_total_children_registered + @cum_total_infants_registered))
 
     value = patients unless patients.blank?
-    render :text => value.to_json
+    render text: value.to_json
   end
 
   def new_pres_hiv(start_date=Time.now, end_date=Time.now, section=nil)
@@ -890,7 +887,7 @@ class CohortController < ActionController::Base
                                             GROUP BY ftc.patient_id").collect{|p| p.patient_id}
 
     value = patients unless patients.blank?
-    render :text => value.to_json
+    render text: value.to_json
   end
 
   def cum_pres_hiv(start_date=Time.now, end_date=Time.now, section=nil)
@@ -905,7 +902,7 @@ class CohortController < ActionController::Base
                                             GROUP BY ftc.patient_id").collect{|p| p.patient_id}
 
     value = patients unless patients.blank?
-    render :text => value.to_json
+    render text: value.to_json
   end
 
   def new_conf_hiv(start_date=Time.now, end_date=Time.now, section=nil)
@@ -923,7 +920,7 @@ class CohortController < ActionController::Base
                                             GROUP BY ftc.patient_id").collect{|p| p.patient_id}
 
     value = patients unless patients.blank?
-    render :text => value.to_json
+    render text: value.to_json
   end
 
   def cum_conf_hiv(start_date=Time.now, end_date=Time.now, section=nil)
@@ -941,7 +938,7 @@ class CohortController < ActionController::Base
                                             GROUP BY ftc.patient_id").collect{|p| p.patient_id}
 
     value = patients unless patients.blank?
-    render :text => value.to_json
+    render text: value.to_json
   end
 
   def new_who_1_2(start_date=Time.now, end_date=Time.now, section=nil)
@@ -964,7 +961,7 @@ class CohortController < ActionController::Base
                                             GROUP BY ftc.patient_id").collect{|p| p.patient_id}
 
     value = patients unless patients.blank?
-    render :text => value.to_json
+    render text: value.to_json
   end
 
   def cum_who_1_2(start_date=Time.now, end_date=Time.now, section=nil)
@@ -985,7 +982,7 @@ class CohortController < ActionController::Base
                                             GROUP BY ftc.patient_id").collect{|p| p.patient_id}
 
     value = patients unless patients.blank?
-    render :text => value.to_json
+    render text: value.to_json
   end
 
   def new_who_2(start_date=Time.now, end_date=Time.now, section=nil)
@@ -1002,7 +999,7 @@ class CohortController < ActionController::Base
                                             GROUP BY ftc.patient_id").collect{|p| p.patient_id}
 
     value = patients unless patients.blank?
-    render :text => value.to_json
+    render text: value.to_json
   end
 
   def cum_who_2(start_date=Time.now, end_date=Time.now, section=nil)
@@ -1017,7 +1014,7 @@ class CohortController < ActionController::Base
                                             GROUP BY ftc.patient_id").collect{|p| p.patient_id}
 
     value = patients unless patients.blank?
-    render :text => value.to_json
+    render text: value.to_json
   end
 
   def new_children(start_date=Time.now, end_date=Time.now, section=nil)
@@ -1034,7 +1031,7 @@ class CohortController < ActionController::Base
                                             GROUP BY ftc.patient_id").collect{|p| p.patient_id}
 
     value = patients unless patients.blank?
-    render :text => value.to_json
+    render text: value.to_json
   end
 
   def cum_children(start_date=Time.now, end_date=Time.now, section=nil)
@@ -1049,7 +1046,7 @@ class CohortController < ActionController::Base
                                             GROUP BY ftc.patient_id").collect{|p| p.patient_id}
 
     value = patients unless patients.blank?
-    render :text => value.to_json
+    render text: value.to_json
   end
 
   def new_breastfeed(start_date=Time.now, end_date=Time.now, section=nil)
@@ -1066,7 +1063,7 @@ class CohortController < ActionController::Base
                                             GROUP BY ftc.patient_id").collect{|p| p.patient_id}
 
     value = patients unless patients.blank?
-    render :text => value.to_json
+    render text: value.to_json
   end
 
   def cum_breastfeed(start_date=Time.now, end_date=Time.now, section=nil)
@@ -1081,7 +1078,7 @@ class CohortController < ActionController::Base
                                             GROUP BY ftc.patient_id").collect{|p| p.patient_id}
 
     value = patients unless patients.blank?
-    render :text => value.to_json
+    render text: value.to_json
   end
 
   def new_preg(start_date=Time.now, end_date=Time.now, section=nil)
@@ -1098,7 +1095,7 @@ class CohortController < ActionController::Base
                                             GROUP BY ftc.patient_id").collect{|p| p.patient_id}
 
     value = patients unless patients.blank?
-    render :text => value.to_json
+    render text: value.to_json
   end
 
   def cum_preg(start_date=Time.now, end_date=Time.now, section=nil)
@@ -1113,7 +1110,7 @@ class CohortController < ActionController::Base
                                             GROUP BY ftc.patient_id").collect{|p| p.patient_id}
 
     value = patients unless patients.blank?
-    render :text => value.to_json
+    render text: value.to_json
   end
 
   def new_who_3(start_date=Time.now, end_date=Time.now, section=nil)
@@ -1131,7 +1128,7 @@ class CohortController < ActionController::Base
                                             GROUP BY ftc.patient_id").collect{|p| p.patient_id}
 
     value = patients unless patients.blank?
-    render :text => value.to_json
+    render text: value.to_json
   end
 
   def cum_who_3(start_date=Time.now, end_date=Time.now, section=nil)
@@ -1147,7 +1144,7 @@ class CohortController < ActionController::Base
                                             GROUP BY ftc.patient_id").collect{|p| p.patient_id}
 
     value = patients unless patients.blank?
-    render :text => value.to_json
+    render text: value.to_json
   end
 
   def new_who_4(start_date=Time.now, end_date=Time.now, section=nil)
@@ -1164,7 +1161,7 @@ class CohortController < ActionController::Base
                                                 OR ft1.reason_for_eligibility = 'WHO stage IV peds')
                                             GROUP BY ftc.patient_id").collect{|p| p.patient_id}
     value = patients unless patients.blank?
-    render :text => value.to_json
+    render text: value.to_json
   end
 
   def cum_who_4(start_date=Time.now, end_date=Time.now, section=nil)
@@ -1180,7 +1177,7 @@ class CohortController < ActionController::Base
                                             GROUP BY ftc.patient_id").collect{|p| p.patient_id}
 
     value = patients unless patients.blank?
-    render :text => value.to_json
+    render text: value.to_json
   end
 
   def new_other_reason(start_date=Time.now, end_date=Time.now, section=nil)
@@ -1197,7 +1194,7 @@ class CohortController < ActionController::Base
                                             GROUP BY ftc.patient_id").collect{|p| p.patient_id}
 
     value = patients unless patients.blank?
-    render :text => value.to_json
+    render text: value.to_json
   end
 
   def cum_other_reason(start_date=Time.now, end_date=Time.now, section=nil)
@@ -1211,7 +1208,7 @@ class CohortController < ActionController::Base
                                             AND ft1.reason_for_eligibility  = 'Unknown'
                                             GROUP BY ftc.patient_id").collect{|p| p.patient_id}
     value = patients unless patients.blank?
-    render :text => value.to_json
+    render text: value.to_json
   end
 
   ######current episode of TB
@@ -1258,7 +1255,7 @@ class CohortController < ActionController::Base
     patients = new_total_current_tb(start_date,end_date)
 
     value = patients unless patients.blank?
-    render :text => value.to_json
+    render text: value.to_json
   end
 
   def cum_current_tb(start_date=Time.now, end_date=Time.now, section=nil)
@@ -1269,7 +1266,7 @@ class CohortController < ActionController::Base
     patients = cum_total_current_tb(@@first_registration_date, end_date)
 
     value = patients unless patients.blank?
-    render :text => value.to_json
+    render text: value.to_json
   end
 
   ##########TB within the last two years
@@ -1323,7 +1320,7 @@ class CohortController < ActionController::Base
     patients = @new_total_tb_2yrs
 
     value = patients unless patients.blank?
-    render :text => value.to_json
+    render text: value.to_json
   end
 
   def cum_tb_w2yrs(start_date=Time.now, end_date=Time.now, section=nil)
@@ -1342,7 +1339,7 @@ class CohortController < ActionController::Base
     patients = @cum_total_tb_2yrs
 
     value = patients unless patients.blank?
-    render :text => value.to_json
+    render text: value.to_json
   end
 
   ##########No TB
@@ -1359,7 +1356,7 @@ class CohortController < ActionController::Base
     patients = (@total_patients_reg.to_a - (@total_tb_w2yrs.to_a + @total_current_tb.to_a))
 
     value = patients unless patients.blank?
-    render :text => value.to_json
+    render text: value.to_json
   end
 
   def cum_no_tb(start_date=Time.now, end_date=Time.now, section=nil)
@@ -1374,7 +1371,7 @@ class CohortController < ActionController::Base
     patients = (@cum_patients_reg.to_a - (@cum_tb_w2yrs.to_a + @cum_current_tb.to_a))
 
     value = patients unless patients.blank?
-    render :text => value.to_json
+    render text: value.to_json
   end
 
   ##########Kaposis Sarcoma
@@ -1393,7 +1390,7 @@ class CohortController < ActionController::Base
                                             GROUP BY ftc.patient_id").collect{|p| p.patient_id}
 
     value = patients unless patients.blank?
-    render :text => value.to_json
+    render text: value.to_json
   end
 
   def cum_ks(start_date=Time.now, end_date=Time.now, section=nil)
@@ -1409,7 +1406,7 @@ class CohortController < ActionController::Base
                                             GROUP BY ftc.patient_id").collect{|p| p.patient_id}
 
     value = patients unless patients.blank?
-    render :text => value.to_json
+    render text: value.to_json
   end
 
   def total_patients_died(start_date=Time.now, end_date=Time.now, section=nil)
@@ -1446,7 +1443,7 @@ class CohortController < ActionController::Base
                 HAVING death_date_diff BETWEEN 0 AND 30.4375").collect{|p| p.patient_id}
 
     value = patients unless patients.blank?
-    render :text => value.to_json
+    render text: value.to_json
   end
 
   def died_2nd_month(start_date=Time.now, end_date=Time.now, section=nil)
@@ -1467,7 +1464,7 @@ class CohortController < ActionController::Base
                 HAVING death_date_diff BETWEEN 30.4375 AND 60.875").collect{|p| p.patient_id}
 
     value = patients unless patients.blank?
-    render :text => value.to_json
+    render text: value.to_json
   end
 
   def died_3rd_month(start_date=Time.now, end_date=Time.now, section=nil)
@@ -1488,7 +1485,7 @@ class CohortController < ActionController::Base
                 HAVING death_date_diff BETWEEN 60.875 AND 91.3125").collect{|p| p.patient_id}
 
     value = patients unless patients.blank?
-    render :text => value.to_json
+    render text: value.to_json
   end
 
   def died_after_3rd_month(start_date=Time.now, end_date=Time.now, section=nil)
@@ -1509,7 +1506,7 @@ class CohortController < ActionController::Base
                 HAVING death_date_diff BETWEEN 91.3125 AND 1000000").collect{|p| p.patient_id}
 
     value = patients unless patients.blank?
-    render :text => value.to_json
+    render text: value.to_json
   end
 
   def died_total(start_date=Time.now, end_date=Time.now, section=nil)
@@ -1520,7 +1517,7 @@ class CohortController < ActionController::Base
     patients = total_patients_died(start_date,end_date)
 
     value = patients unless patients.blank?
-    render :text => value.to_json
+    render text: value.to_json
   end
 
   def patients_stopped_treatment(start_date=Time.now, end_date=Time.now, section=nil)
@@ -1548,7 +1545,7 @@ class CohortController < ActionController::Base
     patients = patients_stopped_treatment(nil,end_date)
 
     value = patients unless patients.blank?
-    render :text => value.to_json
+    render text: value.to_json
   end
 
   def patients_transfered_out(start_date=Time.now, end_date=Time.now, section=nil)
@@ -1577,7 +1574,7 @@ class CohortController < ActionController::Base
     patients = patients_transfered_out(nil,end_date)
 
     value = patients unless patients.blank?
-    render :text => value.to_json
+    render text: value.to_json
   end
 
   def unknown_outcome(start_date=Time.now, end_date=Time.now, section=nil)
@@ -1602,7 +1599,7 @@ class CohortController < ActionController::Base
 
     patients = ((@total_registered.to_a || []) - (all_patients || []))
     value = patients.uniq unless patients.blank?
-    render :text => value.to_json
+    render text: value.to_json
   end
 
   def n1a(start_date=Time.now, end_date=Time.now, section=nil)
@@ -1626,7 +1623,7 @@ class CohortController < ActionController::Base
                     GROUP BY ft2.patient_id").collect{|p| p.patient_id}
 
     value = patients unless patients.blank?
-    render :text => value.to_json
+    render text: value.to_json
   end
 
   def n1p(start_date=Time.now, end_date=Time.now, section=nil)
@@ -1650,7 +1647,7 @@ class CohortController < ActionController::Base
                     GROUP BY ft2.patient_id").collect{|p| p.patient_id}
 
     value = patients unless patients.blank?
-    render :text => value.to_json
+    render text: value.to_json
   end
 
   def n2a(start_date=Time.now, end_date=Time.now, section=nil)
@@ -1674,7 +1671,7 @@ class CohortController < ActionController::Base
                     GROUP BY ft2.patient_id").collect{|p| p.patient_id}
 
     value = patients unless patients.blank?
-    render :text => value.to_json
+    render text: value.to_json
   end
 
   def n2p(start_date=Time.now, end_date=Time.now, section=nil)
@@ -1698,7 +1695,7 @@ class CohortController < ActionController::Base
                     GROUP BY ft2.patient_id").collect{|p| p.patient_id}
 
     value = patients unless patients.blank?
-    render :text => value.to_json
+    render text: value.to_json
   end
 
   def n3a(start_date=Time.now, end_date=Time.now, section=nil)
@@ -1722,7 +1719,7 @@ class CohortController < ActionController::Base
                     GROUP BY ft2.patient_id").collect{|p| p.patient_id}
 
     value = patients unless patients.blank?
-    render :text => value.to_json
+    render text: value.to_json
   end
 
   def n3p(start_date=Time.now, end_date=Time.now, section=nil)
@@ -1746,7 +1743,7 @@ class CohortController < ActionController::Base
                     GROUP BY ft2.patient_id").collect{|p| p.patient_id}
 
     value = patients unless patients.blank?
-    render :text => value.to_json
+    render text: value.to_json
   end
 
   def n4a(start_date=Time.now, end_date=Time.now, section=nil)
@@ -1770,7 +1767,7 @@ class CohortController < ActionController::Base
                     GROUP BY ft2.patient_id").collect{|p| p.patient_id}
 
     value = patients unless patients.blank?
-    render :text => value.to_json
+    render text: value.to_json
   end
 
   def n4p(start_date=Time.now, end_date=Time.now, section=nil)
@@ -1794,7 +1791,7 @@ class CohortController < ActionController::Base
                     GROUP BY ft2.patient_id").collect{|p| p.patient_id}
 
     value = patients unless patients.blank?
-    render :text => value.to_json
+    render text: value.to_json
   end
 
   def n5a(start_date=Time.now, end_date=Time.now, section=nil)
@@ -1818,7 +1815,7 @@ class CohortController < ActionController::Base
                     GROUP BY ft2.patient_id").collect{|p| p.patient_id}
 
     value = patients unless patients.blank?
-    render :text => value.to_json
+    render text: value.to_json
   end
 
   def n6a(start_date=Time.now, end_date=Time.now, section=nil)
@@ -1842,7 +1839,7 @@ class CohortController < ActionController::Base
                     GROUP BY ft2.patient_id").collect{|p| p.patient_id}
 
     value = patients unless patients.blank?
-    render :text => value.to_json
+    render text: value.to_json
   end
 
   def n7a(start_date=Time.now, end_date=Time.now, section=nil)
@@ -1866,7 +1863,7 @@ class CohortController < ActionController::Base
                     GROUP BY ft2.patient_id").collect{|p| p.patient_id}
 
     value = patients unless patients.blank?
-    render :text => value.to_json
+    render text: value.to_json
   end
 
   def n8a(start_date=Time.now, end_date=Time.now, section=nil)
@@ -1890,7 +1887,7 @@ class CohortController < ActionController::Base
                     GROUP BY ft2.patient_id").collect{|p| p.patient_id}
 
     value = patients unless patients.blank?
-    render :text => value.to_json
+    render text: value.to_json
   end
 
   def n0a(start_date=Time.now, end_date=Time.now, section=nil)
@@ -1914,7 +1911,7 @@ class CohortController < ActionController::Base
                     GROUP BY ft2.patient_id").collect{|p| p.patient_id}
 
     value = patients unless patients.blank?
-    render :text => value.to_json
+    render text: value.to_json
   end
 
   def n0p(start_date=Time.now, end_date=Time.now, section=nil)
@@ -1938,7 +1935,7 @@ class CohortController < ActionController::Base
                     GROUP BY ft2.patient_id").collect{|p| p.patient_id}
 
     value = patients unless patients.blank?
-    render :text => value.to_json
+    render text: value.to_json
   end
 
   def n9p(start_date=Time.now, end_date=Time.now, section=nil)
@@ -1962,7 +1959,7 @@ class CohortController < ActionController::Base
                     GROUP BY ft2.patient_id").collect{|p| p.patient_id}
 
     value = patients unless patients.blank?
-    render :text => value.to_json
+    render text: value.to_json
   end
 
   def non_std(start_date=Time.now, end_date=Time.now, section=nil)
@@ -1986,7 +1983,7 @@ class CohortController < ActionController::Base
                     GROUP BY ft2.patient_id").collect{|p| p.patient_id}
 
     value = patients unless patients.blank?
-    render :text => value.to_json
+    render text: value.to_json
   end
 
   def tb_no_suspect(start_date=Time.now, end_date=Time.now, section=nil)
@@ -2013,7 +2010,7 @@ class CohortController < ActionController::Base
                 GROUP BY ft2.patient_id").collect{|p| p.patient_id}
 
     value = patients unless patients.blank?
-    render :text => value.to_json
+    render text: value.to_json
   end
 
   def tb_suspected(start_date=Time.now, end_date=Time.now, section=nil)
@@ -2040,7 +2037,7 @@ class CohortController < ActionController::Base
                 GROUP BY ft2.patient_id").collect{|p| p.patient_id}
 
     value = patients unless patients.blank?
-    render :text => value.to_json
+    render text: value.to_json
   end
 
   def tb_confirm_not_treat(start_date=Time.now, end_date=Time.now, section=nil)
@@ -2067,7 +2064,7 @@ class CohortController < ActionController::Base
                 GROUP BY ft2.patient_id").collect{|p| p.patient_id}
 
     value = patients unless patients.blank?
-    render :text => value.to_json
+    render text: value.to_json
   end
 
   def tb_confirmed(start_date=Time.now, end_date=Time.now, section=nil)
@@ -2094,7 +2091,7 @@ class CohortController < ActionController::Base
                 GROUP BY ft2.patient_id").collect{|p| p.patient_id}
 
     value = patients unless patients.blank?
-    render :text => value.to_json
+    render text: value.to_json
   end
 
   def unknown_tb(start_date=Time.now, end_date=Time.now, section=nil)
@@ -2121,7 +2118,7 @@ class CohortController < ActionController::Base
                 GROUP BY ft2.patient_id").collect{|p| p.patient_id}
 
     value = patients unless patients.blank?
-    render :text => value.to_json
+    render text: value.to_json
 
   end
 
@@ -2253,12 +2250,12 @@ class CohortController < ActionController::Base
     effects = check_all_effects(start_date, end_date)
     none = check_no_effects(start_date, end_date)
     value = $total_alive_and_on_art - (effects + none)
-    render :text => value.to_json
+    render text: value.to_json
   end
 
   def no_effects(start_date=Time.now, end_date=Time.now, section=nil)
     value = check_no_effects(start_date, end_date)
-    render :text => value.to_json
+    render text: value.to_json
   end
 
   def check_all_effects(start_date=Time.now, end_date=Time.now, section=nil)
@@ -2453,7 +2450,7 @@ class CohortController < ActionController::Base
   def side_effects(start_date=Time.now, end_date=Time.now, section=nil)
     value = []
     value = check_all_effects(start_date, end_date)
-    render :text => value.to_json
+    render text: value.to_json
   end
 
   def missed_7plus_one(start_date=Time.now, end_date=Time.now, section=nil)
@@ -2628,7 +2625,7 @@ class CohortController < ActionController::Base
 
     patients = total_missed_7_plus(end_date)
     value = patients unless patients.blank?
-    render :text => value.to_json
+    render text: value.to_json
   end
 
   def total_missed_0_6(start_date=Time.now, end_date=Time.now, section=nil)
@@ -2684,7 +2681,7 @@ class CohortController < ActionController::Base
     patients = total_missed_0_6(end_date)
 
     value =  patients unless patients.blank?
-    render :text => value.to_json
+    render text: value.to_json
   end
 
   def unknown_adherence(start_date=Time.now, end_date=Time.now, section=nil)
@@ -2701,7 +2698,7 @@ class CohortController < ActionController::Base
           (pats_missed_7_plus_doses.to_a || [])))
 
     value =  value unless value.blank?
-    render :text => value.to_json
+    render text: value.to_json
   end
 
 
@@ -2744,7 +2741,7 @@ class CohortController < ActionController::Base
     end
 
     value = patients unless patients.blank?
-    render :text => value.to_json
+    render text: value.to_json
   end
 
   def missed_0_6(start_date=Time.now, end_date=Time.now, section=nil)
@@ -2793,7 +2790,7 @@ class CohortController < ActionController::Base
     value = (total_alive  - patients)
 
     value =  value unless value.blank?
-    render :text => value.to_json
+    render text: value.to_json
   end
 =end
   def cohort_field
@@ -3353,7 +3350,7 @@ class CohortController < ActionController::Base
       end
     end
 
-    render :layout => false
+    render layout: false
   end
   
 end

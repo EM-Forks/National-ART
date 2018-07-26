@@ -1,7 +1,7 @@
 class CohortToolController < GenericCohortToolController
 
   def data_consistency_check_menu
-    render :layout =>"report"
+    render layout: "report"
   end
 
   def males_allegedly_pregnant
@@ -71,7 +71,7 @@ EOF
       }
     end
 
-    render :layout =>"report"
+    render layout: "report"
   end
 
 	def case_findings
@@ -79,20 +79,21 @@ EOF
 		@variables = Hash.new(0)
 		@quarter = params[:quarter]
     @start_date,@end_date = Report.generate_cohort_date_range(@quarter)
-    encounters = Encounter.find(:all, :conditions => ["encounter_type = ? AND
+    encounters = Encounter.where(["encounter_type = ? AND
     encounter_datetime >= ? AND encounter_datetime <= ?",
         EncounterType.find_by_name("tb registration").id, @start_date, @end_date])
+    
     tbtype = ConceptName.find_by_name("TB classification").concept_id
     patienttype = ConceptName.find_by_name("TB patient category").concept_id
 		@variables["count"] = encounters.length
 
     encounters.each do |enc|
 
-      tbclass = Concept.find(Observation.find(:last, :conditions => ["encounter_id = ? and concept_id = ? ", enc.id,tbtype]).value_coded).fullname
+      tbclass = Concept.find(Observation.where(["encounter_id = ? and concept_id = ? ", enc.id,tbtype]).last.value_coded).fullname
 
-    	recurrent = Concept.find(Observation.find(:last, :conditions => ["concept_id = ? ",ConceptName.find_by_name("Ever received TB treatment").concept_id]).value_coded).fullname == "Yes"
+    	recurrent = Concept.find(Observation.where(["concept_id = ? ",ConceptName.find_by_name("Ever received TB treatment").concept_id]).last.value_coded).fullname == "Yes"
 
-      patclass = Concept.find(Observation.find(:last, :conditions => ["encounter_id = ? and concept_id = ? ", enc.id,patienttype]).value_coded).fullname
+      patclass = Concept.find(Observation.where(["encounter_id = ? and concept_id = ? ", enc.id,patienttype]).last.value_coded).fullname
       age = PatientService.age(enc.patient.person)
 
       if ((age >= 0) && (age <= 4))
@@ -201,7 +202,7 @@ EOF
     	@variables["MalesDef"] += @variables[total.to_s+"MPuldef"]
     	@variables["FemalesDef"] +=@variables[total.to_s+"FPuldef"]
     end
-		render :layout => "report"
+		render layout: "report"
 
 	end
 
@@ -310,7 +311,7 @@ EOF
 
     end
 
-    render :layout => 'report'
+    render layout: 'report'
   end
 
 	def case_findings2
@@ -319,12 +320,15 @@ EOF
     @start_date,@end_date = Report.generate_cohort_date_range(@quarter)
 		@variables = Hash.new(0)
 
-		encounters = Encounter.find(:all, :conditions => ["encounter_type = ? and encounter_datetime >= ? and encounter_datetime <= ?", EncounterType.find_by_name("tb registration").id, @start_date - 1.year, @end_date - 1.year])
+		encounters = Encounter.where(["encounter_type = ? and encounter_datetime >= ? and encounter_datetime <= ?",
+        EncounterType.find_by_name("tb registration").id, @start_date - 1.year, @end_date - 1.year])
 
 		encounters.each do |enc|
 
 			index = enc.patient.person.gender
-			state = PatientProgram.find(:first, :conditions => ["program_id = ? and patient_id = ? and date_enrolled >=  ?", Program.find_by_name("TB Program").program_id, enc.patient_id, @start_date]).patient_states.last.program_workflow_state.concept.shortname
+			state = PatientProgram.where(["program_id = ? and patient_id = ? and date_enrolled >=  ?",
+          Program.find_by_name("TB Program").program_id, enc.patient_id, @start_date]
+      ).first.patient_states.last.program_workflow_state.concept.shortname
 
 			case state.upcase
       when "REGIMEN FAILURE" || "TREATMENT FAILURE"
@@ -349,7 +353,7 @@ EOF
 
 		end
 
-		render :layout => "report"
+		render layout: "report"
 
 	end
 
@@ -357,9 +361,9 @@ EOF
 
 		values = [" "," "]
 
-   	tbclass = Concept.find(Observation.find(:last, :conditions => ["person_id = ? and concept_id = ? ", id,Concept.find_by_name("TB classification").concept_id]).value_coded).fullname
+   	tbclass = Concept.find(Observation.where(["person_id = ? and concept_id = ? ", id,Concept.find_by_name("TB classification").concept_id]).last.value_coded).fullname
 
-   	patclass = Concept.find(Observation.find(:last, :conditions => ["person_id = ? and concept_id = ? ", id,Concept.find_by_name("TB patient category").concept_id	]).value_coded).fullname
+   	patclass = Concept.find(Observation.where(["person_id = ? and concept_id = ? ", id,Concept.find_by_name("TB patient category").concept_id	]).last.value_coded).fullname
 
     case tbclass
 
@@ -588,7 +592,7 @@ EOF
     @report_name = 'Patient with Pre-ART/Unknown_outcome'
 
     @people = CohortRevise.patients_with_pre_art_or_unknown_outcome(@start_date, @end_date)
-    render :layout =>"report"
+    render layout: "report"
   end
 
   def patient_on_pre_ART_but_have_arvs_dispensed
@@ -601,7 +605,7 @@ EOF
     @report_name = 'On ART patients with no ARVs dispensations'
 
     @people = CohortRevise.patient_on_pre_ART_but_have_arvs_dispensed(@start_date, @end_date)
-    render :layout =>"report"
+    render layout: "report"
   end
 
   def on_art_patients_with_no_arvs_dispensations
@@ -614,7 +618,7 @@ EOF
     @report_name = 'On ART patients with no ARVs dispensations'
 
     @people = CohortRevise.on_art_patients_with_no_arvs_dispensations(@start_date, @end_date)
-    render :layout =>"report"
+    render layout: "report"
   end
 
   def records_that_were_updated
@@ -627,7 +631,7 @@ EOF
 
     @encounters = records_that_were_corrected(@quarter)
 
-    render :layout =>"report"
+    render layout: "report"
   end
 
   def missing_start_reasons
@@ -640,7 +644,7 @@ EOF
     @report_name = 'Missing start reasons'
 
     @people = CohortRevise.patient_with_missing_start_reasons(@start_date, @end_date)
-    render :layout =>"report"
+    render layout: "report"
   end
 
   def records_that_were_corrected(quarter)
@@ -912,12 +916,10 @@ EOF
   def changed_to(enc)
     encounter_type = enc.encounter_type
 
-    encounter = Encounter.find(:first,
-			:joins       => "INNER JOIN obs ON encounter.encounter_id=obs.encounter_id",
-			:conditions  => ["encounter_type=? AND encounter.patient_id=? AND Date(encounter.encounter_datetime)=?",
-				encounter_type,enc.patient_id, enc.encounter_datetime.to_date],
-			:group       => "encounter.encounter_type",
-			:order       => "encounter.encounter_datetime DESC")
+    encounter = Encounter.joins("INNER JOIN obs ON encounter.encounter_id=obs.encounter_id").where(
+      ["encounter_type=? AND encounter.patient_id=? AND Date(encounter.encounter_datetime)=?",
+				encounter_type,enc.patient_id, enc.encounter_datetime.to_date]
+    ).order("encounter.encounter_datetime DESC").group("encounter.encounter_type").first
 
     observations = encounter.observations rescue nil
     return if observations.blank?
@@ -960,7 +962,7 @@ EOF
     @visits_by_day      = visits_by_week(visits)
     @visits_by_week_day = visits_by_week_day(visits)
 
-    render :layout => "report"
+    render layout: "report"
   end
 
   def visits_by_week(visits)
@@ -1052,12 +1054,10 @@ EOF
 
     required_encounters_ids.sort!
 
-    Encounter.find(:all,
-      :joins      => ["INNER JOIN obs     ON obs.encounter_id    = encounter.encounter_id",
-				"INNER JOIN patient ON patient.patient_id  = encounter.patient_id"],
-      :conditions => ["obs.voided = 0 AND encounter_type IN (?) AND encounter_datetime >=? AND encounter_datetime <=?",required_encounters_ids,start_date,end_date],
-      :group      => "encounter.patient_id,DATE(encounter_datetime)",
-      :order      => "encounter.encounter_datetime ASC")
+    Encounter.joins(["INNER JOIN obs     ON obs.encounter_id    = encounter.encounter_id","INNER JOIN patient ON patient.patient_id  = encounter.patient_id"]
+    ).where(["obs.voided = 0 AND encounter_type IN (?) AND encounter_datetime >=? AND encounter_datetime <=?",
+        required_encounters_ids,start_date,end_date]
+    ).order("encounter.encounter_datetime ASC").group("encounter.patient_id,DATE(encounter_datetime)")
   end
 
   def prescriptions_without_dispensations
@@ -1069,7 +1069,7 @@ EOF
 		end_date    = date_range.last.end_of_day.strftime("%Y-%m-%d %H:%M:%S")
 		@report     = report_prescriptions_without_dispensations_data(start_date , end_date)
 
-		render :layout => 'report'
+		render layout: 'report'
   end
 
   def  dispensations_without_prescriptions
@@ -1081,7 +1081,7 @@ EOF
 		end_date    = date_range.last.end_of_day.strftime("%Y-%m-%d %H:%M:%S")
 		@report     = report_dispensations_without_prescriptions_data(start_date , end_date)
 
-		render :layout => 'report'
+		render layout: 'report'
   end
 
 
@@ -1094,7 +1094,7 @@ EOF
 		end_date    = date_range.last.end_of_day.strftime("%Y-%m-%d %H:%M:%S")
 		@report     = report_patients_with_multiple_start_reasons(start_date , end_date)
 
-		render :layout => 'report'
+		render layout: 'report'
   end
 
   def  patients_with_multiple_same_obs_per_day
@@ -1105,15 +1105,15 @@ EOF
     start_date  = date_range.first.beginning_of_day.strftime("%Y-%m-%d %H:%M:%S")
     end_date    = date_range.last.end_of_day.strftime("%Y-%m-%d %H:%M:%S")
     @report     = report_patients_with_multiple_same_obs_per_day(start_date , end_date)
-    render :layout => 'report'
+    render layout: 'report'
   end
 
   def void_multiple_start_reasons
     concept = ConceptName.find_by_name('REASON FOR ART ELIGIBILITY').concept
 
     (params[:data_inconsistents_patient_ids].split(',') || []).each do |patient_id|
-      obs = Observation.find(:first, :conditions =>["person_id = ? AND concept_id = ?",
-          patient_id, concept.id],:order => "obs_datetime DESC, date_created DESC", :limit => 1)
+      obs = Observation.where(["person_id = ? AND concept_id = ?",
+          patient_id, concept.id]).order("obs_datetime DESC, date_created DESC").limit(1).first
 
       next if obs.blank?
       ActiveRecord::Base.connection.execute <<EOF
@@ -1139,7 +1139,7 @@ EOF
 
 		@report = report_out_of_range_arv_numbers(arv_number_range, start_date, end_date)
 
-		render :layout => 'report'
+		render layout: 'report'
   end
 
 =begin
@@ -1185,7 +1185,7 @@ EOF
 
     end
 
-    render :layout => 'report'
+    render layout: 'report'
   end
 
 	def list_debbuger_details
@@ -1223,7 +1223,7 @@ EOF
 		end
 		@report.sort! { |a,b| a.splitted_arv_number.to_i <=> b.splitted_arv_number.to_i }
 
-		render :layout => 'patient_list'
+		render layout: 'patient_list'
 	end
 
   def list_patients_details
@@ -1304,7 +1304,7 @@ EOF
 
 		@report.sort! { |a,b| a.splitted_arv_number.to_i <=> b.splitted_arv_number.to_i }
 
-		render :layout => 'patient_list'
+		render layout: 'patient_list'
   end
 
 	def set_outcomes_and_start_reason(patient_id)
@@ -1420,7 +1420,7 @@ EOF
 		@cohort_validation = validation.get_all_differences
 		print_rules rescue ""
 		session[:views]=nil; session[:chidren]; session[:nil]
-    render :layout => 'cohort'
+    render layout: 'cohort'
   end
 
   def print_rules
@@ -1473,7 +1473,7 @@ EOF
   def rule_variables
     @logo = CoreService.get_global_property_value('logo').to_s
     @rules = ValidationRule.deliver_validation_results
-    render :layout => false
+    render layout: false
   end
 
   def missed_appointment
@@ -1483,7 +1483,7 @@ EOF
 
     @missed_patients = Cohort.miss_appointment(@start_date, @end_date)
 
-    render :layout => 'report'
+    render layout:'report'
   end
 
 	def survival_analysis
@@ -1502,7 +1502,7 @@ EOF
 
 		@survival_analysis, session[:views] = SurvivalAnalysis.report(cohort, session[:cohort])
 
-		render :layout => 'cohort'
+		render layout: 'cohort'
 	end
 
   def list_incomplete_details
@@ -1513,7 +1513,7 @@ EOF
       patient = Patient.find(patient_id)
       @report[patient_id] =  PatientService.get_debugger_details(patient.person)
     end
-    render :layout => 'patient_list'
+    render layout: 'patient_list'
   end
 
   def incomplete_visits
@@ -1621,7 +1621,7 @@ EOF
     end
     cohort = Cohort.new(start_date, end_date)
 		@children_survival_analysis, session[:children] = SurvivalAnalysis.childern_survival_analysis(cohort, session[:cohort])
-		render :layout => 'cohort'
+		render layout: 'cohort'
 	end
 
 	def women_survival
@@ -1639,7 +1639,7 @@ EOF
    	logger.info("cohort")
    	@women_survival_analysis, session[:women] = SurvivalAnalysis.pregnant_and_breast_feeding(cohort, session[:cohort])
 
-		render :layout => 'cohort'
+		render layout: 'cohort'
 	end
 
   def cohort_menu
@@ -1747,7 +1747,7 @@ EOF
 		session[:cohort] = nil
 
 		if params[:quarter] == 'Select date range'
-			redirect_to :action => 'select_cohort_date' and return
+			redirect_to action: 'select_cohort_date' and return
 		end
 		session[:pre_art] = []
 		@logo = CoreService.get_global_property_value('logo').to_s
@@ -1777,7 +1777,7 @@ EOF
 
 		session[:views]=nil; session[:chidren]; session[:nil]
 =end
-    render :layout => false
+    render layout: false
 
   end
 
@@ -1789,14 +1789,14 @@ EOF
 
 	  @cohort = FlatTablesCohort.get_indicators(start_date, end_date)
 	  logger.info("cohort")
-	  render :layout => false
+	  render layout: false
   end
 
 	def revised_cohort_survival_analysis
 		session[:cohort] = nil
 
 		if params[:quarter] == 'Select date range'
-			redirect_to :action => 'select_cohort_date' and return
+			redirect_to action: 'select_cohort_date' and return
 		end
 
 		@logo = CoreService.get_global_property_value('logo').to_s
@@ -1828,11 +1828,11 @@ EOF
 
 		case params[:quarter_type].downcase
     when 'general'
-      render :template => '/cohort_tool/revised_cohort_survival_analysis', :layout => false and return
+      render template: '/cohort_tool/revised_cohort_survival_analysis', layout: false and return
     when 'women'
-      render :template => '/cohort_tool/revised_women_cohort_survival_analysis', :layout => false and return
+      render template: '/cohort_tool/revised_women_cohort_survival_analysis', layout: false and return
     when 'children'
-      render :template => '/cohort_tool/revised_children_cohort_survival_analysis', :layout => false and return
+      render template: '/cohort_tool/revised_children_cohort_survival_analysis', layout: false and return
 		end
 	end
 
@@ -1871,7 +1871,7 @@ EOF
 
 		session[:views]=nil; session[:chidren]; session[:nil]
 =end
-    render :layout => false
+    render layout: false
 
   end
 
@@ -1909,7 +1909,7 @@ EOF
 
 		session[:views]=nil; session[:chidren]; session[:nil]
 =end
-		render :layout => false
+		render layout: false
 
 	end
 
@@ -1921,14 +1921,14 @@ EOF
 
 	  @cohort = CohortRevise.get_indicators(start_date, end_date)
 	  logger.info("cohort")
-	  render :layout => false
+	  render layout: false
   end
 
 	def revised_cohort_survival_analysis
 		session[:cohort] = nil
 
 		if params[:quarter] == 'Select date range'
-			redirect_to :action => 'select_cohort_date' and return
+			redirect_to action: 'select_cohort_date' and return
 		end
 
 		@logo = CoreService.get_global_property_value('logo').to_s
@@ -1960,11 +1960,11 @@ EOF
 
 		case params[:quarter_type].downcase
     when 'general'
-      render :template => '/cohort_tool/revised_cohort_survival_analysis', :layout => false and return
+      render template: '/cohort_tool/revised_cohort_survival_analysis', layout: false and return
     when 'women'
-      render :template => '/cohort_tool/revised_women_cohort_survival_analysis', :layout => false and return
+      render template: '/cohort_tool/revised_women_cohort_survival_analysis', layout: false and return
     when 'children'
-      render :template => '/cohort_tool/revised_children_cohort_survival_analysis', :layout => false and return
+      render template: '/cohort_tool/revised_children_cohort_survival_analysis', layout: false and return
 		end
 	end
 
@@ -1978,7 +1978,7 @@ EOF
 
 		@cohort = SurvivalAnalysisRevise.get_indicators(start_date, end_date, @quarter)
 		logger.info("cohort")
-		render :layout => false
+		render layout: false
 	end
   
 
@@ -1989,7 +1989,7 @@ EOF
 
 		@cohort = SurvivalAnalysisRevise.get_indicators(start_date, end_date, @quarter)
 		logger.info("cohort")
-		render :layout => false
+		render layout: false
 	end
 
 	def revised_children_cohort_survival_analysis_to_print
@@ -1999,7 +1999,7 @@ EOF
 
 		@cohort = SurvivalAnalysisRevise.get_indicators(start_date, end_date, @quarter)
 		logger.info("cohort")
-		render :layout => false
+		render layout: false
 	end
 
 	def list_more_details
@@ -2025,9 +2025,7 @@ EOF
 
     @people = {}
     (@patient_ids.split(',') || []).each do |patient_id|
-      names =  PersonName.find(:first,
-        :conditions =>["person_id = ?", patient_id.to_i],
-        :order => "date_created DESC")
+      names =  PersonName.where(["person_id = ?", patient_id.to_i]).order("date_created DESC").first
 
       patient = Patient.find(patient_id.to_i)
       temp_earliest = ActiveRecord::Base.connection.select_one <<EOF
@@ -2076,7 +2074,7 @@ EOF
     end
 
 		@sorted_list = @people.sort_by{|patient_id, data| data[:arv_number].split('-').last.to_i}
-		render :layout => false
+		render layout: false
 	end
 
 	def finish
@@ -2140,7 +2138,7 @@ EOF
     @results = @results.each {|result| result[0] = result[0]}.sort_by{|result| result[0]}
     @results.each{|result| @graph_max = result[1].to_f if result[1].to_f > (@graph_max || 0)}
     @graph_max ||= 0
-    render :layout => false #"report"
+    render layout: false #"report"
   end
 
   def list_of_patients_with_adh
@@ -2154,7 +2152,7 @@ EOF
     @patients = get_list_of_patient_with_adherences(@quarter, @range_start, @range_end)
 
     @date = Date.today
-    render :layout => "report"
+    render layout: "report"
   end
 
   def patients_with_adherence_greater_than_hundred
@@ -2176,7 +2174,7 @@ EOF
 		else
 			@report_type = "Patient(s) with adherence starting from  #{min_range}% to #{max_range}%"
 		end
-		render :layout => 'report'
+		render layout: 'report'
 		return
   end
 
@@ -2301,10 +2299,9 @@ EOF
   def report_dispensations_without_prescriptions_data(start_date , end_date)
     pills_dispensed_id      = ConceptName.find_by_name('PILLS DISPENSED').concept_id
 
-    missed_prescriptions_data = Observation.find(:all, :select =>  "person_id, value_drug, date_created",
-			:conditions =>["order_id IS NULL
-                                                AND date_created >= ? AND date_created <= ? AND
-                                                    concept_id = ? AND voided = 0" ,start_date , end_date, pills_dispensed_id])
+    missed_prescriptions_data = Observation.where(["order_id IS NULL AND date_created >= ? AND date_created <= ? AND
+         concept_id = ? AND voided = 0" ,start_date , end_date, pills_dispensed_id]
+    ).select("person_id, value_drug, date_created")
     dispensations_without_prescriptions = []
 
     missed_prescriptions_data.each do |dispensation|
@@ -2353,7 +2350,7 @@ EOF
   def report_dead_with_visits(start_date, end_date)
     patient_died_concept    = ConceptName.find_by_name('PATIENT DIED').concept_id
     program_id = Program.find_by_name('HIV program').id
-    died_state_ids = ProgramWorkflowState.find(:all, :conditions =>["concept_id = ?",
+    died_state_ids = ProgramWorkflowState.where(["concept_id = ?",
         patient_died_concept]).map(&:program_workflow_state_id)
 =begin
     all_dead_patients_with_visits = "SELECT *
@@ -2385,7 +2382,7 @@ EOF
 
     #raise death_dates[215580].inspect
 
-    patients = Patient.find(:all, :conditions =>["patient_id IN(?)", patient_ids]) rescue []
+    patients = Patient.where(["patient_id IN(?)", patient_ids]) rescue []
 
     patients_data  = []
     patients.each do |patient_data_row|
@@ -2659,7 +2656,8 @@ EOF
       person     = patient.person
       patient_bean = PatientService.get_patient(person)
       drug       = Drug.find(rate.drug_id)
-      pill_count = Observation.find(:first, :conditions => "order_id = #{rate.order_id} AND encounter_id = #{rate.encounter_id} AND concept_id = #{brought_drug_concept_id} ").value_numeric rescue ""
+      pill_count = Observation.where("order_id = #{rate.order_id} AND encounter_id = #{rate.encounter_id} AND concept_id = #{brought_drug_concept_id} "
+      ).first.value_numeric rescue ""
       if !patients[patient.patient_id] then
 
 				patients[patient.patient_id]={"id" =>patient.id,
@@ -2710,7 +2708,7 @@ EOF
     @end_date = (end_year + "-" + end_month + "-" + end_day).to_date.strftime('%d %B %Y')
 
 
-		render :layout => "report"
+		render layout: "report"
 	end
 
 	def tb_register
@@ -2725,7 +2723,9 @@ EOF
 		@total = Hash.new(0)
     @start_date = (start_year + "-" + start_month + "-" + start_day).to_date
     @end_date = (end_year + "-" + end_month + "-" + end_day).to_date
-		encounters = Encounter.find(:all, :conditions => ["encounter_type = ? and encounter_datetime >= ? and encounter_datetime <= ?", EncounterType.find_by_name("tb registration").id, @start_date, @end_date])
+		encounters = Encounter.where(["encounter_type = ? and encounter_datetime >= ? and
+          encounter_datetime <= ?", EncounterType.find_by_name("tb registration").id,
+        @start_date, @end_date])
 
     encounters.each do |enc|
 
@@ -2741,8 +2741,10 @@ EOF
     	person["address"] = enc.patient.person.addresses.first.city_village
     	person["person_id"] = enc.patient.id
     	person["name"] = enc.patient.person.names.first.given_name + ' ' + enc.patient.person.names.first.family_name rescue nil
-    	person["cough_duration"] =Concept.find(Observation.find(:last, :conditions => ["encounter_id = ? and concept_id = ? ", enc.id,ConceptName.find_by_name("Duration of current cough").concept_id]).value_coded).shortname rescue nil
-    	tbcat = Concept.find(Observation.find(:last, :conditions => ["encounter_id = ? and concept_id = ? ", enc.id,ConceptName.find_by_name("TB classification").concept_id]).value_coded).fullname
+    	person["cough_duration"] =Concept.find(Observation.where(["encounter_id = ? and concept_id = ? ",
+            enc.id,ConceptName.find_by_name("Duration of current cough").concept_id]).last.value_coded).shortname rescue nil
+    	tbcat = Concept.find(Observation.where(["encounter_id = ? and concept_id = ? ",
+            enc.id,ConceptName.find_by_name("TB classification").concept_id]).last.value_coded).fullname
 
     	if tbcat == "Pulmonary tuberculosis"
     		person["Category"] = "P"
@@ -2751,7 +2753,8 @@ EOF
 	    	person["Category"] = "EP"
 	    	@total["EP"] +=1
     	end
-    	dot = Concept.find(Observation.find(:last, :conditions => ["encounter_id = ? and concept_id = ?",enc.id,ConceptName.find_by_name("Directly observed treatment option").concept_id]).value_coded).shortname
+    	dot = Concept.find(Observation.where(["encounter_id = ? and concept_id = ?",
+            enc.id,ConceptName.find_by_name("Directly observed treatment option").concept_id]).last.value_coded).shortname
 
     	case dot.upcase
       when("GUARDIAN")
@@ -2766,7 +2769,8 @@ EOF
         person["DOT"] = "HCW"
     	end
 
-    	ptype = Concept.find(Observation.find(:last, :conditions => ["encounter_id = ? and concept_id = ? ", enc.id,ConceptName.find_by_name("TB patient category").concept_id]).value_coded).fullname
+    	ptype = Concept.find(Observation.where(["encounter_id = ? and concept_id = ? ",
+            enc.id,ConceptName.find_by_name("TB patient category").concept_id]).last.value_coded).fullname
 
     	case ptype.upcase
       when ("NEW PATIENT")
@@ -2802,7 +2806,9 @@ EOF
 		start = params[:start]
 		end_date = params[:end]
 
-		encounters = Encounter.find(:last, :conditions => ["encounter_type = ? and encounter_datetime >= ? and encounter_datetime <= ? and patient_id = ?", EncounterType.find_by_name("tb registration").id, start, end_date,id])
+		encounters = Encounter.where(["encounter_type = ? and encounter_datetime >= ? and
+        encounter_datetime <= ? and patient_id = ?",
+        EncounterType.find_by_name("tb registration").id, start, end_date,id]).last
 
     @values["hivstatus"] = PatientService.patient_hiv_status(encounters.patient)
 
@@ -2818,7 +2824,7 @@ EOF
       @values["arvnumber"] = PatientService.get_patient_identifier(encounters.patient, 'ARV Number')
 
 
-			startedcpt = Observation.find(:first,:conditions => ["concept_id = ?",ConceptName.find_by_name("cpt given")])
+			startedcpt = Observation.where(["concept_id = ?",ConceptName.find_by_name("cpt given")]).first
 
       if (startedcpt != nil)
         @values["cpt"] = "Started"
@@ -2840,7 +2846,8 @@ EOF
 
     culture_concepts = [ConceptName.find_by_name("Culture(1st) Results").concept_id,ConceptName.find_by_name("Culture-2 Results").concept_id]
 
-		culture = Observation.find(:all, :conditions => ["person_id = ? AND obs_datetime >= ? AND obs_datetime <= ? AND concept_id in (?)", id, start,end_date, culture_concepts], :limit => 2).each { |ob|
+		culture = Observation.where(["person_id = ? AND obs_datetime >= ? AND obs_datetime <= ?
+        AND concept_id in (?)", id, start,end_date, culture_concepts]).limit(2).each { |ob|
 			if Concept.find(ob.value_coded).fullname.to_s.include?"positive"
         @values["culture"] = "Positive"
         break
@@ -2899,8 +2906,9 @@ EOF
       end}
 
 
-    @values["outcome"] = Concept.find(Observation.find(:last, :conditions => ["concept_id = ?",ConceptName.find_by_name("TB treatment outcome").concept_id]).value_coded).fullname rescue nil
-		render :layout => "menu"
+    @values["outcome"] = Concept.find(Observation.where(["concept_id = ?",
+          ConceptName.find_by_name("TB treatment outcome").concept_id]).last.value_coded).fullname rescue nil
+		render layout: "menu"
 	end
 
 	def tb_register_summary
@@ -2908,7 +2916,8 @@ EOF
 		@start_date = params[:start].to_s.split(",")[0].to_date
 		@end_date = params[:start].to_s.split(",")[1].to_date
 		@total = Hash.new(0)
-		encounters = Encounter.find(:all, :conditions => ["encounter_type = ? and encounter_datetime >= ? and encounter_datetime <= ?", EncounterType.find_by_name("tb registration").id, @start_date, @end_date])
+		encounters = Encounter.where(["encounter_type = ? and encounter_datetime >= ? and encounter_datetime <= ?",
+        EncounterType.find_by_name("tb registration").id, @start_date, @end_date])
 
     encounters.each do |enc|
 			@total["total"] +=1
@@ -2917,7 +2926,8 @@ EOF
     	else
     		@total["Females"] +=1
     	end
-    	tbcat = Concept.find(Observation.find(:last, :conditions => ["encounter_id = ? and concept_id = ? ", enc.id,ConceptName.find_by_name("TB classification").concept_id]).value_coded).fullname
+    	tbcat = Concept.find(Observation.where(["encounter_id = ? and concept_id = ? ",
+            enc.id,ConceptName.find_by_name("TB classification").concept_id]).last.value_coded).fullname
 
     	if tbcat == "Pulmonary tuberculosis"
 
@@ -2926,7 +2936,8 @@ EOF
 
     	end
 
-    	ptype = Concept.find(Observation.find(:last, :conditions => ["encounter_id = ? and concept_id = ? ", enc.id,ConceptName.find_by_name("TB patient category").concept_id]).value_coded).fullname
+    	ptype = Concept.find(Observation.where(["encounter_id = ? and concept_id = ? ",
+            enc.id,ConceptName.find_by_name("TB patient category").concept_id]).last.value_coded).fullname
 
     	case ptype.upcase
       when ("NEW PATIENT")
@@ -2962,7 +2973,8 @@ EOF
 				elsif arvstart > enc.encounter_datetime.to_date.strftime(' %d- %b- %Y')
 					@total["statusB"] += 1
 				end
-				startedcpt = Observation.find(:first,:conditions => ["concept_id = ? and person_id = ?",ConceptName.find_by_name("CPT Started").concept_id,enc.patient.person.id])
+				startedcpt = Observation.where(["concept_id = ? and person_id = ?",
+            ConceptName.find_by_name("CPT Started").concept_id,enc.patient.person.id]).first
 
 				if (startedcpt != nil)
 					@total["cpt"] +=1
@@ -2989,7 +3001,9 @@ EOF
 
       culture_concepts = [ConceptName.find_by_name("Culture(1st) Results").concept_id,ConceptName.find_by_name("Culture-2 Results").concept_id]
 
-      culture = Observation.find(:all, :conditions => ["person_id = ? AND obs_datetime >= ? AND obs_datetime <= ? AND concept_id in (?)", enc.patient.patient_id, @start_date,@end_date, culture_concepts],:limit=>2)
+      culture = Observation.where(["person_id = ? AND obs_datetime >= ? AND obs_datetime <= ? AND
+      concept_id in (?)", enc.patient.patient_id, @start_date,@end_date, culture_concepts]).limit(2)
+
       if (Concept.find(culture[0].value_coded).fullname.to_s.include?"positive") || (Concept.find(culture[1].value_coded).fullname.to_s.include?"positive")
 				@total["culture"] +=1
       end rescue nil
@@ -3018,7 +3032,10 @@ EOF
 					break
    			end}
 
-			pattbstatus = PatientProgram.find(:first, :conditions => ["program_id = ? and patient_id = ? and date_enrolled >=  ?", Program.find_by_name("TB Program").program_id, enc.patient.patient_id, enc.encounter_datetime]).patient_states.last.program_workflow_state.concept.shortname
+			pattbstatus = PatientProgram.where(["program_id = ? and patient_id = ? and
+            date_enrolled >=  ?", Program.find_by_name("TB Program").program_id,
+          enc.patient.patient_id, enc.encounter_datetime]
+      ).first.patient_states.last.program_workflow_state.concept.shortname
 
 			case pattbstatus
       when ("Patient cured")
@@ -3036,7 +3053,7 @@ EOF
 			end
 
     end
-		render :layout => "summary"
+		render layout: "summary"
 	end
 
 	def tb_register_summary_specifics
@@ -3048,65 +3065,75 @@ EOF
 		case category
     when("by gender females")
       @title = "Female TB Patients"
-      encounters = Encounter.find(:all,
-        :joins => ["inner join person on encounter.patient_id = person.person_id "],
-        :conditions => ["encounter_type = ? and encounter_datetime >= ? and encounter_datetime <= ? and person.gender = ?", EncounterType.find_by_name("tb registration").id, start, end_date, "F"])
+      encounters = Encounter.joins(["inner join person on encounter.patient_id = person.person_id "]).where(
+        ["encounter_type = ? and encounter_datetime >= ? and encounter_datetime <= ? and person.gender = ?",
+          EncounterType.find_by_name("tb registration").id, start, end_date, "F"])
 
     when("by gender males")
       @title = "Male TB Patients"
-      encounters = Encounter.find(:all,
-        :joins => ["inner join person on encounter.patient_id = person.person_id "],
-        :conditions => ["encounter_type = ? and encounter_datetime >= ? and encounter_datetime <= ? and person.gender = ?", EncounterType.find_by_name("tb registration").id, start, end_date, "M"])
+      encounters = Encounter.joins(["inner join person on encounter.patient_id = person.person_id "]).where(
+        ["encounter_type = ? and encounter_datetime >= ? and encounter_datetime <= ? and person.gender = ?",
+          EncounterType.find_by_name("tb registration").id, start, end_date, "M"])
 
     when("by tbclass pul")
       @title = "Pulmonary TB Patients"
-      encounters = Encounter.find(:all,
-        :joins => ["inner join obs on encounter.encounter_id = obs.encounter_id"],
-        :conditions => ["encounter_type = ? and encounter_datetime >= ? and encounter_datetime <= ? and obs.concept_id = ? and obs.value_coded = ?", EncounterType.find_by_name("tb registration").id, start, end_date, ConceptName.find_by_name("TB classification").concept_id,ConceptName.find_by_name("Pulmonary tuberculosis").concept_id ])
+      encounters = Encounter.joins(["inner join obs on encounter.encounter_id = obs.encounter_id"]).where(
+        ["encounter_type = ? and encounter_datetime >= ? and encounter_datetime <= ? and obs.concept_id = ? and
+        obs.value_coded = ?", EncounterType.find_by_name("tb registration").id, start, end_date,
+          ConceptName.find_by_name("TB classification").concept_id,
+          ConceptName.find_by_name("Pulmonary tuberculosis").concept_id ])
 
     when("by tbclass EP")
       @title = "Extra Pulmonary TB Patients"
-      encounters = Encounter.find(:all,
-        :joins => ["inner join obs on encounter.encounter_id = obs.encounter_id"],
-        :conditions => ["encounter_type = ? and encounter_datetime >= ? and encounter_datetime <= ? and obs.concept_id = ? and obs.value_coded != ?", EncounterType.find_by_name("tb registration").id, start, end_date, ConceptName.find_by_name("TB classification").concept_id,ConceptName.find_by_name("Pulmonary tuberculosis").concept_id ])
+      encounters = Encounter.joins(["inner join obs on encounter.encounter_id = obs.encounter_id"]).where(
+        ["encounter_type = ? and encounter_datetime >= ? and encounter_datetime <= ? and obs.concept_id = ? and
+           obs.value_coded != ?", EncounterType.find_by_name("tb registration").id, start, end_date,
+            ConceptName.find_by_name("TB classification").concept_id,
+            ConceptName.find_by_name("Pulmonary tuberculosis").concept_id ])
 
     when("by patclass new")
       @title = "New TB Patients"
-      encounters = Encounter.find(:all,
-        :joins => ["inner join obs on encounter.encounter_id = obs.encounter_id"],
-        :conditions => ["encounter_type = ? and encounter_datetime >= ? and encounter_datetime <= ? and obs.concept_id = ? and obs.value_coded = ?", EncounterType.find_by_name("tb registration").id, start, end_date, ConceptName.find_by_name("TB patient category").concept_id, ConceptName.find_by_name("new patient").concept_id ])
+      encounters = Encounter.joins(["inner join obs on encounter.encounter_id = obs.encounter_id"]).where(
+        ["encounter_type = ? and encounter_datetime >= ? and encounter_datetime <= ? and obs.concept_id = ? and
+          obs.value_coded = ?", EncounterType.find_by_name("tb registration").id, start, end_date,
+          ConceptName.find_by_name("TB patient category").concept_id, ConceptName.find_by_name("new patient").concept_id ])
 
     when("by patclass def")
       @title = "TB Patients being treated after defualt"
-      encounters = Encounter.find(:all,
-        :joins => ["inner join obs on encounter.encounter_id = obs.encounter_id"],
-        :conditions => ["encounter_type = ? and encounter_datetime >= ? and encounter_datetime <= ? and obs.concept_id = ? and obs.value_coded = ?", EncounterType.find_by_name("tb registration").id, start, end_date, ConceptName.find_by_name("TB patient category").concept_id, ConceptName.find_by_name("Treatment after default MDR-TB patient").concept_id ])
+      encounters = Encounter.joins(["inner join obs on encounter.encounter_id = obs.encounter_id"]).where(
+        ["encounter_type = ? and encounter_datetime >= ? and encounter_datetime <= ? and obs.concept_id = ? and
+          obs.value_coded = ?", EncounterType.find_by_name("tb registration").id, start, end_date,
+            ConceptName.find_by_name("TB patient category").concept_id,
+            ConceptName.find_by_name("Treatment after default MDR-TB patient").concept_id ])
 
     when("by patclass fail")
       @title = "TB Patients being treated after failure"
-      encounters = Encounter.find(:all,
-        :joins => ["inner join obs on encounter.encounter_id = obs.encounter_id"],
-        :conditions => ["encounter_type = ? and encounter_datetime >= ? and encounter_datetime <= ? and obs.concept_id = ? and obs.value_coded = ?", EncounterType.find_by_name("tb registration").id, start, end_date, ConceptName.find_by_name("TB patient category").concept_id, ConceptName.find_by_name("Failed - TB").concept_id ])
+      encounters = Encounter.joins(["inner join obs on encounter.encounter_id = obs.encounter_id"]).where(
+        ["encounter_type = ? and encounter_datetime >= ? and encounter_datetime <= ? and obs.concept_id = ? and
+          obs.value_coded = ?", EncounterType.find_by_name("tb registration").id, start, end_date,
+          ConceptName.find_by_name("TB patient category").concept_id, ConceptName.find_by_name("Failed - TB").concept_id ])
 
     when("by patclass rel")
 			@title = "TB Patients being treated after relapse"
-      encounters = Encounter.find(:all,
-        :joins => ["inner join obs on encounter.encounter_id = obs.encounter_id"],
-        :conditions => ["encounter_type = ? and encounter_datetime >= ? and encounter_datetime <= ? and obs.concept_id = ? and obs.value_coded = ?", EncounterType.find_by_name("tb registration").id, start, end_date, ConceptName.find_by_name("TB patient category").concept_id, ConceptName.find_by_name("Relapse MDR-TB patient").concept_id ])
+      encounters = Encounter.joins(["inner join obs on encounter.encounter_id = obs.encounter_id"]).where(
+        ["encounter_type = ? and encounter_datetime >= ? and encounter_datetime <= ? and obs.concept_id = ? and
+          obs.value_coded = ?", EncounterType.find_by_name("tb registration").id, start, end_date,
+          ConceptName.find_by_name("TB patient category").concept_id,
+          ConceptName.find_by_name("Relapse MDR-TB patient").concept_id ])
 
     when("by patclass other")
       @title = "Other TB Patients "
       concepts = [ConceptName.find_by_name("new patient").concept_id,ConceptName.find_by_name("Treatment after default MDR-TB patient").concept_id,ConceptName.find_by_name("Failed - TB").concept_id,ConceptName.find_by_name("Relapse MDR-TB patient").concept_id]
 
-      encounters = Encounter.find(:all,
-        :joins => ["inner join obs on encounter.encounter_id = obs.encounter_id"],
-        :conditions => ["encounter_type = ? and encounter_datetime >= ? and encounter_datetime <= ? and obs.concept_id = ? and obs.value_coded NOT in (?)", EncounterType.find_by_name("tb registration").id, start, end_date, ConceptName.find_by_name("TB patient category").concept_id, concepts ])
+      encounters = Encounter.joins(["inner join obs on encounter.encounter_id = obs.encounter_id"]).where(
+        ["encounter_type = ? and encounter_datetime >= ? and encounter_datetime <= ? and obs.concept_id = ? and
+          obs.value_coded NOT in (?)", EncounterType.find_by_name("tb registration").id, start, end_date,
+          ConceptName.find_by_name("TB patient category").concept_id, concepts ])
 
     when("hivneg")
       @title = "HIV Negative TB Patients"
       encounters = []
-      encounter = Encounter.find(:all,
-        :conditions => ["encounter_type = ? and encounter_datetime >= ? and encounter_datetime <= ?",
+      encounter = Encounter.where(["encounter_type = ? and encounter_datetime >= ? and encounter_datetime <= ?",
           EncounterType.find_by_name("tb registration").id, start, end_date]).map do |enc|
         if (PatientService.patient_hiv_status(enc.patient) == "Negative")
 					encounters << enc
@@ -3116,8 +3143,7 @@ EOF
     when("hivpos")
       @title = "HIV Positive TB Patients"
       encounters = []
-      encounter = Encounter.find(:all,
-        :conditions => ["encounter_type = ? and encounter_datetime >= ? and encounter_datetime <= ?",
+      encounter = Encounter.where(["encounter_type = ? and encounter_datetime >= ? and encounter_datetime <= ?",
           EncounterType.find_by_name("tb registration").id, start, end_date]).map do |enc|
         if (PatientService.patient_hiv_status(enc.patient) == "Positive")
 					encounters << enc
@@ -3127,8 +3153,7 @@ EOF
     when("hivunk")
       @title = "TB Patients with Unknown HIV Status"
       encounters = []
-      encounter = Encounter.find(:all,
-        :conditions => ["encounter_type = ? and encounter_datetime >= ? and encounter_datetime <= ?",
+      encounter = Encounter.where(["encounter_type = ? and encounter_datetime >= ? and encounter_datetime <= ?",
           EncounterType.find_by_name("tb registration").id, start, end_date]).map do |enc|
         if (PatientService.patient_hiv_status(enc.patient) == "Unknown")
 					encounters << enc
@@ -3138,8 +3163,7 @@ EOF
     when("hivtestb4")
       @title = "Patients with HIV Status from Before TB Registration"
       encounters = []
-      encounter = Encounter.find(:all,
-        :conditions => ["encounter_type = ? and encounter_datetime >= ? and encounter_datetime <= ?",
+      encounter = Encounter.where(["encounter_type = ? and encounter_datetime >= ? and encounter_datetime <= ?",
           EncounterType.find_by_name("tb registration").id, start, end_date]).map do |enc|
         if (PatientService.hiv_test_date(enc.patient.person.id) < enc.encounter_datetime )
 					encounters << enc
@@ -3149,8 +3173,7 @@ EOF
     when("hivtestafta")
       @title = "Patients with HIV Status from After TB Registration"
       encounters = []
-      encounter = Encounter.find(:all,
-        :conditions => ["encounter_type = ? and encounter_datetime >= ? and encounter_datetime <= ?",
+      encounter = Encounter.where(["encounter_type = ? and encounter_datetime >= ? and encounter_datetime <= ?",
           EncounterType.find_by_name("tb registration").id, start, end_date]).map do |enc|
         if (PatientService.hiv_test_date(enc.patient.person.id) > enc.encounter_datetime )
 					encounters << enc
@@ -3160,8 +3183,7 @@ EOF
 		when("artstartafta")
       @title = "Patients Who Started ART After TB Registration"
       encounters = []
-      encounter = Encounter.find(:all,
-        :conditions => ["encounter_type = ? and encounter_datetime >= ? and encounter_datetime <= ?",
+      encounter = Encounter.where(["encounter_type = ? and encounter_datetime >= ? and encounter_datetime <= ?",
           EncounterType.find_by_name("tb registration").id, start, end_date]).map do |enc|
         if (PatientService.patient_art_start_date(enc.patient.patient_id) > enc.encounter_datetime.to_date )
 					encounters << enc
@@ -3171,8 +3193,7 @@ EOF
 		when("artstartb4")
       @title = "Patients Who Started ART Before TB Registration"
       encounters = []
-      encounter = Encounter.find(:all,
-        :conditions => ["encounter_type = ? and encounter_datetime >= ? and encounter_datetime <= ?",
+      encounter = Encounter.where(["encounter_type = ? and encounter_datetime >= ? and encounter_datetime <= ?",
           EncounterType.find_by_name("tb registration").id, start, end_date]).map do |enc|
         if (PatientService.patient_art_start_date(enc.patient.patient_id) < enc.encounter_datetime.to_date )
 					encounters << enc
@@ -3182,8 +3203,7 @@ EOF
 		when("artnotstart")
       @title = "Patients Who Started ART Before TB Registration"
       encounters = []
-      encounter = Encounter.find(:all,
-        :conditions => ["encounter_type = ? and encounter_datetime >= ? and encounter_datetime <= ?",
+      encounter = Encounter.where(["encounter_type = ? and encounter_datetime >= ? and encounter_datetime <= ?",
           EncounterType.find_by_name("tb registration").id, start, end_date]).map do |enc|
         if ((PatientService.patient_hiv_status(enc.patient) == "Positive") && (PatientService.patient_art_start_date(enc.patient.patient_id) == nil))
 					encounters << enc
@@ -3194,10 +3214,9 @@ EOF
 
       @title = "Patients Who Started Have Started CPT"
       encounters = []
-      encounter = Encounter.find(:all,
-        :conditions => ["encounter_type = ? and encounter_datetime >= ? and encounter_datetime <= ?",
+      encounter = Encounter.where(["encounter_type = ? and encounter_datetime >= ? and encounter_datetime <= ?",
           EncounterType.find_by_name("tb registration").id, start, end_date]).map do |enc|
-        if ((PatientService.patient_hiv_status(enc.patient) == "Positive") && (Observation.find(:first,:conditions => ["concept_id = ? and person_id = ?",ConceptName.find_by_name("CPT Started").concept_id, enc.patient.patient_id]) != nil))
+        if ((PatientService.patient_hiv_status(enc.patient) == "Positive") && (Observation.where(["concept_id = ? and person_id = ?",ConceptName.find_by_name("CPT Started").concept_id, enc.patient.patient_id]).first != nil))
 					encounters << enc
         end rescue nil
       end
@@ -3206,9 +3225,12 @@ EOF
 
       @title = "Patients Who Died While in Treatment"
 			encounters = []
-			encounter = Encounter.find(:all,:conditions => ["encounter_type = ? and encounter_datetime >= ? and encounter_datetime <= ?",	EncounterType.find_by_name("tb registration").id, start, end_date]).map do |enc|
+			encounter = Encounter.where(["encounter_type = ? and encounter_datetime >= ? and encounter_datetime <= ?",
+          EncounterType.find_by_name("tb registration").id, start, end_date]).map do |enc|
 
-        if( PatientProgram.find(:first, :conditions => ["program_id = ? and patient_id = ? and date_enrolled >=  ?", Program.find_by_name("TB Program").program_id, enc.patient.patient_id, enc.encounter_datetime]).patient_states.last.program_workflow_state.concept.shortname == "Patient died")
+        if (PatientProgram.where(["program_id = ? and patient_id = ? and date_enrolled >=  ?",
+                Program.find_by_name("TB Program").program_id, enc.patient.patient_id, enc.encounter_datetime]
+            ).first.patient_states.last.program_workflow_state.concept.shortname == "Patient died")
 					encounters << enc
 				end
 			end rescue nil
@@ -3216,9 +3238,12 @@ EOF
 		when("cured")
 			@title = "Patients Who Were Cured"
 			encounters = []
-			encounter = Encounter.find(:all,:conditions => ["encounter_type = ? and encounter_datetime >= ? and encounter_datetime <= ?",	EncounterType.find_by_name("tb registration").id, start, end_date]).map do |enc|
+			encounter = Encounter.where(["encounter_type = ? and encounter_datetime >= ? and encounter_datetime <= ?",
+          EncounterType.find_by_name("tb registration").id, start, end_date]).map do |enc|
 
-        if( PatientProgram.find(:first, :conditions => ["program_id = ? and patient_id = ? and date_enrolled >=  ?", Program.find_by_name("TB Program").program_id, enc.patient.patient_id, enc.encounter_datetime]).patient_states.last.program_workflow_state.concept.shortname == "Patient cured")
+        if (PatientProgram.where(["program_id = ? and patient_id = ? and date_enrolled >=  ?",
+                Program.find_by_name("TB Program").program_id, enc.patient.patient_id, enc.encounter_datetime]
+            ).first.patient_states.last.program_workflow_state.concept.shortname == "Patient cured")
 					encounters << enc
 				end
 			end rescue nil
@@ -3226,9 +3251,12 @@ EOF
 		when("transfered")
 			@title = "Patients Who Were Transferred Out"
 			encounters = []
-			encounter = Encounter.find(:all,:conditions => ["encounter_type = ? and encounter_datetime >= ? and encounter_datetime <= ?",	EncounterType.find_by_name("tb registration").id, start, end_date]).map do |enc|
+			encounter = Encounter.where(["encounter_type = ? and encounter_datetime >= ? and encounter_datetime <= ?",
+          EncounterType.find_by_name("tb registration").id, start, end_date]).map do |enc|
 
-        if( PatientProgram.find(:first, :conditions => ["program_id = ? and patient_id = ? and date_enrolled >=  ?", Program.find_by_name("TB Program").program_id, enc.patient.patient_id, enc.encounter_datetime]).patient_states.last.program_workflow_state.concept.shortname == "Patient transferred out")
+        if (PatientProgram.where(["program_id = ? and patient_id = ? and date_enrolled >=  ?",
+                Program.find_by_name("TB Program").program_id, enc.patient.patient_id, enc.encounter_datetime]
+            ).first.patient_states.last.program_workflow_state.concept.shortname == "Patient transferred out")
 					encounters << enc
 				end
 			end rescue nil
@@ -3236,9 +3264,12 @@ EOF
 		when("treatment complete")
 			@title = "Patients Who Completed Treatment"
 			encounters = []
-			encounter = Encounter.find(:all,:conditions => ["encounter_type = ? and encounter_datetime >= ? and encounter_datetime <= ?",	EncounterType.find_by_name("tb registration").id, start, end_date]).map do |enc|
+			encounter = Encounter.where(["encounter_type = ? and encounter_datetime >= ? and encounter_datetime <= ?",
+          EncounterType.find_by_name("tb registration").id, start, end_date]).map do |enc|
 
-        if( PatientProgram.find(:first, :conditions => ["program_id = ? and patient_id = ? and date_enrolled >=  ?", Program.find_by_name("TB Program").program_id, enc.patient.patient_id, enc.encounter_datetime]).patient_states.last.program_workflow_state.concept.shortname == "Treatment complete")
+        if (PatientProgram.where(["program_id = ? and patient_id = ? and date_enrolled >=  ?",
+                Program.find_by_name("TB Program").program_id, enc.patient.patient_id, enc.encounter_datetime]
+            ).first.patient_states.last.program_workflow_state.concept.shortname == "Treatment complete")
           encounters << enc
 				end
 			end rescue nil
@@ -3246,9 +3277,12 @@ EOF
 		when("defaulted")
 			@title = "Patients Who Defualted Treatment"
 			encounters = []
-			encounter = Encounter.find(:all,:conditions => ["encounter_type = ? and encounter_datetime >= ? and encounter_datetime <= ?",	EncounterType.find_by_name("tb registration").id, start, end_date]).map do |enc|
+			encounter = Encounter.where(["encounter_type = ? and encounter_datetime >= ? and encounter_datetime <= ?",
+          EncounterType.find_by_name("tb registration").id, start, end_date]).map do |enc|
 
-        if( PatientProgram.find(:first, :conditions => ["program_id = ? and patient_id = ? and date_enrolled >=  ?", Program.find_by_name("TB Program").program_id, enc.patient.patient_id, enc.encounter_datetime]).patient_states.last.program_workflow_state.concept.shortname == "z_deprecated Patient defaulted")
+        if (PatientProgram.where(["program_id = ? and patient_id = ? and date_enrolled >=  ?",
+                Program.find_by_name("TB Program").program_id, enc.patient.patient_id, enc.encounter_datetime]
+            ).first.patient_states.last.program_workflow_state.concept.shortname == "z_deprecated Patient defaulted")
           encounters << enc
 				end
 			end rescue nil
@@ -3256,9 +3290,12 @@ EOF
 		when("failed")
 			@title = "Patients With Failed Treatment"
 			encounters = []
-			encounter = Encounter.find(:all,:conditions => ["encounter_type = ? and encounter_datetime >= ? and encounter_datetime <= ?",	EncounterType.find_by_name("tb registration").id, start, end_date]).map do |enc|
+			encounter = Encounter.where(["encounter_type = ? and encounter_datetime >= ? and encounter_datetime <= ?",
+          EncounterType.find_by_name("tb registration").id, start, end_date]).map do |enc|
 
-        if( PatientProgram.find(:first, :conditions => ["program_id = ? and patient_id = ? and date_enrolled >=  ?", Program.find_by_name("TB Program").program_id, enc.patient.patient_id, enc.encounter_datetime]).patient_states.last.program_workflow_state.concept.shortname == "Regimen failure")
+        if (PatientProgram.where(["program_id = ? and patient_id = ? and date_enrolled >=  ?",
+                Program.find_by_name("TB Program").program_id, enc.patient.patient_id, enc.encounter_datetime]
+            ).first.patient_states.last.program_workflow_state.concept.shortname == "Regimen failure")
           encounters << enc
 				end
 			end rescue nil
@@ -3266,7 +3303,8 @@ EOF
 		when ("Smear+ve1")
 			@title = "Patients with Smear +ve Results at Initiation "
 			encounters = []
-			encounter = Encounter.find(:all,:conditions => ["encounter_type = ? and encounter_datetime >= ? and encounter_datetime <= ?",	EncounterType.find_by_name("tb registration").id, start, end_date]).map do |enc|
+			encounter = Encounter.where(["encounter_type = ? and encounter_datetime >= ? and encounter_datetime <= ?",
+          EncounterType.find_by_name("tb registration").id, start, end_date]).map do |enc|
 
         sputum_results = sputum_results_at_reg(enc.encounter_datetime.to_date + 60 , enc.patient.patient_id)
         sputum_results.each { |obs|
@@ -3279,7 +3317,8 @@ EOF
 		when ("Smear+ve2")
 			@title = "Patients with Smear +ve Results at Month 2"
 			encounters = []
-			encounter = Encounter.find(:all,:conditions => ["encounter_type = ? and encounter_datetime >= ? and encounter_datetime <= ?",	EncounterType.find_by_name("tb registration").id, start, end_date]).map do |enc|
+			encounter = Encounter.where(["encounter_type = ? and encounter_datetime >= ? and encounter_datetime <= ?",
+          EncounterType.find_by_name("tb registration").id, start, end_date]).map do |enc|
 
         sputum_results = sputum_results_after_reg(enc.encounter_datetime, enc.patient.patient_id,60)
         sputum_results.each { |obs|
@@ -3292,14 +3331,16 @@ EOF
 		when ("Smear+ve5")
 			@title = "Patients with Smear +ve Results at Month 5"
 			encounters = []
-			encounter = Encounter.find(:all,:conditions => ["encounter_type = ? and encounter_datetime >= ? and encounter_datetime <= ?",	EncounterType.find_by_name("tb registration").id, start, end_date]).map do |enc|
+			encounter = Encounter.where(["encounter_type = ? and encounter_datetime >= ? and encounter_datetime <= ?",
+          EncounterType.find_by_name("tb registration").id, start, end_date]).map do |enc|
         date = enc.encounter_datetime + 60.days
         sputum_results = sputum_results_after_reg(date, enc.patient.patient_id,150)
         sputum_results.each { |obs|
           if obs.value_coded != ConceptName.find_by_name("Negative").id
             encounters << enc
             break
-          end}
+          end
+          }
  			end
 
 
@@ -3324,17 +3365,20 @@ EOF
   def sputum_results_at_reg(registration_date, patient_id)
     sputum_concept_names = ["AAFB(1st) results", "AAFB(2nd) results",
       "AAFB(3rd) results"]
-    sputum_concept_ids = ConceptName.find(:all, :conditions => ["name IN (?)",
+    sputum_concept_ids = ConceptName.where(["name IN (?)",
         sputum_concept_names]).map(&:concept_id)
-    obs = Observation.find(:all,:conditions => ["person_id = ? AND value_coded != ? AND concept_id IN (?) AND obs_datetime <= ?",patient_id,ConceptName.find_by_name("Negative").id ,sputum_concept_ids, registration_date], :limit => 3)
+    obs = Observation.where(["person_id = ? AND value_coded != ? AND concept_id IN (?) AND obs_datetime <= ?",
+        patient_id,ConceptName.find_by_name("Negative").id ,sputum_concept_ids, registration_date]).limit(3)
   end
 
   def sputum_results_after_reg(registration_date, patient_id,add)
     sputum_concept_names = ["AAFB(1st) results", "AAFB(2nd) results",
       "AAFB(3rd) results"]
-    sputum_concept_ids = ConceptName.find(:all, :conditions => ["name IN (?)",
+    sputum_concept_ids = ConceptName.where(["name IN (?)",
         sputum_concept_names]).map(&:concept_id)
-    obs = Observation.find(:all,:conditions => ["person_id = ? AND value_coded != ? AND concept_id IN (?) AND obs_datetime > ? AND obs_datetime <= ?",patient_id,ConceptName.find_by_name("Negative").id ,sputum_concept_ids, registration_date, registration_date + add.days], :limit => 3)
+    obs = Observation.where(["person_id = ? AND value_coded != ? AND concept_id IN (?) AND obs_datetime > ? AND
+        obs_datetime <= ?",patient_id,ConceptName.find_by_name("Negative").id ,
+        sputum_concept_ids, registration_date, registration_date + add.days]).limit(3)
   end
 
   def check_encounter(patient_id, encounter_date, encounter)
@@ -3772,7 +3816,7 @@ ActiveRecord::Base.connection.execute <<EOF
 DROP table IF EXISTS above_18_years;
 EOF
 =end
-    render :layout => "report"
+    render layout: "report"
   end
 
 

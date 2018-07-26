@@ -120,7 +120,7 @@ EOF
       }
     end
     
-    render :text => results.to_json
+    render text: results.to_json
   end
 
   def get_patient_outcomes
@@ -149,7 +149,7 @@ EOF
       }
     end
 
-    render :text => outcomes.to_json
+    render text: outcomes.to_json
   end
 
 
@@ -259,7 +259,7 @@ EOF
       :family_planning   =>  "#{family_palnning_quarter} %",
       :bp_screening      =>  "#{bp_screen_patients_percent} %"}
     
-    render :text => results.to_json
+    render text: results.to_json
   end
 
   def get_total_pregnant_and_breastfeeding
@@ -353,7 +353,7 @@ EOF
         :other_patient              =>  this_other_patient}
     end
 
-    render :text => female_patients.to_json
+    render text: female_patients.to_json
   end
 
   def get_patients_alive_and_ART_details
@@ -466,7 +466,7 @@ EOF
         :patient_art_adherence  =>  this_patient_adherence
       }
     end
-    render :text => patients_alive_and_ART_details.to_json
+    render text: patients_alive_and_ART_details.to_json
 
   end
 
