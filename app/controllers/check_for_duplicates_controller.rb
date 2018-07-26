@@ -1,8 +1,9 @@
 class CheckForDuplicatesController < ApplicationController
   def view
-    local_person = Person.find(:first,:joins => "INNER JOIN patient_identifier i
-      ON i.patient_id = person.person_id AND i.voided = 0 AND person.voided=0",
-      :conditions => ["identifier = ?",params[:identifier]])
+    local_person = Person.joins("INNER JOIN patient_identifier i
+      ON i.patient_id = person.person_id AND i.voided = 0 AND person.voided=0").where(
+      ["identifier = ?",params[:identifier]]
+    ).first
 
     @local_person = PatientService.demographics(local_person)
 
@@ -14,11 +15,11 @@ class CheckForDuplicatesController < ApplicationController
   end
 
   def remote_app_search
-    person = Person.find(:first,:joins => "INNER JOIN patient_identifier i
+    person = Person.joins("INNER JOIN patient_identifier i
       ON i.patient_id = person.person_id AND i.voided = 0 AND person.voided=0
-      INNER JOIN person_name n ON n.person_id=person.person_id AND n.voided = 0",
-      :conditions => ["identifier = ? AND NOT (n.given_name = ? AND n.family_name = ? AND gender = ?)",
-      params[:identifier],params[:given_name],params[:family_name],params[:gender]])
+      INNER JOIN person_name n ON n.person_id=person.person_id AND n.voided = 0").where(
+      ["identifier = ? AND NOT (n.given_name = ? AND n.family_name = ? AND gender = ?)",
+      params[:identifier],params[:given_name],params[:family_name],params[:gender]]).first
 
     unless person.blank?
       demographics = PatientService.demographics(person)
@@ -43,22 +44,21 @@ class CheckForDuplicatesController < ApplicationController
     #setting default user
     User.current = User.first
 
-    patient = Patient.find(:first,:joins =>"INNER JOIN patient_identifier i ON i.patient_id = patient.patient_id",
-      :conditions =>["identifier = ?",params[:identifier]])
+    patient = Patient.joins("INNER JOIN patient_identifier i ON i.patient_id = patient.patient_id").where(
+      ["identifier = ?",params[:identifier]]).first
 
     Location.current_location = Location.current_health_center
     PatientIdentifierType.find_by_name('National ID').next_identifier({:patient => patient})
 
-    npid = PatientIdentifier.find(:first,
-      :conditions => ["patient_id = ? AND identifier = ?
-           AND voided = 0", patient.id,params[:identifier]])
+    npid = PatientIdentifier.where(["patient_id = ? AND identifier = ?
+           AND voided = 0", patient.id,params[:identifier]]).first
     npid.voided = 1
     npid.void_reason = "Given another national ID"
     npid.date_voided = Time.now()
     npid.save
 
-    new_id = PatientIdentifier.find(:first,:conditions =>["patient_id = ? AND identifier_type = ?",
-      patient.id,PatientIdentifierType.find_by_name('National ID').id]).identifier
+    new_id = PatientIdentifier.where(["patient_id = ? AND identifier_type = ?",
+      patient.id,PatientIdentifierType.find_by_name('National ID').id]).first.identifier
 
     render :text => new_id.to_s and return
   end
@@ -113,14 +113,13 @@ class CheckForDuplicatesController < ApplicationController
 
 
   def local_print
-    patient = Patient.find(:first,:joins=>"INNER JOIN patient_identifier i ON i.patient_id = patient.patient_id",
-      :conditions =>["identifier = ?",params[:identifier]])
+    patient = Patient.joins("INNER JOIN patient_identifier i ON i.patient_id = patient.patient_id").where(
+      ["identifier = ?",params[:identifier]]).first
 
     PatientIdentifierType.find_by_name('National ID').next_identifier({:patient => patient})
 
-    npid = PatientIdentifier.find(:first,
-      :conditions => ["patient_id = ? AND identifier = ?
-           AND voided = 0", patient.id,params[:identifier]])
+    npid = PatientIdentifier.where(["patient_id = ? AND identifier = ?
+           AND voided = 0", patient.id,params[:identifier]]).first
     npid.voided = 1
     npid.void_reason = "Given another national ID"
     npid.date_voided = Time.now()

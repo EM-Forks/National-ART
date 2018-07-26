@@ -1,9 +1,9 @@
 class ApplicationController < GenericApplicationController
   def national_lims_activated
-    if !File.exists?("#{Rails.root}/config/lims.yml")
+    if !File.exists?("#{Rails.root.to_s}/config/lims.yml")
       return false
     end
-    settings = YAML.load_file("#{Rails.root}/config/lims.yml")[Rails.env]
+    settings = YAML.load_file("#{Rails.root.to_s}/config/lims.yml")[Rails.env]
     enabled = settings['enable_lims']
 
     begin
@@ -15,7 +15,7 @@ class ApplicationController < GenericApplicationController
   end
 
   def latest_lims_vl(patient)
-    settings = YAML.load_file("#{Rails.root}/config/lims.yml")[Rails.env]
+    settings = YAML.load_file("#{Rails.root.to_s}/config/lims.yml")[Rails.env]
     national_id_type = PatientIdentifierType.find_by_name("National id").id
     npid = patient.patient_identifiers.find_by_identifier_type(national_id_type).identifier
     url = settings['lims_national_dashboard_ip'] + "/api/vl_result_by_npid?npid=#{npid}&test_status=verified__reviewed"

@@ -11,11 +11,12 @@ class BriefReportController < ApplicationController
 		@quarter = "#{q_from} #{year}"
 		@quart = "#{q_to} #{year}"
 
-		@display_result = ReportingReportDesignResource.find(:all, :select => ["name,contents,description"],
-			:conditions => ["description = ? or description = ?", @quarter,@quart])
+		@display_result = ReportingReportDesignResource.where(
+      ["description = ? or description = ?", @quarter,@quart]
+    ).select(["name,contents,description"])
 		@results = @display_result.to_json
 
-	 	render :layout => "report"
+	 	render layout: "report"
 	end
 
 	def bfrief_report
