@@ -142,7 +142,7 @@
     <div class="dtable">
       <div class="drow">
         <div class="dcell name">
-          <div class="gender"><%= image_tag "male.gif", :id => 'fetched_sex' %>
+          <div class="gender"><%= image_tag "/images/male.gif", :id => 'fetched_sex' %>
           </div>&nbsp;<span id='patient_name'></span>
         </div>
       </div>
@@ -276,10 +276,10 @@
 
 </body>
 
-<%= javascript_include_tag "Highcharts/js/jquery.min.js" %>
+<%= javascript_include_tag "/javascripts/Highcharts/js/jquery.min.js" %>
 
-<%= javascript_include_tag "Highcharts/js/highcharts" %>
-<%= javascript_include_tag "Highcharts/js/modules/exporting" %>
+<%= javascript_include_tag "/javascripts/Highcharts/js/highcharts" %>
+<%= javascript_include_tag "/javascripts/Highcharts/js/modules/exporting" %>
 <script type="text/javascript">
   var patientID = "<%=params[:found_person_id]%>";
   var years_elapsed_since_last_update;

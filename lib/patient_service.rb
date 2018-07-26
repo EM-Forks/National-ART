@@ -1592,15 +1592,16 @@ module PatientService
   end
 
   def self.reason_for_art_eligibility(patient)
-=begin
-    reasons = patient.person.observations.recent(1).question("REASON FOR ART ELIGIBILITY").all rescue nil
-    reasons.map{|c|ConceptName.find(c.value_coded_name_id).name}.join(',') rescue nil
-=end
-    reason_for_art = ActiveRecord::Base.connection.select_one <<EOF
-      SELECT patient_reason_for_starting_art_text(#{patient.patient_id}) reason;
-EOF
 
-    return reason_for_art['reason']
+    reasons = patient.person.observations.recent(1).question("REASON FOR ART ELIGIBILITY").all rescue nil
+    reason = reasons.map{|c|ConceptName.find(c.value_coded_name_id).name}.join(',') rescue nil
+
+    #reason_for_art = ActiveRecord::Base.connection.select_one <<EOF
+      #SELECT patient_reason_for_starting_art_text(#{patient.patient_id}) reason;
+    #EOF
+
+
+    return reason
   end
 
   def self.patient_appointment_dates(patient, start_date, end_date = nil)
@@ -1758,7 +1759,7 @@ EOF
   end
 
   def self.patient_art_start_date(patient_id)
-    self.date_antiretrovirals_started(Patient.find(patient_id))
+    self.date_antiretrovirals_started(Patient.find(patient_id.id))
     #date = ActiveRecord::Base.connection.select_value <<EOF
     #SELECT patient_start_date(#{patient_id})
     #EOF
@@ -2204,39 +2205,41 @@ EOF
 
 	def self.create_from_form(params)
     return nil if params.blank?
+
 		address_params = params["addresses"]
 		names_params = params["names"]
 		patient_params = params["patient"]
-		params_to_process = params.reject{|key,value| key.match(/addresses|patient|names|relation|cell_phone_number|home_phone_number|office_phone_number|agrees_to_be_visited_for_TB_therapy|agrees_phone_text_for_TB_therapy|regiment_id|date_joined_military|military_rank/) }
-		birthday_params = params_to_process.reject{|key,value| key.match(/gender/) }
-		person_params = params_to_process.reject{|key,value| key.match(/birth_|age_estimate|occupation|identifiers/) }
 
-		if person_params["gender"].to_s == "Female"
+    params_to_process = params.reject{|key,value| key.match(/addresses|patient|names|relation|cell_phone_number|home_phone_number|office_phone_number|agrees_to_be_visited_for_TB_therapy|agrees_phone_text_for_TB_therapy|regiment_id|date_joined_military|military_rank/) }
+    birthday_params = params_to_process.reject{|key,value| key.match(/gender/) }
+    person_params = params_to_process.reject{|key,value| key.match(/birth_|age_estimate|occupation|identifiers/) }
+
+    if person_params["gender"].to_s == "Female"
       person_params["gender"] = 'F'
-		elsif person_params["gender"].to_s == "Male"
+    elsif person_params["gender"].to_s == "Male"
       person_params["gender"] = 'M'
-		end
+    end
 
-		person = Person.create(person_params)
+    person = Person.create(person_params.permit!)
 
-		unless birthday_params.empty?
-		  if birthday_params["birth_year"] == "Unknown"
+    unless birthday_params.empty?
+      if birthday_params["birth_year"] == "Unknown"
         self.set_birthdate_by_age(person, birthday_params["age_estimate"], person.session_datetime || Date.today)
-		  else
+      else
         self.set_birthdate(person, birthday_params["birth_year"], birthday_params["birth_month"], birthday_params["birth_day"])
-		  end
-		end
+      end
+    end
 
     unless person_params['birthdate_estimated'].blank?
       person.birthdate_estimated = person_params['birthdate_estimated'].to_i
     end
 
-		person.save
+    person.save
 
-		person.names.create(names_params)
-		person.addresses.create(address_params) unless address_params.empty? rescue nil
+    person.names.create(names_params.permit!)
+    person.addresses.create(address_params.permit!) unless address_params.empty? rescue nil
 
-		person.person_attributes.create(
+    person.person_attributes.create(
 		  :person_attribute_type_id => PersonAttributeType.find_by_name("Occupation").person_attribute_type_id,
 		  :value => params["occupation"]) unless params["occupation"].blank? rescue nil
 
@@ -2269,7 +2272,8 @@ EOF
     # TODO handle the birthplace attribute
 
 		if (!patient_params.nil?)
-		  patient = person.create_patient
+		  #patient = person.create_patient
+      patient = Patient.create(patient_id: person.id)
       params["identifiers"].each{|identifier_type_name, identifier|
         next if identifier.blank?
         identifier_type = PatientIdentifierType.find_by_name(identifier_type_name) || PatientIdentifierType.find_by_name("Unknown id")

@@ -924,8 +924,7 @@ EOF
       number = filing_number.first['number'] rescue 'N/A'
     
       next if number.blank? || number == 'N/A'   
-      count = PatientIdentifier.find(:all, 
-        :conditions =>["identifier = ? AND identifier_type = ?", 
+      count = PatientIdentifier.where(["identifier = ? AND identifier_type = ?",
           number, filing_number_identifier_type])
       
       next if count.length > 1
@@ -1032,8 +1031,7 @@ EOF
 
   def correct_tb_numbers
     @identifier_types = ["Legacy Pediatric id","National id","Legacy National id","Old Identification Number"]
-    identifier_types = PatientIdentifierType.find(:all,
-      :conditions=>["name IN (?)",@identifier_types]
+    identifier_types = PatientIdentifierType.where(["name IN (?)",@identifier_types]
     ).collect{| type |type.id }
 
     @patient = Patient.find(params[:patient_id] || params[:id])
@@ -1043,8 +1041,7 @@ EOF
 
       prefix = params[:tb_prefix].upcase
       session_date = "#{prefix}-TB #{current_date.year.to_s}"
-      patient_exists = PatientIdentifier.find(:all,
-        :conditions => ['identifier_type = ?
+      patient_exists = PatientIdentifier.where(['identifier_type = ?
                                          AND patient_id = ? AND voided = 0', params[:identifiers][0][:identifier_type].to_i , params[:patient_id]]).first
 
       if ! patient_exists.blank?
@@ -1212,14 +1209,12 @@ EOF
 
     if PatientService.art_patient?(patient)
       clinic_encounters = ["APPOINTMENT","HIV CLINIC CONSULTATION","VITALS","HIV STAGING",'ART ADHERENCE','DISPENSING','HIV CLINIC REGISTRATION']
-      clinic_encounter_ids = EncounterType.find(:all,:conditions => ["name IN (?)",clinic_encounters]).collect{| e | e.id }
-      first_encounter_date = patient.encounters.find(:first,
-        :order => 'encounter_datetime',
-        :conditions => ['encounter_type IN (?)',clinic_encounter_ids]).encounter_datetime.strftime("%d-%b-%Y") rescue 'Uknown'
+      clinic_encounter_ids = EncounterType.where(["name IN (?)",clinic_encounters]).collect{| e | e.id }
+      first_encounter_date = patient.encounters.where(['encounter_type IN (?)',clinic_encounter_ids]
+                                               ).order('encounter_datetime').first.encounter_datetime.strftime("%d-%b-%Y") rescue 'Uknown'
 
-      last_encounter_date = patient.encounters.find(:first,
-        :order => 'encounter_datetime DESC',
-        :conditions => ['encounter_type IN (?)',clinic_encounter_ids]).encounter_datetime.strftime("%d-%b-%Y") rescue 'Uknown'
+      last_encounter_date = patient.encounters.where(['encounter_type IN (?)',clinic_encounter_ids]
+      ).order('encounter_datetime DESC').first.encounter_datetime.strftime("%d-%b-%Y") rescue 'Uknown'
 
 
       art_start_date = PatientService.patient_art_start_date(patient.id).strftime("%d-%b-%Y") rescue 'Uknown'
@@ -1227,7 +1222,7 @@ EOF
       last_given_drugs = last_given_drugs.value_text rescue 'Uknown'
 
       program_id = Program.find_by_name('HIV PROGRAM').id
-      outcome = PatientProgram.find(:first,:conditions =>["program_id = ? AND patient_id = ?",program_id,patient.id],:order => "date_enrolled DESC")
+      outcome = PatientProgram.where(["program_id = ? AND patient_id = ?",program_id,patient.id]).order("date_enrolled DESC").first
       art_clinic_outcome = outcome.patient_states.last.program_workflow_state.concept.fullname rescue 'Unknown'
 
       date_tested_positive = patient.person.observations.recent(1).question("FIRST POSITIVE HIV TEST DATE").last rescue nil
@@ -1265,21 +1260,20 @@ EOF
 
     if PatientService.art_patient?(patient)
       clinic_encounters = ["APPOINTMENT","HIV CLINIC CONSULTATION","VITALS","HIV STAGING",'ART ADHERENCE','DISPENSING','HIV CLINIC REGISTRATION']
-      clinic_encounter_ids = EncounterType.find(:all,:conditions => ["name IN (?)",clinic_encounters]).collect{| e | e.id }
-      first_encounter_date = patient.encounters.find(:first,
-        :order => 'encounter_datetime',
-        :conditions => ['encounter_type IN (?)',clinic_encounter_ids]).encounter_datetime.strftime("%d-%b-%Y") rescue 'Uknown'
+      clinic_encounter_ids = EncounterType.where(["name IN (?)",clinic_encounters]).collect{| e | e.id }
+      first_encounter_date = patient.encounters.where(['encounter_type IN (?)',
+                                                       clinic_encounter_ids]).order('encounter_datetime').first.encounter_datetime.strftime("%d-%b-%Y") rescue 'Uknown'
 
-      last_encounter_date = patient.encounters.find(:first,
-        :order => 'encounter_datetime DESC',
-        :conditions => ['encounter_type IN (?)',clinic_encounter_ids]).encounter_datetime.strftime("%d-%b-%Y") rescue 'Uknown'
+      last_encounter_date = patient.encounters.where(['encounter_type IN (?)',
+                                                      clinic_encounter_ids]).order('encounter_datetime DESC').first.encounter_datetime.strftime("%d-%b-%Y") rescue 'Uknown'
 
       art_start_date = patient.art_start_date.strftime("%d-%b-%Y") rescue 'Uknown'
       last_given_drugs = patient.person.observations.recent(1).question("ARV REGIMENS RECEIVED ABSTRACTED CONSTRUCT").last rescue nil
       last_given_drugs = last_given_drugs.value_text rescue 'Uknown'
 
 			program_id = Program.find_by_name('HIV PROGRAM').id
-      outcome = PatientProgram.find(:first,:conditions =>["program_id = ? AND patient_id = ?",program_id,patient.id],:order => "date_enrolled DESC")
+      outcome = PatientProgram.where(["program_id = ? AND patient_id = ?",program_id,patient.id]
+                                     ).order("date_enrolled DESC").first
       art_clinic_outcome = outcome.patient_states.last.program_workflow_state.concept.fullname rescue 'Unknown'
 
       date_tested_positive = patient.person.observations.recent(1).question("FIRST POSITIVE HIV TEST DATE").last rescue nil
@@ -1442,9 +1436,8 @@ EOF
     else
       PatientIdentifierType.find_by_name('National ID').next_identifier({:patient => patient})
     end
-    npid = PatientIdentifier.find(:first,
-      :conditions => ["patient_id = ? AND identifier = ?
-           AND voided = 0", patient.id,params[:identifier]])
+    npid = PatientIdentifier.where(["patient_id = ? AND identifier = ?
+           AND voided = 0", patient.id,params[:identifier]]).first
     npid.voided = 1
     npid.void_reason = "Given another national ID"
     npid.date_voided = Time.now()
@@ -1471,12 +1464,10 @@ EOF
 
   def area_graph_adults
     @patient_bean = PatientService.get_patient(Person.find(params[:id]))
-    weight_obs = Observation.find(:all,:joins =>"INNER JOIN encounter USING(encounter_id)",
-      :conditions =>["patient_id=? AND encounter_type=?
-      AND concept_id=?",params[:id],EncounterType.find_by_name('Vitals').id,
-        ConceptName.find_by_name('WEIGHT (KG)').concept_id],
-      :group =>"Date(encounter_datetime)",
-      :order =>"encounter_datetime DESC")
+    weight_obs = Observation.where(["patient_id=? AND encounter_type=? AND concept_id=?",
+                                    params[:id],EncounterType.find_by_name('Vitals').id,
+        ConceptName.find_by_name('WEIGHT (KG)').concept_id]).joins(
+        "INNER JOIN encounter USING(encounter_id)").group("Date(encounter_datetime)").order("encounter_datetime DESC")
 
     @start_date = weight_obs.last.obs_datetime.to_date rescue Date.today
     @weights = [] ; weights = {} ; count = 1
@@ -1532,15 +1523,14 @@ EOF
   def get_initial_vital_signs
     patient_id = params[:patient_id]
     vitals = EncounterType.find_by_name('Vitals')
-    vital_reading = Encounter.find(:first, 
-      :conditions =>["encounter_type = ? AND patient_id = ?",
-        vitals.id, patient_id],:select =>"MIN(encounter_datetime) AS date, encounter_id")
+    vital_reading = Encounter.select("MIN(encounter_datetime) AS date, encounter_id").where(["encounter_type = ? AND patient_id = ?",
+        vitals.id, patient_id]).first
 
     begin 
       date = vital_reading['date'].to_date
       encounter_id = vital_reading['encounter_id'].to_i
 
-      obs = Observation.find(:all, :conditions =>["person_id = ? 
+      obs = Observation.where(["person_id = ?
         AND encounter_id = ? AND obs_datetime BETWEEN ? AND ?", 
           patient_id, encounter_id, date.strftime('%Y-%m-%d 00:00:00'),
           date.strftime('%Y-%m-%d 23:59:59')])
@@ -1573,26 +1563,22 @@ EOF
     patient_id = params[:patient_id]
     identifier_type = PatientIdentifierType.find_by_name('National ID')
 
-    nid = PatientIdentifier.find(:first,
-      :conditions => ["identifier_type = ? AND patient_id = ?",
-        identifier_type.id, patient_id]).identifier rescue 'N/A'
+    nid = PatientIdentifier.where(["identifier_type = ? AND patient_id = ?",
+        identifier_type.id, patient_id]).first.identifier rescue 'N/A'
 
     identifier_type = PatientIdentifierType.find_by_name('Filing number')
-    filing_number = PatientIdentifier.find(:first,
-      :conditions => ["identifier_type = ? AND patient_id = ?",
-        identifier_type.id, patient_id]).identifier rescue nil
+    filing_number = PatientIdentifier.where(["identifier_type = ? AND patient_id = ?",
+        identifier_type.id, patient_id]).first.identifier rescue nil
 
     if filing_number.blank?
       identifier_type = PatientIdentifierType.find_by_name('Archived filing number')
-      filing_number = PatientIdentifier.find(:first,
-        :conditions => ["identifier_type = ? AND patient_id = ?",
-          identifier_type.id, patient_id]).identifier rescue nil
+      filing_number = PatientIdentifier.where(["identifier_type = ? AND patient_id = ?",
+          identifier_type.id, patient_id]).first.identifier rescue nil
     end
 
     identifier_type = PatientIdentifierType.find_by_name('ARV Number')
-    arv_number = PatientIdentifier.find(:first,
-      :conditions => ["identifier_type = ? AND patient_id = ?",
-        identifier_type.id, patient_id]).identifier rescue nil
+    arv_number = PatientIdentifier.where(["identifier_type = ? AND patient_id = ?",
+        identifier_type.id, patient_id]).first.identifier rescue nil
 
 
     render :text => {
@@ -1683,18 +1669,17 @@ EOF
     patient_id = params[:patient_id]
     person_attribute_type = PersonAttributeType.find_by_name('Occupation')
 
-    occupation = PersonAttribute.find(:last,
-      :conditions => ["person_attribute_type_id = ? AND person_id = ?",
-        person_attribute_type.id, patient_id]).value rescue nil
+    occupation = PersonAttribute.where(["person_attribute_type_id = ? AND person_id = ?",
+        person_attribute_type.id, patient_id]).last.value rescue nil
 
     render :text => {:occupation =>occupation}.to_json
   end
 
   def get_guardian
     patient_id = params[:patient_id]
-    relationship = Relationship.find(:last,:conditions =>["person_a = ?", patient_id])
+    relationship = Relationship.where(["person_a = ?", patient_id]).last
     unless relationship.blank?
-      names = PersonName.find_last_by_person_id(relationship.person_b)
+      names = PersonName.find_by_person_id(relationship.person_b).last
       begin
         middle_name = names.middle_name unless names.middle_name.match(/N\/A|Unknown/i)
       rescue
@@ -1717,10 +1702,8 @@ EOF
   def get_agrees_to_followup
     patient_id = params[:patient_id]
     agrees_to_followup = ConceptName.find_by_name('Agrees to followup').concept_id
-
-    obs = Observation.find(:last,
-      :conditions =>["person_id = ? AND concept_id = ?",
-        patient_id, agrees_to_followup]).answer_string rescue nil
+    obs = Observation.where(["person_id = ? AND concept_id = ?",
+        patient_id, agrees_to_followup]).last.answer_string rescue nil
 
     render :text => {:agrees_to_followup => obs}.to_json
   end
@@ -1737,10 +1720,9 @@ EOF
     who_stage_criteria = ConceptName.find_by_name('Who stages criteria present').concept_id
     hiv_staging_type = EncounterType.find_by_name('HIV staging').id
 
-    hiv_staging = Encounter.find(:last,
-      :conditions =>["patient_id = ? AND encounter_type = ?",
-        patient_id, hiv_staging_type],
-      :select =>"DATE(MAX(encounter_datetime)) AS encounter_date, encounter_id")
+    hiv_staging = Encounter.select("DATE(MAX(encounter_datetime)) AS encounter_date, encounter_id").where(
+        ["patient_id = ? AND encounter_type = ?",
+        patient_id, hiv_staging_type]).last
 
     last_2_yrs  = 'N/A'
     eptb        = 'N/A'
@@ -1753,11 +1735,11 @@ EOF
       tb_current  = 'No'
       ks          = 'No'
 
-      obs = Observation.find(:all,
-        :joins => "INNER JOIN concept_name n ON n.concept_id = obs.value_coded AND n.voided = 0",
-        :conditions =>["person_id = ? AND obs.concept_id = ? AND encounter_id = ?",
-          patient_id, who_stage_criteria, hiv_staging['encounter_id']],
-        :select => "n.name tb_stat, obs_datetime, value_text answer")
+      obs = Observation.select("n.name tb_stat, obs_datetime, value_text answer").where(
+          ["person_id = ? AND obs.concept_id = ? AND encounter_id = ?",
+          patient_id, who_stage_criteria, hiv_staging['encounter_id']]).joins(
+          "INNER JOIN concept_name n ON n.concept_id = obs.value_coded AND n.voided = 0")
+
     
       (obs || []).each do |ob|
         name = ob['tb_stat']
@@ -1785,13 +1767,11 @@ EOF
     test_date = ConceptName.find_by_name('Confirmatory HIV test date').concept_id
     test_location = ConceptName.find_by_name('Confirmatory HIV test location').concept_id
 
-    test_date = Observation.find(:last,
-      :conditions =>["person_id = ? AND concept_id = ?",
-        patient_id, test_date]).value_datetime.to_date.strftime('%d/%b/%Y') rescue 'N/A'
+    test_date = Observation.where(["person_id = ? AND concept_id = ?",
+        patient_id, test_date]).last.value_datetime.to_date.strftime('%d/%b/%Y') rescue 'N/A'
 
-    test_location = Observation.find(:last,
-      :conditions =>["person_id = ? AND concept_id = ?",
-        patient_id, test_location]).value_text rescue nil
+    test_location = Observation.where(["person_id = ? AND concept_id = ?",
+        patient_id, test_location]).last.value_text rescue nil
 
     render :text => {:test_date => test_date, :test_location => test_location}.to_json
   end
@@ -1801,17 +1781,17 @@ EOF
 
     begin
       concept_id = ConceptName.find_by_name('ART START DATE').concept_id
-      art_start_date = Observation.find(:last,
-        :conditions =>["person_id = ? AND concept_id = ?",
-          patient_id, concept_id], :select =>"value_datetime AS date_of_first_line")
+      art_start_date = Observation.select("value_datetime AS date_of_first_line"
+                             ).where(["person_id = ? AND concept_id = ?",
+          patient_id, concept_id]).last
       first_line_date = art_start_date['date_of_first_line'].to_date.strftime('%d/%b/%Y')
     rescue
       reg_category = ConceptName.find_by_name('Regimen Category').concept_id
       regimens = ['5A','6A','4P','4A','3P','3A','2A','2P','1A','1P','0A','0P']
 
-      latest_date = Observation.find(:first,
-        :conditions =>["person_id = ? AND concept_id = ? AND value_text IN(?)",
-          patient_id, reg_category, regimens], :select =>"MIN(obs_datetime) AS date_of_first_line")
+      latest_date = Observation.select("MIN(obs_datetime) AS date_of_first_line").where(
+          ["person_id = ? AND concept_id = ? AND value_text IN(?)",
+          patient_id, reg_category, regimens]).last
       first_line_date = latest_date['date_of_first_line'].to_date.strftime('%d/%b/%Y') rescue nil
     end
 
@@ -1821,12 +1801,10 @@ EOF
   def get_patient_weight_trail
     patient_id = params[:patient_id]
 
-    weight_obs = Observation.find(:all,:joins =>"INNER JOIN encounter USING(encounter_id)",
-      :conditions =>["patient_id=? AND encounter_type=?
+    weight_obs = Observation.where(["patient_id=? AND encounter_type=?
       AND concept_id=?",patient_id, EncounterType.find_by_name('Vitals').id,
-        ConceptName.find_by_name('WEIGHT (KG)').concept_id],
-      :group =>"Date(encounter_datetime)",
-      :order =>"encounter_datetime DESC")
+        ConceptName.find_by_name('WEIGHT (KG)').concept_id]).joins(
+        "INNER JOIN encounter USING(encounter_id)").group("Date(encounter_datetime)").order("encounter_datetime DESC")
 
     @start_date = weight_obs.last.obs_datetime.to_date rescue Date.today
     @weights = [] ; weights = {} ; count = 1
@@ -1879,11 +1857,11 @@ EOF
 
       date_vl_result_given = nil
       if ((data.last[2].downcase == 'reviewed') rescue false)
-        date_vl_result_given = Observation.find(:last, :conditions => ['person_id =? AND concept_id =? AND value_text
+        date_vl_result_given = Observation.where(['person_id =? AND concept_id =? AND value_text
                                                                          REGEXP ? AND DATE(obs_datetime) = ?',@patient.id,
             Concept.find_by_name('Viral load').concept_id,
             'Result given to patient', data.last[3].to_date]
-        ).value_datetime rescue nil
+        ).last.value_datetime rescue nil
 
         date_vl_result_given = data.last[3].to_date if date_vl_result_given.blank?
       end
@@ -1895,17 +1873,17 @@ EOF
       vl_latest_result = results[1]["TestValue"] rescue nil
       vl_modifier = results[1]["Range"] rescue nil
 
-      vl_request = Observation.find(:last, :conditions => ["person_id = ? AND concept_id = ? AND value_coded IS NOT NULL",
+      vl_request = Observation.where(["person_id = ? AND concept_id = ? AND value_coded IS NOT NULL",
           @patient.patient_id,
-          Concept.find_by_name("Viral load").concept_id]).answer_string.squish.upcase rescue nil
+          Concept.find_by_name("Viral load").concept_id]).last.answer_string.squish.upcase rescue nil
 
-      repeat_vl_request = Observation.find(:last, :conditions => ["person_id = ? AND concept_id = ?
+      repeat_vl_request = Observation.where(["person_id = ? AND concept_id = ?
                 AND value_text =?", @patient.patient_id, Concept.find_by_name("Viral load").concept_id,
-          "Repeat"]).answer_string.squish.upcase rescue nil
+          "Repeat"]).last.answer_string.squish.upcase rescue nil
 
-      date_vl_result_given = Observation.find(:last, :conditions => ["person_id =? AND concept_id =? AND value_text REGEXP ?",
+      date_vl_result_given = Observation.where(["person_id =? AND concept_id =? AND value_text REGEXP ?",
           @patient.patient_id, Concept.find_by_name("Viral load").concept_id,
-          'Result given to patient']).value_datetime.strftime("%d-%b-%Y") rescue nil
+          'Result given to patient']).last.value_datetime.strftime("%d-%b-%Y") rescue nil
 
       data = {}
       if vl_latest_result.blank?
@@ -1958,7 +1936,7 @@ EOF
   def update_person_address
     @patient = Patient.find(params[:patient_id])
     if request.post?
-      person_address = PersonAddress.find(:last, :conditions => ["person_id =?", params[:patient_id]])
+      person_address = PersonAddress.where(["person_id =?", params[:patient_id]]).last
       if person_address.blank?
         person_address = PersonAddress.new
         person_address.person_id = params[:patient_id]
@@ -1976,7 +1954,7 @@ EOF
   end
 
   def get_person_address
-    person_address = PersonAddress.find(:last, :conditions => ["person_id =?", params[:patient_id]])
+    person_address = PersonAddress.where(["person_id =?", params[:patient_id]]).last
     city_village = person_address.city_village rescue nil
     state_province = person_address.state_province rescue nil
     township_division = person_address.township_division rescue nil

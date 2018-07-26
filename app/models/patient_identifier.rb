@@ -8,7 +8,7 @@ class PatientIdentifier < ActiveRecord::Base
 
   include Openmrs
 
-  belongs_to :type, ->{where(voided:0)},class_name: :PatientIdentifierType, foreign_key: :identifier_type
+  belongs_to :type, ->{where(retired:0)},class_name: :PatientIdentifierType, foreign_key: :identifier_type
   belongs_to :patient,->{where(voided:0)}, class_name: :Patient, foreign_key: :patient_id
 
   def self.calculate_checkdigit(number)
