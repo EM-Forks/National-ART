@@ -16,31 +16,31 @@ module Openmrs
     base.extend(ClassMethods)
     base.assign_scopes
   end
-  def before_save
-    super
-    self.changed_by = User.current.id if self.attribute_method?("changed_by") and User.current != nil
 
-    self.changed_by = User.first if self.attribute_method?("changed_by") and User.current.nil?
-    
-    self.date_changed = Time.now if self.attribute_method?("date_changed")
+  def before_save
+
+    self.changed_by = User.current.id if self.has_attribute?("changed_by") and User.current != nil
+
+    self.changed_by = User.first if self.has_attribute?("changed_by") and User.current.nil?
+
+    self.date_changed = Time.now if self.has_attribute?("date_changed")
   end
 
   def before_create
-    super
 
     if !Person.migrated_datetime.to_s.empty?
-      self.location_id = Person.migrated_location if self.attribute_method?("location_id")
-      self.creator = Person.migrated_creator if self.attribute_method?("creator")
-      self.date_created = Person.migrated_datetime if self.attribute_method?("date_created")
+      self.location_id = Person.migrated_location if self.has_attribute?("location_id")
+      self.creator = Person.migrated_creator if self.has_attribute?("creator")
+      self.date_created = Person.migrated_datetime if self.has_attribute?("date_created")
     else
-      self.location_id = Location.current_health_center.id if self.attribute_method?("location_id") and (self.location_id.blank? || self.location_id == 0) and Location.current_health_center != nil
-      self.creator = User.current.id if self.attribute_method?("creator") and (self.creator.blank? || self.creator == 0)and User.current != nil
-      self.date_created = Time.now if self.attribute_method?("date_created")
+      self.location_id = Location.current_health_center.id if self.has_attribute?("location_id") and (self.location_id.blank? || self.location_id == 0) and Location.current_health_center != nil
+      self.creator = User.current.id if self.has_attribute?("creator") and (self.creator.blank? || self.creator == 0)and User.current != nil
+      self.date_created = Time.now if self.has_attribute?("date_created")
     end
 
-    self.uuid = ActiveRecord::Base.connection.select_one("SELECT UUID() as uuid")['uuid'] if self.attribute_method?("uuid")
+    self.uuid = ActiveRecord::Base.connection.select_one("SELECT UUID() as uuid")['uuid'] if self.has_attribute?("uuid")
   end
-  
+
   # Override this
   def after_void(reason = nil)
   end
@@ -57,7 +57,7 @@ module Openmrs
   end
 
   def voided?
-    self.attribute_method?("voided") ? voided == 1 : raise("Model does not support voiding")
+    self.has_attribute?("voided") ? voided == 1 : raise("Model does not support voiding")
   end 
   
   def add_location_obs
@@ -69,5 +69,4 @@ module Openmrs
     obs.obs_datetime = self.encounter_datetime
     obs.save
   end
-   
 end

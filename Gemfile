@@ -69,3 +69,4 @@ gem 'tzinfo-data', platforms: [:mingw, :mswin, :x64_mingw, :jruby]
 gem 'fastercsv'
 gem 'passenger'
 gem 'pdfkit'
+gem 'mechanize'

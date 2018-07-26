@@ -1,5 +1,5 @@
 class GenericPatientsController < ApplicationController
-  before_filter :find_patient, :except => [:void]
+  before_action :find_patient, :except => [:void]
 
   def show
 
@@ -19,7 +19,7 @@ class GenericPatientsController < ApplicationController
     @prescriptions = @patient.orders.unfinished.prescriptions.all
     @programs = @patient.patient_programs.all
     @alerts = alerts(@patient, session_date) rescue nil
-    @restricted = ProgramLocationRestriction.all(:conditions => {:location_id => Location.current_health_center.id })
+    @restricted = ProgramLocationRestriction.where(location_id:  Location.current_health_center.id)
     @restricted.each do |restriction|
       @encounters = restriction.filter_encounters(@encounters)
       @prescriptions = restriction.filter_orders(@prescriptions)
@@ -2685,16 +2685,15 @@ EOF
 
 
   def tb_status(patient, visit_date = Date.today)
-    state = Concept.find(Observation.find(:first, :order => "obs_datetime DESC, date_created DESC", :conditions => ["person_id = ? AND concept_id = ? AND DATE(obs_datetime) <= ? AND value_coded IS NOT NULL", patient.id, ConceptName.find_by_name("TB STATUS").concept_id, visit_date.to_date ]).value_coded).fullname rescue "Unknown"
+    state = Concept.find(Observation.where(["person_id = ? AND concept_id = ? AND DATE(obs_datetime) <= ? AND value_coded IS NOT NULL",
+                                                   patient.id, ConceptName.find_by_name("TB STATUS").concept_id,
+                                                   visit_date.to_date ]).order("obs_datetime DESC, date_created DESC").first.value_coded).fullname rescue "Unknown"
 
     program_id = Program.find_by_name('TB PROGRAM').id
-    patient_state = PatientState.find(:first,
-      :joins => "INNER JOIN patient_program p
-       ON p.patient_program_id = patient_state.patient_program_id",
-      :conditions =>["patient_state.voided = 0 AND p.voided = 0
+    patient_state = PatientState.where(["patient_state.voided = 0 AND p.voided = 0
        AND p.program_id = ? AND DATE(start_date) <= DATE('#{visit_date}') AND p.patient_id =?",
-        program_id,patient.id],
-      :order => "start_date DESC")
+        program_id,patient.id]).joins("INNER JOIN patient_program p  ON p.patient_program_id = patient_state.patient_program_id"
+                        ).order("start_date DESC").first
 
     return state if patient_state.blank?
     return ConceptName.find_by_concept_id(patient_state.program_workflow_state.concept_id).name

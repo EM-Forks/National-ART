@@ -1,4 +1,6 @@
 class PatientProgram < ActiveRecord::Base
+  before_save :before_save
+  before_create :before_create
   self.table_name = "patient_program"
   self.primary_key = "patient_program_id"
   include Openmrs

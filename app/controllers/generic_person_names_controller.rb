@@ -18,7 +18,8 @@ class GenericPersonNamesController < ApplicationController
   def search(field_name, search_string)
     #@names = PersonNameCode.find_most_common(field_name, search_string).collect{|person_name| person_name.send(field_name)}
     @names = PersonName.search(field_name, search_string).collect{|person_name| person_name.send(field_name)}
-    render :text => "<li>" + @names.map{|n| n } .join("</li><li>") + "</li>"
+    output = ("<li>" + @names.map{|n| n } .join("</li><li>") + "</li>").to_s.gsub(" ","")
+    render plain: output
   end
   
   def edit

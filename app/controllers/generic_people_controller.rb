@@ -638,16 +638,15 @@ class GenericPeopleController < ApplicationController
       home_district = @parameters[:person][:addresses]['address2']
       home_village = @parameters[:person][:addresses]['neighborhood_cell']
 
-      people = Person.find(:all,:joins =>"INNER JOIN person_name pn
-       ON person.person_id = pn.person_id
-       INNER JOIN person_name_code pnc ON pnc.person_name_id = pn.person_name_id
-       INNER JOIN person_address pad ON pad.person_id = person.person_id",
-        :conditions =>["(pad.address2 LIKE (?) OR pad.county_district LIKE (?)
-       OR pad.neighborhood_cell LIKE (?)) AND pnc.given_name_code LIKE (?)
-       AND pnc.family_name_code LIKE (?) AND person.gender = '#{gender}'
-       AND (person.birthdate >= ? AND person.birthdate <= ?)","%#{home_district}%",
+      people = Person.where(
+          ["(pad.address2 LIKE (?) OR pad.county_district LIKE (?)
+          OR pad.neighborhood_cell LIKE (?)) AND pnc.given_name_code LIKE (?)
+          AND pnc.family_name_code LIKE (?) AND person.gender = '#{gender}'
+          AND (person.birthdate >= ? AND person.birthdate <= ?)","%#{home_district}%",
           "%#{ta}%","%#{home_village}%","%#{given_name_code}%","%#{family_name_code}%",
-          start_birthdate,end_birthdate],:group => "person.person_id")
+          start_birthdate,end_birthdate]).joins("INNER JOIN person_name pn ON person.person_id = pn.person_id
+          INNER JOIN person_name_code pnc ON pnc.person_name_id = pn.person_name_id
+          INNER JOIN person_address pad ON pad.person_id = person.person_id").group("person.person_id")
 
       if people
         people_ids = []
@@ -687,8 +686,8 @@ class GenericPeopleController < ApplicationController
       #............................................................................
       #if params
       if not people_ids.blank? or not @dde_search_results.blank?
-        redirect_to :action => :create_confirm , :people_ids => people_ids ,
-          :user_entered_params => @parameters and return
+        redirect_to action: :create_confirm , people_ids: people_ids ,
+          user_entered_params: @parameters.permit! and return
       end
     end
 
@@ -1108,34 +1107,34 @@ EOF
     district_id = District.find_by_name("#{params[:filter_value]}").id
     traditional_authority_conditions = ["name LIKE (?) AND district_id = ?", "%#{params[:search_string]}%", district_id]
 
-    traditional_authorities = TraditionalAuthority.find(:all,:conditions => traditional_authority_conditions, :order => 'name')
+    traditional_authorities = TraditionalAuthority.where(traditional_authority_conditions).order(:name)
     traditional_authorities = traditional_authorities.map do |t_a|
       "<li value=\"#{t_a.name}\">#{t_a.name}</li>"
     end
-    render :text => traditional_authorities.join('') + "<li value='Other'>Other</li>" and return
+    render plain: traditional_authorities.join('') + "<li value='Other'>Other</li>" and return
   end
 
   # Regions containing the string given in params[:value]
   def region_of_origin
     region_conditions = ["name LIKE (?)", "#{params[:value]}%"]
 
-    regions = Region.find(:all,:conditions => region_conditions, :order => 'region_id')
+    regions = Region.where(region_conditions).order(:region_id)
     regions = regions.map do |r|
       "<li value=\"#{r.name}\">#{r.name}</li>"
     end
-    render :text => regions.join('')  and return
+    render plain: regions.join('')  and return
   end
 
   def region
     region_conditions = ["name LIKE (?)", "#{params[:value]}%"]
 
-    regions = Region.find(:all,:conditions => region_conditions, :order => 'region_id')
+    regions = Region.where(region_conditions).order(:region_id)
     regions = regions.map do |r|
       if r.name != "Foreign"
         "<li value=\"#{r.name}\">#{r.name}</li>"
       end
     end
-    render :text => regions.join('')  and return
+    render plain:  regions.join('')  and return
   end
 
   # Districts containing the string given in params[:value]
@@ -1143,19 +1142,19 @@ EOF
     region_id = Region.find_by_name("#{params[:filter_value]}").id
     region_conditions = ["name LIKE (?) AND region_id = ? ", "#{params[:search_string]}%", region_id]
 
-    districts = District.find(:all,:conditions => region_conditions, :order => 'name')
+    districts = District.where(region_conditions).order(:name)
     districts = districts.map do |d|
       "<li value=\"#{d.name}\">#{d.name}</li>"
     end
-    render :text => districts.join('') + "<li value='Other'>Other</li>" and return
+    render plain: districts.join('') + "<li value='Other'>Other</li>" and return
   end
 
   def tb_initialization_district
-    districts = District.find(:all, :order => 'name')
+    districts = District.all.order(:name)
     districts = districts.map do |d|
       "<li value=\"#{d.name}\">#{d.name}</li>"
     end
-    render :text => districts.join('') + "<li value='Other'>Other</li>" and return
+    render plain: districts.join('') + "<li value='Other'>Other</li>" and return
   end
 
 	def tb_initialization_location
@@ -1170,20 +1169,20 @@ EOF
     traditional_authority_id = TraditionalAuthority.find_by_name("#{params[:filter_value]}").id
     village_conditions = ["name LIKE (?) AND traditional_authority_id = ?", "%#{params[:search_string]}%", traditional_authority_id]
 
-    villages = Village.find(:all,:conditions => village_conditions, :order => 'name')
+    villages = Village.where(village_conditions).order(:name)
     villages = villages.map do |v|
       "<li value=\"" + v.name + "\">" + v.name + "</li>"
     end
-    render :text => villages.join('') + "<li value='Other'>Other</li>" and return
+    render plain: villages.join('') + "<li value='Other'>Other</li>" and return
   end
 
   # Landmark containing the string given in params[:value]
   def landmark
-    landmarks = PersonAddress.find(:all, :select => "DISTINCT address1" , :conditions => ["city_village = (?) AND address1 LIKE (?)", "#{params[:filter_value]}", "#{params[:search_string]}%"])
+    landmarks = PersonAddress.select("DISTINCT address1").where(["city_village = (?) AND address1 LIKE (?)", "#{params[:filter_value]}", "#{params[:search_string]}%"])
     landmarks = landmarks.map do |v|
       "<li value=\"#{v.address1}\">#{v.address1}</li>"
     end
-    render :text => landmarks.join('') + "<li value='Other'>Other</li>" and return
+    render plain: landmarks.join('') + "<li value='Other'>Other</li>" and return
   end
 
 =begin
