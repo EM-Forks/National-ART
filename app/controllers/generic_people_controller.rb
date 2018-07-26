@@ -1507,14 +1507,14 @@ EOF
     patient_id = params[:patient_id]
 
     person = Person.find(patient_id)
-    names = PersonName.find_last_by_person_id(patient_id)
+    names = PersonName.where(person_id: patient_id).last
     begin
       middle_name = names.middle_name unless names.middle_name.match(/N\/A|Unknown/i)
     rescue
       middle_name = nil
     end
 
-    render :text => {
+    render plain:  {
       :gender => person.gender, :age => person.age,
       :name => "#{names.given_name} #{middle_name} #{names.family_name}".squish,
       :birthdate => PatientService.birthdate_formatted(person)}.to_json
@@ -1581,7 +1581,7 @@ EOF
         identifier_type.id, patient_id]).first.identifier rescue nil
 
 
-    render :text => {
+    render plain: {
       :national_id => nid,
       :filing_number => filing_number,
       :arv_number => arv_number
@@ -1604,7 +1604,7 @@ AND p.patient_id = #{patient_id}
 GROUP BY p.patient_id;
 EOF
 
-    render :text => {
+    render plain: {
       :start_date => (date.first['earliest_start_date'].to_date.strftime('%d/%b/%Y') rescue nil)
     }.to_json
   end
@@ -1618,7 +1618,7 @@ EOF
       months = 'N/A'
     end
 
-    render :text => {
+    render plain: {
       :duration => months
     }.to_json
   end
@@ -1629,7 +1629,7 @@ EOF
       question("ART start date").all.\
       collect{|o| o.value_datetime }.last.to_date rescue []
 
-    render :text => {
+    render plain: {
       :transfer_in => transfer_in = (transfer_in_date.blank? == true ? 'No' : 'Yes'),
       :transfer_in_date => transfer_in_date
     }.to_json
@@ -1638,7 +1638,7 @@ EOF
   def get_patient_current_regimen
     patient_id = params[:patient_id]
     current_reg = Patient.find_by_sql("SELECT patient_current_regimen(#{patient_id}, current_date()) AS regimen;")
-    render :text => {
+    render plain: {
       :regimen => (current_reg.first['regimen'] rescue nil)
     }.to_json
   end
@@ -1654,13 +1654,13 @@ EOF
       landmark = 'Unknown'
     end
 
-    render :text => {:current_residence => phaddress, :landmark => landmark}.to_json 
+    render plain: {:current_residence => phaddress, :landmark => landmark}.to_json
   end
 
   def get_current_outcome
     patient_id = params[:patient_id]
     current_outcome = Patient.find_by_sql("SELECT patient_outcome(#{patient_id}, current_date()) AS outcome;")
-    render :text => {
+    render plain: {
       :outcome => (current_outcome.first['outcome'] rescue nil)
     }.to_json
   end
@@ -1672,7 +1672,7 @@ EOF
     occupation = PersonAttribute.where(["person_attribute_type_id = ? AND person_id = ?",
         person_attribute_type.id, patient_id]).last.value rescue nil
 
-    render :text => {:occupation =>occupation}.to_json
+    render plain: {:occupation =>occupation}.to_json
   end
 
   def get_guardian
@@ -1696,7 +1696,7 @@ EOF
       name = "#{name} (#{type})" unless type.blank? 
     end
     
-    render :text => {:guardian_name => name}.to_json
+    render plain: {:guardian_name => name}.to_json
   end
 
   def get_agrees_to_followup
@@ -1705,7 +1705,7 @@ EOF
     obs = Observation.where(["person_id = ? AND concept_id = ?",
         patient_id, agrees_to_followup]).last.answer_string rescue nil
 
-    render :text => {:agrees_to_followup => obs}.to_json
+    render plain: {:agrees_to_followup => obs}.to_json
   end
 
 
@@ -1758,7 +1758,7 @@ EOF
       end  
     end
 
-    render :text => {:ks => ks, :eptb => eptb, 
+    render plain: {:ks => ks, :eptb => eptb,
       :last_2_yrs => last_2_yrs, :tb_current => tb_current}.to_json
   end
 
@@ -1773,7 +1773,7 @@ EOF
     test_location = Observation.where(["person_id = ? AND concept_id = ?",
         patient_id, test_location]).last.value_text rescue nil
 
-    render :text => {:test_date => test_date, :test_location => test_location}.to_json
+    render plain: {:test_date => test_date, :test_location => test_location}.to_json
   end
  
   def get_date_of_first_line
@@ -1795,7 +1795,7 @@ EOF
       first_line_date = latest_date['date_of_first_line'].to_date.strftime('%d/%b/%Y') rescue nil
     end
 
-    render :text => {:first_line_date => first_line_date}.to_json
+    render plain: {:first_line_date => first_line_date}.to_json
   end
    
   def get_patient_weight_trail
@@ -1819,7 +1819,7 @@ EOF
       @weights << [date.to_date , weight]
     end
 
-    render :text => @weights.to_json
+    render plain:  @weights.to_json
   end
 
   def get_patient_next_task
@@ -1828,7 +1828,7 @@ EOF
     session_date = session[:datetime].to_date rescue Date.today
     task = main_next_task(Location.current_location, Patient.find(patient_id), session_date)
     next_url = next_task(patient)
-    render :text => {
+    render plain: {
       :task => task.encounter_type, :url => next_url
     }.to_json
   end
@@ -1914,13 +1914,13 @@ EOF
     @data["vl_date"] = vl_latest_date
     @data["vl_date_given"] = date_vl_result_given
     @data["results_available"] = results_available
-    render :text => @data.to_json and return
+    render plain: @data.to_json and return
   end
   
   def get_reason_for_starting_art
     patient_id = params[:patient_id]
     reason_for_art_eligibility = Patient.find_by_sql("SELECT patient_reason_for_starting_art_text(#{patient_id}) AS reason;")
-    render :text => {
+    render plain: {
       :reason_for_starting_art => (reason_for_art_eligibility.first['reason'] rescue nil)
     }.to_json
   end
@@ -1930,7 +1930,7 @@ EOF
     attribute_type = PersonAttributeType.find_by_name("Military Rank").id rescue ""
     person_attribute = person.person_attributes.find_by_person_attribute_type_id(attribute_type)
     value = person_attribute.value rescue ""
-    render :text => value and return
+    render plain: value and return
   end
 
   def update_person_address
@@ -1960,7 +1960,7 @@ EOF
     township_division = person_address.township_division rescue nil
 
     data = {"city_village" => city_village, "state_province" => state_province, "township_division" => township_division}
-    render :text => data.to_json and return
+    render plain: data.to_json and return
   end
 
   def address_still_valid
@@ -1975,7 +1975,7 @@ EOF
     date_changed = patient.person.date_addressed_changed.to_date
     today = Date.today
     years = ((today - date_changed) / 365).to_i
-    render :text => years and return
+    render plain: years and return
   end
 
 	private
