@@ -14,7 +14,7 @@
 
 </style>
 
-<%  form_tag :controller => "drug", :action => "create_new_drug_set" do |f| %>
+<%=  form_tag :controller => "drug", :action => "create_new_drug_set" do |f| %>
 
   <%= hidden_field_tag "set_id", params[:set_id] %>
   <%= hidden_field_tag "user_id", params[:user_id] %>

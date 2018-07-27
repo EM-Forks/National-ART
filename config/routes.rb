@@ -12,6 +12,9 @@ Rails.application.routes.draw do
   get '/:controller/:action/:id'
   post '/:controller/:action'
   get '/logout', controller: 'sessions', action: 'destroy'
+  get '/people', to: "clinic#index"
+
+  post '/:controller/:action/:id'
 
   resources :dispensations, collection: {quantities: :get}
   resources :barcodes, collection: {label: :get}

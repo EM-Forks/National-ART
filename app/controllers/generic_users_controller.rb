@@ -52,15 +52,15 @@ class GenericUsersController < ApplicationController
     role_conditions = ["role LIKE (?) AND role IN (?)",
                        "%#{params[:value]}%",
                        valid_roles.split(',')] if valid_roles
-    roles = Role.find(:all,:conditions => role_conditions)
+    roles = Role.where(role_conditions)
     roles = roles.map do |r|
       "<li value='#{r.role}'>#{r.role.gsub('_',' ').capitalize}</li>"
     end
-    render :text => roles.join('') and return
+    render plain: roles.join('') and return
   end
 
   def username
-    users = User.find(:all,:conditions => ["username LIKE (?)","%#{params[:username]}%"])
+    users = User.where(["username LIKE (?)","%#{params[:username]}%"])
 
     if params[:all_roles] and params[:all_roles] == '1'
       users = users.map{|u| "<li value='#{u.username}'>#{u.username}</li>" }
@@ -78,7 +78,7 @@ class GenericUsersController < ApplicationController
 
   def health_centres
     redirect_to(:controller => "patient", :action => "menu")
-    @health_centres = Location.find(:all,  :order => "name").map{|r|[r.name, r.location_id]}
+    @health_centres = Location.all.order("name").map{|r|[r.name, r.location_id]}
   end
 
   def list_clinicians
@@ -127,7 +127,7 @@ class GenericUsersController < ApplicationController
     unless params[:id].blank?
       @user = User.find(params[:id])
     else
-      @user = User.find(:first, :order => 'date_created DESC')
+      @user = User.all.order('date_created DESC').first
     end
     render :layout => 'menu'
   end
@@ -138,7 +138,7 @@ class GenericUsersController < ApplicationController
 
   def create
     session[:user_edit] = nil
-    existing_user = User.find(:first, :conditions => {:username => params[:user][:username]}) rescue nil
+    existing_user = User.whered(username: params[:user][:username]).first rescue nil
 
     if existing_user
       flash[:notice] = 'Username already in use'
@@ -161,10 +161,11 @@ class GenericUsersController < ApplicationController
     params[:user][:password] = params[:user][:plain_password]
     params[:user][:plain_password] = nil
     person = Person.create()
-    person.names.create(params[:person_name])
+    person.names.create(params[:person_name].permit!)
     params[:user][:user_id] = nil
-    @user = RawUser.new(params[:user])
+    @user = RawUser.new(params[:user].permit!)
     @user.person_id = person.id
+
     if @user.save
       # if params[:user_role_admin][:role] == "Yes"
       #  @roles = Array.new.push params[:user_role][:role_id]
@@ -176,9 +177,11 @@ class GenericUsersController < ApplicationController
       # user_role.save
       #}
       #else
-      @user.update_attributes(params[:user])
+      user_params = params[:user].reject!{|key,value| key.eql?("user_id")}
+      @user.update_attributes(user_params)
       user_role = UserRole.new
-      user_role.role = Role.find_by_role(params[:user_role][:role_id])
+
+      user_role.role = Role.find_by_role(params[:user_role][:role_id]).role
       user_role.user_id = @user.user_id
       user_role.save
       # end
@@ -204,7 +207,7 @@ class GenericUsersController < ApplicationController
       @user.update_attributes(:username => username)
     end
 
-    PersonName.find(:all,:conditions =>["voided = 0 AND person_id = ?",@user.person_id]).each do | person_name |
+    PersonName.where(["voided = 0 AND person_id = ?",@user.person_id]).each do | person_name |
       person_name.voided = 1
       person_name.voided_by = current_user.person_id
       person_name.date_voided = Time.now()
@@ -250,7 +253,7 @@ class GenericUsersController < ApplicationController
       redirect_to :action => "show"
     else
       user_roles = UserRole.find_all_by_user_id(@user.user_id).collect{|ur|ur.role.role}
-      all_roles = Role.find(:all).collect{|r|r.role}
+      all_roles = Role.all.collect{|r|r.role}
       @roles = (all_roles - user_roles)
       @show_super_user = true if UserRole.find_all_by_user_id(@user.user_id).collect{|ur|ur.role.role != "superuser" }
     end
@@ -259,10 +262,10 @@ class GenericUsersController < ApplicationController
   def delete_role
     @user = User.find(params[:id])
     unless request.post?
-      @roles = UserRole.find_all_by_user_id(@user.user_id).collect{|ur|ur.role.role}
+      @roles = UserRole.where(user_id: @user.user_id).collect{|ur|ur.role.role}
     else
       role = Role.find_by_role(params[:user_role][:role_id]).role
-      user_role =  UserRole.find_by_role_and_user_id(role,@user.user_id)
+      user_role =  UserRole.where({role: role,user_id: @user.user_id})
       user_role.destroy
       flash[:notice] = "You have successfuly removed the role of #{params[:user_role][:role_id]}"
       redirect_to :action =>"show"
@@ -291,7 +294,7 @@ class GenericUsersController < ApplicationController
       else
         params[:user][:password] = params[:user][:plain_password]
         params[:user][:plain_password] = nil
-        if @user.update_attributes(params[:user])
+        if @user.update_attributes(params[:user].permit!)
           flash[:notice] = "Password successfully changed"
           redirect_to :action => "show",:id => @user.id
           return
@@ -421,9 +424,9 @@ class GenericUsersController < ApplicationController
 
   def properties
     if request.post?
-      property = UserProperty.find(:first,
-                                   :conditions =>["property = ? AND user_id = ?",'preferred.keyboard',
-                                                  current_user.id])
+      property = UserProperty.where(
+                                   ["property = ? AND user_id = ?",'preferred.keyboard',
+                                                  current_user.id]).first
       if property.blank?
         property = UserProperty.new()
         property.user_id = current_user.id
@@ -443,12 +446,12 @@ class GenericUsersController < ApplicationController
   def set_user_role
     # Don't show tasks that have been disabled
     @user = User.find(params[:user_id])
-    @role=Role.find(:all).map(&:role)
-    @user_roles = UserRole.find(:all,:conditions =>["user_id = ?", @user.user_id]).map(&:role)
+    @role=Role.all.map(&:role)
+    @user_roles = UserRole.where(["user_id = ?", @user.user_id]).map(&:role)
   end
 
   def set_role_role
-    @roles = Role.find(:all).map(&:role)
+    @roles = Role.all.map(&:role)
   end
 
   def change_role
@@ -456,7 +459,7 @@ class GenericUsersController < ApplicationController
     new_roles = []
 
     new_roles = params[:user][:activities] if !params[:user][:activities].blank?
-    current_roles = UserRole.find(:all,:conditions =>["user_id = ?", @user_id]).map(&:role)
+    current_roles = UserRole.where(["user_id = ?", @user_id]).map(&:role)
 
     removed_roles = current_roles - new_roles
     new_roles -= current_roles
@@ -476,9 +479,9 @@ class GenericUsersController < ApplicationController
 
   def roles
     @role = params[:role_role]
-    @selected_role_roles = RoleRole.find(:all, :conditions => ["parent_role = ?", @role]).map(&:child_role)
+    @selected_role_roles = RoleRole.where(["parent_role = ?", @role]).map(&:child_role)
     @selected_role_roles = [] if @selected_role_roles.blank?
-    @roles = Role.find(:all).map(&:role) - [@role]
+    @roles = Role.all.map(&:role) - [@role]
   end
 
   def set_roles_for_role
@@ -486,7 +489,7 @@ class GenericUsersController < ApplicationController
     new_roles = []
 
     new_roles = params[:roles][:select_role] if !params[:roles][:select_role].blank?
-    current_roles = RoleRole.find(:all,:conditions =>["parent_role = ?", selected_role]).map(&:child_role)
+    current_roles = RoleRole.where(["parent_role = ?", selected_role]).map(&:child_role)
 
     removed_roles = current_roles - new_roles
     new_roles -= current_roles
@@ -505,12 +508,12 @@ class GenericUsersController < ApplicationController
   end
 
   def users
-    @users = User.find(:all)
+    @users = User.all
   end
 
   def merge_users
     @user = User.find_by_username(params[:user][:username])
-    @users = User.find(:all, :conditions => ["user_id != ? ", @user.user_id])
+    @users = User.where(["user_id != ? ", @user.user_id])
     render :layout => "menu"
   end
 
