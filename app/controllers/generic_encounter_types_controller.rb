@@ -1,6 +1,6 @@
 class GenericEncounterTypesController < ApplicationController
 	def index
-		role_privileges = RolePrivilege.find(:all,:conditions => ["role IN (?)", current_user_roles])
+		role_privileges = RolePrivilege.where(["role IN (?)", current_user_roles])
 		privileges = role_privileges.each.map{ |role_privilege_pair| role_privilege_pair["privilege"].humanize }
 	 
 		@encounter_privilege_map = CoreService.get_global_property_value("encounter_privilege_map").to_s rescue ''
@@ -19,8 +19,8 @@ class GenericEncounterTypesController < ApplicationController
 		roles_for_the_user = roles_for_the_user.uniq
 
 		# TODO add clever sorting
-		@encounter_types = EncounterType.find(:all).map{|enc|enc.name.gsub(/.*\//,"").gsub(/\..*/,"").humanize}
-		@available_encounter_types = Dir.glob(RAILS_ROOT+"/app/views/encounters/*.rhtml").map{|file|file.gsub(/.*\//,"").gsub(/\..*/,"").humanize}
+		@encounter_types = EncounterType.all.map{|enc|enc.name.gsub(/.*\//,"").gsub(/\..*/,"").humanize}
+		@available_encounter_types = Dir.glob(Rails.root.to_s + "/app/views/encounters/*.html.erb").map{|file|file.gsub(/.*\//,"").gsub(/\..*/,"").humanize}
 
 		@available_encounter_types -= @available_encounter_types - @encounter_types
 

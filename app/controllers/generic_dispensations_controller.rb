@@ -6,9 +6,8 @@ class GenericDispensationsController < ApplicationController
 		#@prescriptions = @patient.orders.current.prescriptions.all
 		type = EncounterType.find_by_name('TREATMENT')
 		session_date = session[:datetime].to_date rescue Date.today
-		@prescriptions = Order.find(:all,
-					     :joins => "INNER JOIN encounter e USING (encounter_id)", 
-					     :conditions => ["encounter_type = ? AND e.patient_id = ? AND DATE(encounter_datetime) = ?",
+		@prescriptions = Order.joins("INNER JOIN encounter e USING (encounter_id)").where(
+      ["encounter_type = ? AND e.patient_id = ? AND DATE(encounter_datetime) = ?",
 					     type.id,@patient.id,session_date]) 
 		@options = @prescriptions.map{|presc| [presc.drug_order.drug.name, presc.drug_order.drug_inventory_id]}
 	end
@@ -68,9 +67,7 @@ class GenericDispensationsController < ApplicationController
     @encounter = current_dispensation_encounter(@patient, session_date, user_person_id)
 
     @order = PatientService.current_treatment_encounter(@patient, session_date, 
-      user_person_id).drug_orders.find(:first,
-      :conditions => ['drug_order.drug_inventory_id = ?', 
-      params[:drug_id]]).order rescue []
+      user_person_id).drug_orders.where(['drug_order.drug_inventory_id = ?', params[:drug_id]]).first.order rescue []
 
     # Do we have an order for the specified drug?
 		if @order.blank?
@@ -96,9 +93,9 @@ class GenericDispensationsController < ApplicationController
 				duration = 0
 
 				if !estimate
-						regimen = Regimen.find(:first, :select => "regimen.*, regimen_drug_order.*", :joins => 'LEFT JOIN regimen_drug_order ON regimen.regimen_id = regimen_drug_order.regimen_id' ,
-												:conditions => ['min_weight <= ? AND max_weight > ?
-													AND program_id = 1 AND drug_inventory_id = ?', current_weight, current_weight, params[:drug_id]])
+						regimen = Regimen.joins("LEFT JOIN regimen_drug_order ON regimen.regimen_id = regimen_drug_order.regimen_id").where(
+              ['min_weight <= ? AND max_weight > ? AND program_id = 1 AND drug_inventory_id = ?', current_weight,
+                current_weight, params[:drug_id]]).select("regimen.*, regimen_drug_order.*").first
           if !regimen.blank?
             dose = regimen.dose
             frequency = regimen.frequency
@@ -164,16 +161,16 @@ class GenericDispensationsController < ApplicationController
       end
     end
 
-    @patient.patient_programs.find_last_by_program_id(Program.find_by_name("HIV PROGRAM")).transition(
+    @patient.patient_programs.where(["program_id =?", Program.find_by_name("HIV PROGRAM").id]).last.transition(
              :state => "On antiretrovirals",:start_date => session_date || Time.now()) if MedicationService.arv(@drug) rescue nil
 
-    @patient.patient_programs.find_last_by_program_id(Program.find_by_name("DIABETES PROGRAM")).transition(
+    @patient.patient_programs.where(["program_id =?", Program.find_by_name("DIABETES PROGRAM").id]).last.transition(
              :state => "On treatment",:start_date => session_date || Time.now()) if MedicationService.diabetes_medication(@drug) rescue nil
 
     @tb_programs = @patient.patient_programs.in_uncompleted_programs(['TB PROGRAM', 'MDR-TB PROGRAM'])
 
     if !@tb_programs.blank?
-      @patient.patient_programs.find_last_by_program_id(Program.find_by_name("TB PROGRAM")).transition(
+      @patient.patient_programs.where(["program_id =?", Program.find_by_name("TB PROGRAM").id]).last.transition(
              :state => "Currently in treatment",:start_date => session_date || Time.now()) if   MedicationService.tb_medication(@drug)
     end
 
@@ -183,8 +180,7 @@ class GenericDispensationsController < ApplicationController
     complete = dispensation_complete(@patient, @encounter, PatientService.current_treatment_encounter(@patient, session_date, user_person_id))
     
     encounter_ids = @patient.encounters.find_by_date(session_date).map(&:encounter_id)
-    observations = Observation.find(:all, 
-                      :conditions => ["encounter_id IN (?) AND voided = 0", encounter_ids])
+    observations = Observation.where(["encounter_id IN (?) AND voided = 0", encounter_ids])
                       
     @transfer_out_site = nil
     
@@ -194,7 +190,7 @@ class GenericDispensationsController < ApplicationController
     regimen_category_id = ConceptName.find_by_name('Regimen Category').concept_id
     regimen = MedicationService.get_arv_regimen(@patient.id, session_date).to_s.upcase
     if regimen != "UNKNOWN"
-       category = Observation.find(:all, :conditions => ["encounter_id = ? AND concept_id = ?", @encounter.id,regimen_category_id])
+       category = Observation.where(["encounter_id = ? AND concept_id = ?", @encounter.id,regimen_category_id])
        if category.blank?
           obs = Observation.new(
       :concept_id => regimen_category_id,
@@ -239,11 +235,7 @@ class GenericDispensationsController < ApplicationController
     # of pills brought to clinic and we should assume that the AMOUNT DISPENSED
     # observations more accurately represent pack sizes
     amounts = []
-    Observation.question("AMOUNT DISPENSED").all(
-      :conditions => {:value_drug => drug.drug_id},
-      :group => 'value_drug, value_numeric',
-      :order => 'count(*)',
-      :limit => '10').each do |obs|
+    Observation.question("AMOUNT DISPENSED").where({:value_drug => drug.drug_id}).order("count(*)").group("value_drug, value_numeric").limit(10).each do |obs|
       amounts << "#{obs.value_numeric.to_f}" unless obs.value_numeric.blank?
     end
     amounts = amounts.flatten.compact.uniq
@@ -252,7 +244,7 @@ class GenericDispensationsController < ApplicationController
 
   def current_dispensation_encounter(patient, date = Time.now(), provider = user_person_id)
     type = EncounterType.find_by_name("DISPENSING")
-    encounter = patient.encounters.find(:first,:conditions =>["DATE(encounter_datetime) = ? AND encounter_type = ?",date.to_date,type.id])
+    encounter = patient.encounters.where(["DATE(encounter_datetime) = ? AND encounter_type = ?",date.to_date,type.id]).first
     encounter ||= patient.encounters.create(:encounter_type => type.id,:encounter_datetime => date, :provider_id => provider)
   end
 
@@ -301,8 +293,7 @@ class GenericDispensationsController < ApplicationController
       drug_order = order.drug_order
       quantity = drug_order.quantity.to_f rescue 0.0
       if quantity == 0.0
-        value_numeric = Observation.find(:first, :conditions =>["order_id = ?
-          AND concept_id = ?",order.id, con_id]).value_numeric rescue 0
+        value_numeric = Observation.where(["order_id = ? AND concept_id = ?",order.id, con_id]).first.value_numeric rescue 0
         quantity = value_numeric.to_f rescue 0.0
       end
      
@@ -333,8 +324,7 @@ class GenericDispensationsController < ApplicationController
 		def all_orders_complete(patient, encounter_date)                               
 			type = EncounterType.find_by_name('TREATMENT').id                           
 
-			current_treatment_encounters = Encounter.find(:all,                                                  
-				:conditions =>["patient_id = ? AND encounter_datetime BETWEEN ? AND ?           
+			current_treatment_encounters = Encounter.where(["patient_id = ? AND encounter_datetime BETWEEN ? AND ?
 				AND encounter_type = ?",patient.id , 
 				encounter_date.to_date.strftime('%Y-%m-%d 00:00:00'),
 				encounter_date.to_date.strftime('%Y-%m-%d 23:59:59'), 

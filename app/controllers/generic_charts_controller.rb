@@ -4,7 +4,7 @@ class GenericChartsController < ApplicationController
     @patient = Patient.find(params[:patient_id])                                
     @patient_bean = PatientService.get_patient(@patient.person)                 
     @test = params[:type]                                     
-    render :layout => 'menu'
+    render layout: 'menu'
   end
 
 end

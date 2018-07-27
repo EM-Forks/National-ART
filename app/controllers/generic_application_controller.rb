@@ -94,7 +94,7 @@ class GenericApplicationController < ActionController::Base
 		@backtrace = exception.backtrace.join("\n") unless exception.nil?
 		logger.info @message
 		logger.info @backtrace
-		render :file => "#{Rails.root}/app/views/errors/error.rhtml", :layout=> false, :status => 404
+		render file: "#{Rails.root}/app/views/errors/error.html.erb", layout: false, status: 404
 	end if Rails.env == 'development' || Rails.env == 'test'
 
   def rescue_action(exception)
@@ -102,7 +102,7 @@ class GenericApplicationController < ActionController::Base
     @backtrace = exception.backtrace.join("\n") unless exception.nil?
     logger.info @message
     logger.info @backtrace
-    render :file => "#{Rails.env}/app/views/errors/error.rhtml", :layout=> false, :status => 404
+    render file: "#{Rails.env}/app/views/errors/error.html.erb", layout: false, status: 404
   end if Rails.env == 'production'
 
   def print_and_redirect(print_url, redirect_url, message = "Printing, please wait...", show_next_button = false, patient_id = nil)
@@ -111,7 +111,7 @@ class GenericApplicationController < ActionController::Base
     @message = message
     @show_next_button = show_next_button
     @patient_id = patient_id
-    render :template => 'print/print', :layout => nil
+    render template: 'print/print', layout: nil
   end
   
   def print_location_and_redirect(print_url, redirect_url, message = "Printing, please wait...", show_next_button = false, patient_id = nil)
@@ -119,7 +119,7 @@ class GenericApplicationController < ActionController::Base
     @redirect_url = redirect_url
     @message = message
     @show_next_button = show_next_button
-    render :template => 'print/print_location', :layout => nil
+    render template: 'print/print_location', layout: nil
   end
 
   def show_lab_results
@@ -176,7 +176,7 @@ class GenericApplicationController < ActionController::Base
 
   def concept_set(concept_name)
     concept_id = ConceptName.find_by_name(concept_name).concept_id
-    set = ConceptSet.find_all_by_concept_set(concept_id, :order => 'sort_weight')
+    set = ConceptSet.where(["concept_set =?", concept_id]).order("sort_weight")
     options = set.map{|item|next if item.concept.blank? ; [item.concept.fullname, item.concept.fullname] }
 
     return options
@@ -185,11 +185,11 @@ class GenericApplicationController < ActionController::Base
   def concept_set_diff(concept_name, exclude_concept_name)
     concept_id = ConceptName.find_by_name(concept_name).concept_id
     
-    set = ConceptSet.find_all_by_concept_set(concept_id, :order => 'sort_weight')
+    set = ConceptSet.where(["concept_set =?", concept_id]).order("sort_weight")
     options = set.map{|item|next if item.concept.blank? ; [item.concept.fullname, item.concept.fullname] }
 
     exclude_concept_id = ConceptName.find_by_name(exclude_concept_name).concept_id
-    exclude_set = ConceptSet.find_all_by_concept_set(exclude_concept_id, :order => 'sort_weight')
+    exclude_set = ConceptSet.where(["concept_set =?", exclude_concept_id]).order("sort_weight")
     exclude_options = exclude_set.map{|item|next if item.concept.blank? ; [item.concept.fullname, item.concept.fullname] }
 
     final_options = (options - exclude_options)
@@ -312,9 +312,9 @@ class GenericApplicationController < ActionController::Base
 
   def has_patient_been_on_art_before(patient)
     on_art = false
-    patient_states = PatientProgram.find(:first, :conditions => ["program_id = ? AND location_id = ? AND patient_id = ?",      
+    patient_states = PatientProgram.where(["program_id = ? AND location_id = ? AND patient_id = ?",
         Program.find_by_concept_id(Concept.find_by_name('HIV PROGRAM').id).id,
-        Location.current_health_center,patient.id]).patient_states rescue []
+        Location.current_health_center,patient.id]).first.patient_states rescue []
 
     (patient_states || []).each do |state|
       if state.program_workflow_state.concept.fullname.match(/antiretrovirals/i)

@@ -40,7 +40,7 @@ class GenericClinicController < ApplicationController
       ["Stock report","/drug/date_select"]
     ]
 
-    render :template => 'clinic/reports', :layout => 'clinic'
+    render template: 'clinic/reports', layout: 'clinic'
   end
 
   def supervision
@@ -51,7 +51,7 @@ class GenericClinicController < ApplicationController
 
     @landing_dashboard = 'clinic_supervision'
 
-    render :template => 'clinic/supervision', :layout => 'clinic'
+    render template: 'clinic/supervision', layout: 'clinic'
   end
 
   def properties
@@ -62,7 +62,7 @@ class GenericClinicController < ApplicationController
       ["Set site code", "/properties/site_code"],
       ["Set appointment limit", "/properties/set_appointment_limit"]
     ]
-    render :template => 'clinic/properties', :layout => 'clinic'
+    render template: 'clinic/properties', layout: 'clinic'
   end
 
   def management
@@ -74,15 +74,15 @@ class GenericClinicController < ApplicationController
       ["Removed from shelves","date_select"],
       ["Stock report","date_select"]
     ]
-    render :template => 'clinic/management', :layout => 'clinic'
+    render template: 'clinic/management', layout: 'clinic'
   end
 
   def printing
-    render :template => 'clinic/printing', :layout => 'clinic'
+    render template: 'clinic/printing', layout: 'clinic'
   end
 
   def users
-    render :template => 'clinic/users', :layout => 'clinic'
+    render template: 'clinic/users', layout: 'clinic'
   end
 
   def administration
@@ -92,7 +92,7 @@ class GenericClinicController < ApplicationController
       ['/clinic/location_management','Location Management']
     ]
     @landing_dashboard = 'clinic_administration'
-    render :template => 'clinic/administration', :layout => 'clinic'
+    render template: 'clinic/administration', layout: 'clinic'
   end
 
   def overview_tab
@@ -129,10 +129,10 @@ class GenericClinicController < ApplicationController
     @user = User.find(current_user.user_id).person.name rescue ""
 
     if simple_overview
-      render :template => 'clinic/overview_simple.html.erb' , :layout => false
+      render template: 'clinic/overview_simple.html.erb' , layout: false
       return
     end
-    render :layout => false
+    render layout: false
   end
 
   def viral_load_tab
@@ -202,7 +202,7 @@ class GenericClinicController < ApplicationController
 
     @data["available"] = @data["more_than_1000_not_given"] + @data["less_than_1000_not_given"]
 
-    render :layout => false
+    render layout: false
   end
 
   def reports_tab
@@ -249,7 +249,7 @@ class GenericClinicController < ApplicationController
       ["Diagnosis (By address)","/drug/date_select?goto=/report/age_group_select?type=diagnosis_by_address"],
       ["Diagnosis + demographics","/drug/date_select?goto=/report/age_group_select?type=diagnosis_by_demographics"]
     ] if Location.current_location.name.match(/Outpatient/i)
-    render :layout => false
+    render layout: false
   end
 
   def summarised_report
@@ -264,7 +264,7 @@ class GenericClinicController < ApplicationController
       ['Out of range ARV number' , '/cohort_tool/select?report_type=out_of_range_arv_number'],
       ['Data Consistency Check' , '/cohort_tool/data_consistency_check_menu']
     ]
-    render :layout => false
+    render layout: false
   end
 
   def properties_tab
@@ -285,7 +285,7 @@ class GenericClinicController < ApplicationController
     else
       @settings = []
     end
-    render :layout => false
+    render layout: false
   end
 
   def administration_tab
@@ -317,7 +317,7 @@ class GenericClinicController < ApplicationController
     end
 
     @landing_dashboard = 'clinic_administration'
-    render :layout => false
+    render layout: false
   end
 
   def pharmacy_error_correction_menu
@@ -331,7 +331,7 @@ class GenericClinicController < ApplicationController
       @drugs[drug_name] = "#{drug.short_name} #{drug.strength} "
     end
 
-    render :layout => "application"
+    render layout: "application"
   end
 
   def select_pharmacy_obs_date
@@ -340,9 +340,8 @@ class GenericClinicController < ApplicationController
     @key_value_data = {}
     @encounter_dates = []
 
-    pharmacy_observations = Pharmacy.find(:all, :conditions => ["drug_id =? AND value_text =?", drug.drug_id,
-        params[:verification]], :order => "encounter_date DESC"
-    )
+    pharmacy_observations = Pharmacy.where(["drug_id =? AND value_text =?", drug.drug_id,
+        params[:verification]]).order("encounter_date DESC")
 
     pharmacy_observations.each do |obs|
       encounter_date = obs.encounter_date.to_date.strftime("%d-%b-%Y") rescue obs.encounter_date
@@ -353,7 +352,7 @@ class GenericClinicController < ApplicationController
       @key_value_data[obs.id] = tins
     end
 
-    render :layout => "application"
+    render layout: "application"
   end
 
   def update_pharmacy_obs
@@ -400,7 +399,7 @@ class GenericClinicController < ApplicationController
     @clinic_holidays = GlobalProperty.find_by_property("clinic.holidays").property_value.split(",").collect{|d|
       d.to_date.strftime("%d-%b-%Y")
     } rescue []
-    render :layout => "report"
+    render layout: "report"
   end
 
   def supervision_tab
@@ -411,11 +410,11 @@ class GenericClinicController < ApplicationController
       ["Non-eligible Patients in Cohort", "/cohort_tool/select?report_type=non_eligible_patients_in_cohort"]
     ]
     @landing_dashboard = 'clinic_supervision'
-    render :layout => false
+    render layout: false
   end
 
   def users_tab
-    render :layout => false
+    render layout: false
   end
 
   def location_management
@@ -424,7 +423,7 @@ class GenericClinicController < ApplicationController
       ['/location.new?act=delete','Delete location'],
       ['/location/new?act=print','Print location']
     ]
-    render :template => 'clinic/location_management', :layout => 'clinic'
+    render template: 'clinic/location_management', layout: 'clinic'
   end
 
   def location_management_tab
@@ -435,7 +434,7 @@ class GenericClinicController < ApplicationController
       @reports << ['/location/new?act=create','Add location']
       @reports << ['/location/new?act=delete','Delete location']
     end
-    render :layout => false
+    render layout: false
   end
 
   def management_tab
@@ -453,7 +452,7 @@ class GenericClinicController < ApplicationController
       ["Manage <br /> Drug Sets","new_drug_sets"],
       ["Drug Movement <br /> Report","drug_movement_report_menu"]
     ]
-    render :layout => false
+    render layout: false
   end
 
   def lab_tab
@@ -464,7 +463,7 @@ class GenericClinicController < ApplicationController
     @today = Encounter.statistics(@types, :conditions => ['DATE(encounter_datetime) = ?', enc_date])
     @user = User.find(current_user.user_id).name rescue ""
 
-    render :template => 'clinic/lab_tab.rhtml' , :layout => false
+    render template: 'clinic/lab_tab.rhtml' , layout: false
   end
 
 end

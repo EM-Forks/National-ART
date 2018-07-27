@@ -8,7 +8,7 @@ class GenericLabController < ApplicationController
       @results << [short_name.gsub('_',' '),"/lab/view?test=#{short_name}&patient_id=#{@patient.id}"]
     end
 
-    @lims_activated = YAML.load_file("#{Rails.root}/config/lims.yml")[Rails.env]['enable_lims'] rescue false
+    @lims_activated = YAML.load_file("#{Rails.root.to_s}/config/lims.yml")[Rails.env]['enable_lims'] rescue false
     @enter_lab_results = GlobalProperty.find_by_property('enter.lab.results').property_value == 'true' rescue false
     render :layout => 'menu'
   end
