@@ -81,7 +81,7 @@
 
     <%
     count = @reports.length  unless @reports.blank?
-    @reports.sort.reverse.map do | path, name | %>
+    @reports.sort.reverse_each.map do | path, name | %>
       <script>
 
         setInnerHtmlData("<%=count%>","<%=path%>","<%=name%>", "_self");

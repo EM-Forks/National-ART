@@ -72,13 +72,13 @@ class CohortController < ActionController::Base
         q = ((startdate.month - 1)/3)
 
         case q.to_s
-        when "0":
+        when "0"
             retstr = startdate.year.to_s + " - 1<sup>st</sup> Quarter"
-        when "1":
+        when "1"
             retstr = startdate.year.to_s + " - 2<sup>nd</sup> Quarter"
-        when "2":
+        when "2"
             retstr = startdate.year.to_s + " - 3<sup>rd</sup> Quarter"
-        when "3":
+        when "3"
             retstr = startdate.year.to_s + " - 4<sup>th</sup> Quarter"
         end
       else
@@ -88,7 +88,7 @@ class CohortController < ActionController::Base
       retstr = startdate.strftime("%d/%b/%Y") + " to " + enddate.strftime("%d/%b/%Y")
     end
 
-    render text: retstr
+    render plain: retstr
   end
 
   def art_defaulters#(start_date=Time.now, end_date=Time.now, section=nil)

@@ -61,20 +61,21 @@ EOF
     @data = {}
     (data || []).each do |d|
       @data[d['patient_id'].to_i] = {
-        :arv_number => d['arv_number'],
-        :earliest_start_date => (d['earliest_start_date'].to_date rescue nil),
-        :date_enrolled => (d['date_enrolled'].to_date rescue nil),
-        :birthdate => (d['birthdate'].to_date rescue nil),
-        :gender => (d['gender']),
-        :death_date => (d['death_date'].to_date rescue nil),
-        :outcome => d['cum_outcome']
+          :arv_number => d['arv_number'],
+          :earliest_start_date => (d['earliest_start_date'].to_date rescue nil),
+          :date_enrolled => (d['date_enrolled'].to_date rescue nil),
+          :birthdate => (d['birthdate'].to_date rescue nil),
+          :gender => (d['gender']),
+          :death_date => (d['death_date'].to_date rescue nil),
+          :outcome => d['cum_outcome']
       }
     end
 
-    render layout: "report"
+    render :layout =>"report"
   end
 
-	def case_findings
+
+  def case_findings
 
 		@variables = Hash.new(0)
 		@quarter = params[:quarter]

@@ -65,7 +65,7 @@ class RawUser < ActiveRecord::Base
   def encrypt(plain, salt)
     encoding = ""
     digest = Digest::SHA1.digest("#{plain}#{salt}") 
-    (0..digest.size-1).each{|i| encoding << digest[i].to_s(16) }
+    (0..digest.size-1).each{|i| encoding << digest[i] }
     encoding
   end  
 

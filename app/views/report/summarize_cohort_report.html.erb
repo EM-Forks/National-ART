@@ -1,6 +1,6 @@
-<%= javascript_include_tag "prototype" %>
-<%= javascript_include_tag 'jquery' %>
-<%= stylesheet_link_tag 'extra_buttons' %>
+<%= javascript_include_tag "/javascripts/prototype" %>
+<%= javascript_include_tag '/javascripts/jquery' %>
+<%= stylesheet_link_tag '/stylesheets/extra_buttons' %>
 <style>
 
     .tt_controls_start_month .keyboard{display:none;}
@@ -21,7 +21,7 @@
   <select id="year_one" name="report_year" tt_requireNextClick ='true' helpText="Select Year" tt_pageStyleClass ="NoKeyboard">
     <option></option>
 
-    <% ((Time.now.year - 10)..(Time.now.year)).map.reverse.each do |year| %>
+    <% ((Time.now.year - 10)..(Time.now.year)).map.reverse_each.each do |year| %>
 
     <option><%= year %></option>
 

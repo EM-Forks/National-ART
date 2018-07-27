@@ -118,7 +118,7 @@
                   tt_onLoad="__$('keyboard').style.display='none'" tt_beforeUnLoad="checkYear()">
             <option></option>
 
-            <% ((Time.now.year - 10)..(Time.now.year)).map.reverse.each do |year| %>
+            <% ((Time.now.year - 10)..(Time.now.year)).map.reverse_each.each do |year| %>
 
               <option><%= year %></option>
 

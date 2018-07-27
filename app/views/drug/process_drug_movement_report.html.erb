@@ -8,9 +8,9 @@
     <title>Highcharts Example</title>
 
     <!--script type="text/javascript" src="http://ajax.googleapis.com/ajax/libs/jquery/1.8.2/jquery.min.js"></script-->
-    <%=javascript_include_tag "Charts/Highcharts/jquery.min"%>
-    <%=javascript_include_tag "Charts/Highcharts/highstock"%>
-    <%=javascript_include_tag "Charts/Highcharts/exporting"%>
+    <%=javascript_include_tag "/javascripts/Charts/Highcharts/jquery.min"%>
+    <%=javascript_include_tag "/javascripts/Charts/Highcharts/highstock"%>
+    <%=javascript_include_tag "/javascripts/Charts/Highcharts/exporting"%>
 
     <script type="text/javascript">
       var results = JSON.parse('<%= @stocks.to_json %>');

@@ -10,7 +10,7 @@
       }
 
     </style>
-		<%= javascript_include_tag "Highcharts/js/jquery.min.js" %>
+		<%= javascript_include_tag "/javascripts/Highcharts/js/jquery.min.js" %>
 		<script type="text/javascript">
 
 		var stocks = JSON.parse('<%=@stocks%>');
@@ -87,8 +87,8 @@ $(function () {
   </head>
   <body>
 
-<%= javascript_include_tag "Highcharts/js/highcharts" %>
-<%= javascript_include_tag "Highcharts/js/modules/exporting" %>
+<%= javascript_include_tag "/javascripts/Highcharts/js/highcharts" %>
+<%= javascript_include_tag "/javascripts/Highcharts/js/modules/exporting" %>
 
 <div id="container" style="width: 100%; height: 100%; margin: 0 auto">
 </div>

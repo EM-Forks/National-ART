@@ -3,10 +3,11 @@ require 'digest/sha2'
 
 class User < ActiveRecord::Base
 	devise :database_authenticatable #:authentication_keys => [:login]
-
+	before_save :before_save
+	before_create :before_create
 	self.table_name = "users"
 	self.primary_key = "user_id"
-	#include Openmrs
+	include Openmrs
 
 	before_save :set_password, :before_create
 	
