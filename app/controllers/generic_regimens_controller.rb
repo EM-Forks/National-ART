@@ -14,9 +14,9 @@ class GenericRegimensController < ApplicationController
 
 		allergic_to_sulphur_session_date = session[:datetime].to_date rescue Date.today
     ################################################ check if on TB treatment ##########################
-    on_tb_treatment = Observation.find(:first, :conditions =>["person_id = ? AND concept_id = ?
+    on_tb_treatment = Observation.where(["person_id = ? AND concept_id = ?
       AND obs_datetime <= ?", @patient.patient_id, ConceptName.find_by_name('TB treatment').concept_id,
-        allergic_to_sulphur_session_date.strftime('%Y-%m-%d 23:59:59')], :order =>"obs_datetime DESC").to_s #rescue ''
+																				 allergic_to_sulphur_session_date.strftime('%Y-%m-%d 23:59:59')]).order("obs_datetime DESC").first.to_s #rescue ''
     
     if on_tb_treatment.match(/Yes/i)
       @on_tb_treatment = true 
@@ -261,7 +261,7 @@ class GenericRegimensController < ApplicationController
 		options = []
 		current_weight = PatientService.get_patient_attribute_value(patient_program.patient, "current_weight", session_date)
 		options = MedicationService.regimen_options(current_weight, patient_program.program)
-		render :text => (options.to_json)
+		render plain: (options.to_json)
 	end
 
 	def regimen_options
@@ -813,9 +813,8 @@ class GenericRegimensController < ApplicationController
       if state.present? && (current_state.downcase.strip != "on treatment")
         on_treatment_state = ProgramWorkflowState.where(
           ["program_workflow_id = ? AND concept_id = ?",
-            ProgramWorkflow.find(:first,
-              :conditions => ["program_id = ?",
-                ht_program_id]).id,
+            ProgramWorkflow.where(["program_id = ?",
+																	 ht_program_id]).first.id,
             Concept.find_by_name("On Treatment").id]).last.id
 
         PatientState.create(:patient_program_id => program.id,
@@ -1056,8 +1055,8 @@ class GenericRegimensController < ApplicationController
       unless params[:pyridoxine_value].blank?
 
         weight = @current_weight = PatientService.get_patient_attribute_value(@patient, "current_weight")
-        regimen_id = Regimen.all(:conditions =>  ['min_weight <= ? AND max_weight >= ? AND concept_id = ?', weight, weight, drug.concept_id]).first.regimen_id
-        orders = RegimenDrugOrder.all(:conditions => {:regimen_id => regimen_id, :drug_inventory_id => drug.id})
+        regimen_id = Regimen.where(['min_weight <= ? AND max_weight >= ? AND concept_id = ?', weight, weight, drug.concept_id]).first.regimen_id
+        orders = RegimenDrugOrder.where(regimen_id: regimen_id, drug_inventory_id:  drug.id)
       end
       #=begin
       orders.each do |order|
@@ -1152,7 +1151,7 @@ class GenericRegimensController < ApplicationController
 
     if prescribe_ipt_set == true
       pyridoxine_ipt_drug_names = ['INH or H (Isoniazid 100mg tablet)', 'Pyridoxine (25mg)']
-      pyridoxine_ipt_drugs = Drug.find(:all, :conditions => ["name IN (?)", pyridoxine_ipt_drug_names])
+      pyridoxine_ipt_drugs = Drug.where(["name IN (?)", pyridoxine_ipt_drug_names])
       pyridoxine_ipt_drugs.each do |drug|
         medications << drug
       end
@@ -1273,8 +1272,7 @@ class GenericRegimensController < ApplicationController
             category = regimen_medications.last[:category] rescue nil
             drug = Drug.find_by_name('Pyridoxine (25mg)')
 
-            pyridoxine_regimen_drug_order = RegimenDrugOrder.find(:all, 
-              :conditions => ["drug_inventory_id = ?", drug.id])
+            pyridoxine_regimen_drug_order = RegimenDrugOrder.where(["drug_inventory_id = ?", drug.id])
 
             (pyridoxine_regimen_drug_order || []).each do |r|
               next unless current_weight.to_f >= r.regimen.min_weight.to_f && r.regimen.max_weight.to_f <= current_weight.to_f
@@ -1317,8 +1315,7 @@ class GenericRegimensController < ApplicationController
       category = regimen_medications.last[:category] rescue nil
       drug = Drug.find_by_name('Pyridoxine (25mg)')
       
-      pyridoxine_regimen_drug_orders = RegimenDrugOrder.find(:all, 
-        :conditions => ["drug_inventory_id = ?", drug.id])
+      pyridoxine_regimen_drug_orders = RegimenDrugOrder.where(["drug_inventory_id = ?", drug.id])
 
       (pyridoxine_regimen_drug_orders || []).each do |r|
         next unless current_weight.to_f >= r.regimen.min_weight.to_f && current_weight.to_f <= r.regimen.max_weight.to_f
@@ -1389,7 +1386,7 @@ class GenericRegimensController < ApplicationController
       [r[:drug_name] , r[:am] , r[:pm], r[:units] , r[:regimen_index] , r[:category]]
     end
     
-    render :text => @options.to_json
+    render plain: @options.to_json
   end
 
   def formulations_all
@@ -1608,7 +1605,7 @@ class GenericRegimensController < ApplicationController
   end
 	# Look up likely durations for the regimen
 	def durations
-		@regimen = Regimen.find_by_concept_id(params[:id], :include => :regimen_drug_orders)
+		@regimen = Regimen.find_by_concept_id(params[:id]).includes(:regimen_drug_orders)
 		@drug_id = @regimen.regimen_drug_orders.first.drug_inventory_id rescue nil
 		render plain: "No matching durations found for regimen" and return unless @drug_id
 
@@ -1699,19 +1696,18 @@ class GenericRegimensController < ApplicationController
   def current_regimen(patient_id)
 	  regimen_category = Concept.find_by_name("Regimen Category")
 
-    current_regimen = Observation.find(:first, :conditions => ["concept_id = ? AND
+    current_regimen = Observation.where(["concept_id = ? AND
         person_id = ? AND obs_datetime = (SELECT MAX(obs_datetime) FROM obs o
         WHERE o.person_id = #{patient_id} AND o.concept_id =#{regimen_category.id}
-        AND o.voided = 0)",regimen_category.id, patient_id]).value_text rescue nil
+        AND o.voided = 0)",regimen_category.id, patient_id]).first.value_text rescue nil
   end
 
   def prescribe_medication_set(patient, date, medication_type)
 	  prescribe_medication = Concept.find_by_name("Medication orders").concept_id
 	  medication_concept = Concept.find_by_name(medication_type).concept_id
 
-    found = Observation.find(:first, :joins => [:encounter], :conditions => ["concept_id = ? AND
-        person_id = ? AND value_coded = ? AND DATE(obs_datetime) = ?",
-        prescribe_medication, patient.id, medication_concept, date.to_date])
+    found = Observation.where(["concept_id = ? AND person_id = ? AND value_coded = ? AND DATE(obs_datetime) = ?",
+															 prescribe_medication, patient.id, medication_concept, date.to_date]).joins(:encounter).first
 
     return (found.blank? ? false : true)
   end
