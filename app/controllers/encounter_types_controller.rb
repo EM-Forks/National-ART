@@ -22,7 +22,8 @@ class EncounterTypesController < GenericEncounterTypesController
 
     # TODO add clever sorting
     @encounter_types = EncounterType.all.map{|enc|enc.name.gsub(/.*\//,"").gsub(/\..*/,"").humanize}
-    @available_encounter_types = Dir.glob(Rails.root.to_s +"/app/views/encounters/*.html.erb").map{|file|file.gsub(/.*\//,"").gsub(/\..*/,"").humanize}
+
+    @available_encounter_types = Dir.glob(Rails.root.to_s + "/app/views/encounters/*.html.erb").map{|file|file.gsub(/.*\//,"").gsub(/\..*/,"").humanize}
 
     @available_encounter_types -= @available_encounter_types - @encounter_types
 
@@ -64,7 +65,7 @@ class EncounterTypesController < GenericEncounterTypesController
     if params["encounter_type"].downcase == "bp management"
       redirect_to "/htn_encounter/bp_management?#{params.to_param}" and return
     else
-      redirect_to "/encounters/new/#{params["encounter_type"].downcase.gsub(/ /,"_")}?#{params.to_param}" and return
+      redirect_to "/encounters/new/#{params["encounter_type"].downcase.gsub(/ /,"_")}?#{params.permit!.to_param}" and return
     end
 
   end

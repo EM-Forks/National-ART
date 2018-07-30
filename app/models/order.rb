@@ -22,8 +22,8 @@ class Order < ActiveRecord::Base
     arv_drug_concepts = ConceptSet.where(['concept_set = ?', arv_concept])
     where(['concept_id IN (?)', arv_drug_concepts.map(&:concept_id)])
   }
-  scope :labs, -> {includes(:drug_order).where('drug_order.drug_inventory_id is NULL')}
-  scope :prescriptions, -> {includes(:drug_order).where("drug_order.drug_inventory_id is NOT NULL")}
+  scope :labs, -> {joins(:drug_order).where('drug_order.drug_inventory_id is NULL')}
+  scope :prescriptions, -> {joins(:drug_order).where("drug_order.drug_inventory_id is NOT NULL")}
   
   after_save do |o|
     drug_order = DrugOrder.where(["order_id =?", o.order_id]).last

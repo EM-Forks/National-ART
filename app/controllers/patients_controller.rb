@@ -12,7 +12,7 @@ class PatientsController < GenericPatientsController
 
   def exitcare
     @programs = @patient.patient_programs.all
-    @restricted = ProgramLocationRestriction.all(:conditions => {:location_id => Location.current_health_center.id })
+    @restricted = ProgramLocationRestriction.where({:location_id => Location.current_health_center.id })
     @restricted.each do |restriction|
       @programs = restriction.filter_programs(@programs)
     end
@@ -22,8 +22,7 @@ class PatientsController < GenericPatientsController
     @patient = Patient.find(params[:patient_id])
     encounter_type = EncounterType.find_by_name("EXIT FROM HIV CARE").id
 
-    @encounters = Encounter.find(:all,  
-      :conditions => [" patient_id = ? AND encounter_type = ?",
+    @encounters = Encounter.where([" patient_id = ? AND encounter_type = ?",
         @patient.id, encounter_type])
     @creator_name = {}
     @encounters.each do |encounter|
@@ -138,11 +137,10 @@ class PatientsController < GenericPatientsController
     demographics.reg = []
 
     concept_id = Concept.find_by_name('AMOUNT DISPENSED').id
-    previous_orders = Order.find(:all, :select => "obs.obs_datetime, drug_order.drug_inventory_id", :joins =>"INNER JOIN obs ON obs.order_id = orders.order_id LEFT JOIN drug_order ON orders.order_id = drug_order.order_id",
-      :conditions =>["obs.person_id = ? AND obs.concept_id = ?
-        	AND obs_datetime <=?",
-        patient.id, concept_id, date.strftime('%Y-%m-%d 23:59:59')],
-      :order => "obs_datetime DESC")
+    previous_orders = Order.joins("INNER JOIN obs ON obs.order_id = orders.order_id LEFT JOIN drug_order ON
+      orders.order_id = drug_order.order_id").where(["obs.person_id = ? AND obs.concept_id = ?
+        	AND obs_datetime <=?",patient.id, concept_id, date.strftime('%Y-%m-%d 23:59:59')]
+    ).order("obs_datetime DESC").select("obs.obs_datetime, drug_order.drug_inventory_id")
 
     previous_date = nil
     drugs = []
@@ -328,8 +326,7 @@ EOF
     @weight_height_for_ages = {}
 
     age_in_months += 5 if age_in_months < 53
-    weight_heights = WeightHeightForAge.find(:all,
-      :conditions => ["sex = ? AND age_in_months BETWEEN 0 AND ?", sex, age_in_months])
+    weight_heights = WeightHeightForAge.where(["sex = ? AND age_in_months BETWEEN 0 AND ?", sex, age_in_months])
     
     (weight_heights || []).each do |data|
 
@@ -353,9 +350,9 @@ EOF
     @baby = @patient
 
     if (@baby.person.gender.downcase.match(/f/i))
-      file =  File.open(RAILS_ROOT + "/public/data/weight_for_age_girls.txt", "r")
+      file =  File.open(Rails.root.to_s + "/public/data/weight_for_age_girls.txt", "r")
     else
-      file =  File.open(RAILS_ROOT + "/public/data/weight_for_age_boys.txt", "r")
+      file =  File.open(Rails.root.to_s + "/public/data/weight_for_age_boys.txt", "r")
     end
     @file = []
 
@@ -372,10 +369,10 @@ EOF
     @weights = []
     birthdate_sec = @patient.person.birthdate
 
-    ids = ConceptName.find(:all, :conditions => ["name IN (?)", ["WEIGHT", "BIRTH WEIGHT", "BIRTH WEIGHT AT ADMISSION", "WEIGHT (KG)"]]).collect{|concept|
+    ids = ConceptName.where(["name IN (?)", ["WEIGHT", "BIRTH WEIGHT", "BIRTH WEIGHT AT ADMISSION", "WEIGHT (KG)"]]).collect{|concept|
       concept.concept_id}
 
-    Observation.find(:all, :conditions => ["person_id = ? AND concept_id IN (?)",
+    Observation.where(["person_id = ? AND concept_id IN (?)",
         @patient.id, ids]).each do |ob|
       age = ((((ob.value_datetime.to_date rescue ob.obs_datetime.to_date) rescue ob.date_created.to_date) - birthdate_sec).days.to_i/(60*60*24)).to_s rescue nil
       weight = ob.answer_string.to_i rescue nil
@@ -428,7 +425,10 @@ EOF
 		patient = @person.patient
 		@outcome = patient.patient_programs.last.patient_states.last.program_workflow_state.concept.fullname rescue nil
 
-		@current_hiv_program_state = PatientProgram.find(:first, :joins => :location, :conditions => ["program_id = ? AND patient_id = ? AND location.location_id = ?", Program.find_by_concept_id(Concept.find_by_name('HIV PROGRAM').id).id,@person.id, Location.current_health_center.location_id]).patient_states.last.program_workflow_state.concept.fullname rescue ''
+		@current_hiv_program_state = PatientProgram.joins(:location).where(["program_id = ? AND patient_id = ? AND location.location_id = ?",
+        Program.find_by_concept_id(Concept.find_by_name('HIV PROGRAM').id).id,@person.id,
+        Location.current_health_center.location_id]
+    ).first.patient_states.last.program_workflow_state.concept.fullname rescue ''
 
 		@task = main_next_task(Location.current_location, @person.patient, session_date)
 		@patient_bean = PatientService.get_patient(@person)
@@ -445,21 +445,20 @@ EOF
     @latest_result = @results[1]["TestValue"] rescue nil
     @modifier = @results[1]["Range"] rescue nil
     @reason_for_art = PatientService.reason_for_art_eligibility(patient)
-    @vl_request = Observation.find(:last, :conditions => ["person_id = ? AND concept_id = ? AND value_coded IS NOT NULL",
+    @vl_request = Observation.where(["person_id = ? AND concept_id = ? AND value_coded IS NOT NULL",
         patient.patient_id, Concept.find_by_name("Viral load").concept_id]
-    ).answer_string.squish.upcase rescue nil
+    ).last.answer_string.squish.upcase rescue nil
 
-    @repeat_vl_request = Observation.find(:last, :conditions => ["person_id = ? AND concept_id = ?
+    @repeat_vl_request = Observation.where(["person_id = ? AND concept_id = ?
                 AND value_text =?", patient.patient_id, Concept.find_by_name("Viral load").concept_id,
-        "Repeat"]).answer_string.squish.upcase rescue nil
+        "Repeat"]).last.answer_string.squish.upcase rescue nil
 
     @repeat_vl_obs_date = Observation.find(:last, :conditions => ["person_id = ? AND concept_id = ?
               AND value_text =?", patient.patient_id, Concept.find_by_name("Viral load").concept_id,
         "Repeat"]).obs_datetime.to_date rescue nil
 
-    @date_vl_result_given = Observation.find(:last, :conditions => ["
-          person_id =? AND concept_id =? AND value_text REGEXP ?", @person.id,
-        Concept.find_by_name("Viral load").concept_id, 'Result given to patient']).value_datetime rescue nil
+    @date_vl_result_given = Observation.where(["person_id =? AND concept_id =? AND value_text REGEXP ?", @person.id,
+        Concept.find_by_name("Viral load").concept_id, 'Result given to patient']).last.value_datetime rescue nil
     @enter_lab_results = GlobalProperty.find_by_property('enter.lab.results').property_value == 'true' rescue false
 
     @vl_result_hash = Patient.vl_result_hash(patient)
@@ -588,9 +587,8 @@ EOF
   def change_reason_for_starting_art
     if request.post?
       encounter_type = EncounterType.find_by_name('HIV STAGING')
-      encounter = Encounter.find(:last, 
-        :conditions =>["patient_id = ? AND encounter_type = ?",
-        params[:patient_id], encounter_type.id])
+      encounter = Encounter.where(["patient_id = ? AND encounter_type = ?",
+        params[:patient_id], encounter_type.id]).last
 
       if encounter.blank?
         redirect_to "/patients/mastercard?patient_id=#{params[:patient_id]}" and return
