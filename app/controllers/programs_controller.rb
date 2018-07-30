@@ -115,8 +115,8 @@ class ProgramsController < GenericProgramsController
     patient.person.save
 
     exit_from_care_encounter_type = EncounterType.find_by_name("EXIT FROM HIV CARE").id
-    exit_from_care_encounter = Encounter.find(:all,
-      :conditions => ["encounter_type = ? AND patient_id = ? AND voided = 0",
+    exit_from_care_encounter = Encounter.where(
+      ["encounter_type = ? AND patient_id = ? AND voided = 0",
         exit_from_care_encounter_type, patient.patient_id]
     )
 
@@ -203,8 +203,8 @@ class ProgramsController < GenericProgramsController
     @exit_from_care_state = params[:exit_state]
     @patient = Patient.find(params[:patient_id])
     hiv_program_id = Program.find_by_name("HIV PROGRAM").id
-    patient_program = PatientProgram.find(:all,
-      :conditions => ["patient_id = ? and program_id = ?",
+    patient_program = PatientProgram.where(
+        ["patient_id = ? and program_id = ?",
         params[:patient_id], hiv_program_id]).first rescue nil
 
     @latest_outcome_date = Patient.latest_outcome_date(@patient).to_date.strftime("%d/%b/%Y")
@@ -225,7 +225,7 @@ class ProgramsController < GenericProgramsController
       next if name.blank?
       "<li value='#{state.id}'>#{name}</li>" unless name == params[:current_state]
     }
-    render :text => @names.join('')
+    render plain:  @names.join('')
   end
 
   def update_exitcare
@@ -240,7 +240,7 @@ class ProgramsController < GenericProgramsController
     Location.current_location = Location.find(params[:location]) if params[:location]
     #state_concept = ConceptName.find_by_name(params[:current_state]).concept
     state_concept = ConceptName.find_all_by_name(params[:current_state])
-    state = ProgramWorkflowState.find(:first, :conditions => ["concept_id IN (?)",state_concept.map{|c|c.concept_id}] ).program_workflow_state_id
+    state = ProgramWorkflowState.where(["concept_id IN (?)",state_concept.map{|c|c.concept_id}]).first.program_workflow_state_id
 =begin
     program_workflow_state = ProgramWorkflowState.find(:first, 
       :joins => "INNER JOIN program_workflow USING (program_workflow_id) INNER JOIN program USING (program_id)",
@@ -304,7 +304,7 @@ end
 
           #updates the state of all patient_programs to patient died and save the
           #end_date of the last active state.
-          current_programs = PatientProgram.find(:all,:conditions => ["patient_id = ?",@patient.id])
+          current_programs = PatientProgram.where(["patient_id = ?",@patient.id])
           current_programs.each do |program|
             if patient_program.to_s != program.to_s
               current_active_state = program.patient_states.last
@@ -355,8 +355,8 @@ end
 
   def void_exitcare
     hiv_program_id = Program.find_by_name("HIV PROGRAM").id
-    patient_program = PatientProgram.find(:all,
-      :conditions => ["patient_id = ? AND program_id = ? AND voided = 0",
+    patient_program = PatientProgram.where(
+      ["patient_id = ? AND program_id = ? AND voided = 0",
         params[:patient_id], hiv_program_id]).first rescue nil
     if ! patient_program.nil?
       rebuild_program_states(patient_program.patient_program_id, params[:patient_id])
@@ -367,9 +367,9 @@ end
 	def show
 		tb_states = ["currently in treatment", "patient cured", "patient transferred out", "regimen failure","treatment complete","patient died"]
     if params[:show_non_terminal_states_only].to_s == true.to_s
-      @states = ProgramWorkflowState.all(:conditions => ['program_workflow_id = ? AND terminal = 0', params[:workflow]], :include => :concept)
+      @states = ProgramWorkflowState.where(['program_workflow_id = ? AND terminal = 0', params[:workflow]]).includes(:concept)
     else
-      @states = ProgramWorkflowState.all(:conditions => ['program_workflow_id = ?', params[:workflow]], :include => :concept)
+      @states = ProgramWorkflowState.where(['program_workflow_id = ?', params[:workflow]]).includes(:concept)
     end
 
     @names = @states.map{|state|
@@ -380,7 +380,7 @@ end
         "<li value='#{state.id}'>#{name}</li>" unless name == params[:current_state]
 			end
     }
-    render :text => @names.join('')
+    render plain: @names.join('')
   end
 
 end

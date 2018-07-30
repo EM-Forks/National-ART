@@ -18,10 +18,9 @@ class ReportController < GenericReportController
 	def appointments_for_the_day(date = Date.today, identifier_type = 'Filing number')
     concept_id = ConceptName.find_by_name("Appointment date").concept_id
 
-		records = Observation.find(:all,
-			:conditions =>["obs.concept_id = ? AND value_datetime >= ? AND value_datetime <=?",
-				concept_id, date.strftime('%Y-%m-%d 00:00:00'), date.strftime('%Y-%m-%d 23:59:59')],
-			:order => "obs.obs_datetime DESC")
+		records = Observation.where(
+			["obs.concept_id = ? AND value_datetime >= ? AND value_datetime <=?",
+				concept_id, date.strftime('%Y-%m-%d 00:00:00'), date.strftime('%Y-%m-%d 23:59:59')]).order("obs.obs_datetime DESC")
 
 		demographics = {}
 		(records || []).each do |r|
@@ -29,7 +28,7 @@ class ReportController < GenericReportController
 			demographics[r.obs_id] = {	:first_name => patient.first_name,
         :last_name => patient.last_name,
         :gender => patient.sex,
-        :birthdate => patient.birth_date,
+        :birthdate => patient.birth_dat"encounter.encounter_datetime ASC"e,
         :visit_date => r.obs_datetime,
         :patient_id => r.person_id,
         :identifier => patient.filing_number || patient.arv_number }
@@ -49,12 +48,10 @@ class ReportController < GenericReportController
 
     required_encounters_ids.sort!
 
-    Encounter.find(:all,
-      :joins      => ["INNER JOIN obs     ON obs.encounter_id    = encounter.encounter_id",
-				"INNER JOIN patient ON patient.patient_id  = encounter.patient_id"],
-      :conditions => ["obs.voided = 0 AND encounter_type IN (?) AND DATE(encounter_datetime) = ?",required_encounters_ids,date],
-      :group      => "encounter.patient_id,DATE(encounter_datetime)",
-      :order      => "encounter.encounter_datetime ASC")
+    Encounter.where(["obs.voided = 0 AND encounter_type IN (?) AND DATE(encounter_datetime) = ?",required_encounters_ids,date]
+      ).joins(["INNER JOIN obs     ON obs.encounter_id    = encounter.encounter_id",
+               "INNER JOIN patient ON patient.patient_id  = encounter.patient_id"]).order("encounter.encounter_datetime ASC").group("encounter.patient_id,DATE(encounter_datetime)")(:all,
+
   end
 
   def drug_menu
@@ -133,7 +130,7 @@ class ReportController < GenericReportController
 
     program = Program.find_by_name('HIV PROGRAM').id
 
-    patients = PatientProgram.find(:all, :conditions => ["program_id = ? AND date_completed  IS NULL", program])
+    patients = PatientProgram.where(["program_id = ? AND date_completed  IS NULL", program])
 
     patients.each do |patient|
 
@@ -292,7 +289,7 @@ AND '#{@end_date.strftime('%Y-%m-%d 23:59:59')}' GROUP BY t.person_id, DATE(t.ob
       data["patients"][encounter_id]["hypertension"] = patient.hypertension(encounter_datetime)
     end
 
-    render :text => data.to_json and return
+    render plain: data.to_json and return
   end
   
 end
