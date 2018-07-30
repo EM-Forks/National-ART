@@ -7,11 +7,11 @@ class Observation < ActiveRecord::Base
   include Openmrs
 
   belongs_to :encounter, -> {where(voided: 0)}
-  belongs_to :order, -> {where(voided: 0)}
+  #belongs_to :order, -> {where(voided: 0)}
   belongs_to :concept, -> {where(retired: 0)}
-  belongs_to :concept_name
-  belongs_to :answer_concept, -> { where retired: 0 },  class_name: "Concept", foreign_key: "value_coded"
-  belongs_to :answer_concept_name, -> { where voided: 0 }, class_name: "ConceptName", foreign_key: "value_coded_name_id"
+  #belongs_to :concept_name, ->{where(voided: 0)}, class_name: "ConceptName", foreign_key: "concept_name"
+  #belongs_to :answer_concept, -> { where retired: 0 },  class_name: "Concept", foreign_key: "value_coded"
+  #belongs_to :answer_concept_name, -> { where voided: 0 }, class_name: "ConceptName", foreign_key: "value_coded_name_id"
   has_many :concept_names, through: "concept"
 
   scope :recent, lambda{ |number| joins(:encounter).order("obs_datetime DESC,date_created DESC").limit(number)}

@@ -208,6 +208,7 @@ class ApplicationController < GenericApplicationController
 
     session_date = session[:datetime].to_date rescue Date.today
     task = main_next_task(Location.current_location, patient,session_date)
+    #raise task.url.inspect
     sbp_threshold = CoreService.get_global_property_value("htn.systolic.threshold").to_i
     dbp_threshold = CoreService.get_global_property_value("htn.diastolic.threshold").to_i
 

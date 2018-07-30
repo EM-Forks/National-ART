@@ -2,6 +2,7 @@ require "will_paginate"
 class Encounter < ActiveRecord::Base
   before_save :before_save
   before_create :before_create
+  after_save :after_save
 
   self.table_name = "encounter"
   self.primary_key = "encounter_id"
@@ -12,12 +13,16 @@ class Encounter < ActiveRecord::Base
   has_many :drug_orders, foreign_key: "order_id", through: "orders"
   has_many :orders, -> { where voided: 0 }, dependent: :destroy
   belongs_to :type, -> { where retired: 0 }, class_name: "EncounterType", foreign_key: "encounter_type"  
-  #belongs_to :provider, -> { where voided: 0 }, class_name: "Person", foreign_key: "provider_id"
+  belongs_to :provider, -> { where voided: 0 }, class_name: "Person", foreign_key: "provider_id"
   belongs_to :patient, -> { where voided: 0 }
 
   # TODO, this needs to account for current visit, which needs to account for possible retrospective entry
   scope :current, -> {where('DATE(encounter.encounter_datetime) = CURRENT_DATE()')}
 
+
+  def after_save
+    self.add_location_obs
+  end
 
   def after_void(reason = nil)
     unless self.name.upcase == 'ART ADHERENCE'

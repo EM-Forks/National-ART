@@ -24,6 +24,7 @@ module Openmrs
     self.changed_by = User.first if self.has_attribute?("changed_by") and User.current.nil?
 
     self.date_changed = Time.now if self.has_attribute?("date_changed")
+
   end
 
   def before_create
@@ -36,6 +37,12 @@ module Openmrs
       self.location_id = Location.current_health_center.id if self.has_attribute?("location_id") and (self.location_id.blank? || self.location_id == 0) and Location.current_health_center != nil
       self.creator = User.current.id if self.has_attribute?("creator") and (self.creator.blank? || self.creator == 0)and User.current != nil
       self.date_created = Time.now if self.has_attribute?("date_created")
+    end
+
+    if self.instance_of?(Encounter)
+    self.provider_id = User.current.person if self.provider_id.blank?
+    # TODO, this needs to account for current visit, which needs to account for possible retrospective entry
+    self.encounter_datetime = Time.now if self.encounter_datetime.blank?
     end
 
     self.uuid = ActiveRecord::Base.connection.select_one("SELECT UUID() as uuid")['uuid'] if self.has_attribute?("uuid")

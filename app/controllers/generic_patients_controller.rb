@@ -499,7 +499,7 @@ EOF
 
     obs << [session_date.to_date, current_weight.to_f]
     obs = obs.sort_by{|atr| atr[0]}.to_json
-    render :text => obs and return
+    render plain: obs and return
   end
   
   def void

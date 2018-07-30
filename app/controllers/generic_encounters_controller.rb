@@ -1,8 +1,9 @@
 class GenericEncountersController < ApplicationController
-  def create(params=params, session=session)
-    
+  def create
+
     if params[:encounter]["encounter_type_name"].squish.upcase == "HIV RECEPTION"
       url = create_reception_encounter(params, session)
+			#raise url.inspect
       redirect_to url and return
     end
 
@@ -36,6 +37,7 @@ class GenericEncountersController < ApplicationController
 
     if params[:encounter]["encounter_type_name"].squish.upcase == 'ART ADHERENCE'
       url = create_art_adherence_encounter(params, session)
+			#raise url.inspect
       redirect_to url and return
     end
 
@@ -1067,7 +1069,7 @@ class GenericEncountersController < ApplicationController
 
 					observation = update_observation_value(observation)
 
-					Observation.create(observation) 
+					Observation.create!(observation.permit!)
 				end
 			elsif extracted_value_numerics.class == Array
 				extracted_value_numerics.each do |value_numeric|
@@ -1078,7 +1080,7 @@ class GenericEncountersController < ApplicationController
 						observation.delete(:value_numeric)
 					end
 									
-					Observation.create(observation)
+					Observation.create!(observation.permit!)
 				end
 			else      
 				observation.delete(:value_coded_or_text_multiple)
@@ -1088,10 +1090,14 @@ class GenericEncountersController < ApplicationController
 					observation[:value_text] = observation[:value_numeric]
 					observation.delete(:value_numeric)
 				end
-				
-				Observation.create(observation)
+				#raise observation.inspect
+				Observation.create!(observation.permit!)
 			end
 		end
+	end
+
+  def resolve_referential_integrity(observation)
+
 	end
 
 	def update_observation_value(observation)
@@ -1152,6 +1158,7 @@ class GenericEncountersController < ApplicationController
   def create_reception_encounter(params, session)
     encounter_type = EncounterType.find_by_name('HIV RECEPTION')
     patient_id = params[:encounter]["patient_id"].to_i
+		provider_id = params[:encounter][:provider_id]
     begin
       encounter_datetime = session[:datetime].to_date.strftime('%Y-%m-%d 00:00:01') 
       params[:encounter]['encounter_datetime'] = encounter_datetime
@@ -1163,10 +1170,9 @@ class GenericEncountersController < ApplicationController
       end
     end
 
-    encounter = Encounter.create(:patient_id => patient_id,
+    encounter = Encounter.create!(:patient_id => patient_id,
       :encounter_datetime => encounter_datetime, 
-      :encounter_type => encounter_type.id)
-
+      :encounter_type => encounter_type.id,:provider_id=>provider_id)
     create_obs(encounter, params)
 
     #when the patient has been assigned ARV number
@@ -1186,7 +1192,7 @@ class GenericEncountersController < ApplicationController
         PatientIdentifier.create(:patient_id => patient_id,
           :identifier_type => identifier_type, :identifier => identifier) 
       end
-    end
+		end
 
     return next_task(encounter.patient)
   end
@@ -1542,9 +1548,9 @@ class GenericEncountersController < ApplicationController
     end
 
 
-    encounter = Encounter.create(:patient_id => patient_id,
+    encounter = Encounter.create!(:patient_id => patient_id,
       :encounter_datetime => encounter_datetime, 
-      :encounter_type => encounter_type.id)
+      :encounter_type => encounter_type.id,:provider_id=>params[:encounter][:provider_id])
     
     create_obs(encounter, params) 
     return next_task(encounter.patient)
@@ -1596,9 +1602,9 @@ class GenericEncountersController < ApplicationController
       end
     end
 
-    encounter = Encounter.create(:patient_id => patient_id,
+    encounter = Encounter.create!(:patient_id => patient_id,
       :encounter_datetime => encounter_datetime, 
-      :encounter_type => encounter_type.id)
+      :encounter_type => encounter_type.id,:provider_id=>params[:encounter][:provider_id])
 
     create_obs(encounter ,  params)
     return next_task(encounter.patient)
@@ -1772,10 +1778,10 @@ class GenericEncountersController < ApplicationController
       end
     end
 
-    encounter = Encounter.create(
+    encounter = Encounter.create!(
       :encounter_type => encounter_type.id,
       :patient_id => patient_id,
-      :encounter_datetime => encounter_datetime
+      :encounter_datetime => encounter_datetime,:provider_id=>params[:encounter][:provider_id]
     )
 
 

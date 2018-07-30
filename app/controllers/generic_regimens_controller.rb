@@ -89,10 +89,10 @@ class GenericRegimensController < ApplicationController
 			@hiv_clinic_consultation = true
 		end
 
-		tb_visit_obs = Encounter.find(:all,:order => "encounter_datetime DESC,date_created DESC",
-      :conditions =>["DATE(encounter_datetime) = ? AND patient_id = ? AND encounter_type = ?",
+		tb_visit_obs = Encounter.where(
+      ["DATE(encounter_datetime) = ? AND patient_id = ? AND encounter_type = ?",
         session_date.to_date, @patient.id, EncounterType.find_by_name("TB VISIT").id],
-			:include => [:observations])
+			).includes(:observations).order("encounter_datetime DESC,date_created DESC")
 
 		prescribe_tb_medication = false
 		@transfer_out_patient = false;
@@ -726,7 +726,7 @@ class GenericRegimensController < ApplicationController
     end
 
     ######################################################################################
-		orders = RegimenDrugOrder.all(:conditions => {:regimen_id => params[:tb_regimen]})
+		orders = RegimenDrugOrder.where(regimen_id:  params[:tb_regimen])
 		ActiveRecord::Base.transaction do
 			# Need to write an obs for the regimen they are on, note that this is ARV
 			# Specific at the moment and will likely need to have some kind of lookup
@@ -755,7 +755,7 @@ class GenericRegimensController < ApplicationController
 			end if prescribe_tb_drugs
 		end
 
-		orders = RegimenDrugOrder.all(:conditions => {:regimen_id => params[:tb_continuation_regimen]})
+		orders = RegimenDrugOrder.where(regimen_id: params[:tb_continuation_regimen])
 		ActiveRecord::Base.transaction do
 			# Need to write an obs for the regimen they are on, note that this is ARV
 			# Specific at the moment and will likely need to have some kind of lookup
@@ -801,23 +801,22 @@ class GenericRegimensController < ApplicationController
 
     if (!params[:htn_drugs].blank?)
       ht_program_id = Program.find_by_name("HYPERTENSION PROGRAM").id
-      program = PatientProgram.find(:last,
-        :conditions => ["DATE(date_enrolled) <= ? AND patient_id = ? AND program_id = ?",
+      program = PatientProgram.where(["DATE(date_enrolled) <= ? AND patient_id = ? AND program_id = ?",
           (session[:datetime].to_date rescue Date.today), @patient.id,
-          ht_program_id])
+          ht_program_id]).last
 
-      state = PatientState.find(:last,
-        :conditions => ["patient_program_id = ? AND DATE(start_date) <= ?",
-          program.id, (session[:datetime].to_date rescue Date.today)]) rescue nil
+      state = PatientState.where(
+        ["patient_program_id = ? AND DATE(start_date) <= ?",
+          program.id, (session[:datetime].to_date rescue Date.today)]).last rescue nil
       current_state = ConceptName.find_by_concept_id(state.program_workflow_state.concept_id).name rescue nil
 
       if state.present? && (current_state.downcase.strip != "on treatment")
-        on_treatment_state = ProgramWorkflowState.find(:first,
-          :conditions => ["program_workflow_id = ? AND concept_id = ?",
+        on_treatment_state = ProgramWorkflowState.where(
+          ["program_workflow_id = ? AND concept_id = ?",
             ProgramWorkflow.find(:first,
               :conditions => ["program_id = ?",
                 ht_program_id]).id,
-            Concept.find_by_name("On Treatment").id]).id
+            Concept.find_by_name("On Treatment").id]).last.id
 
         PatientState.create(:patient_program_id => program.id,
           :start_date => (session[:datetime].to_date rescue Date.today),
@@ -832,7 +831,7 @@ class GenericRegimensController < ApplicationController
     regimen_concept_id_all = (params[:regimen_concept_id_all].reject(&:empty?) rescue []) #remove empty elements
     unless regimen_concept_id_all.blank?
       drug_names = params[:drug_names].keys
-      drug_ids = Drug.find(:all, :conditions => ["name IN (?)", drug_names]).map(&:drug_id)
+      drug_ids = Drug.where(["name IN (?)", drug_names]).map(&:drug_id)
       regimen_name = MedicationService.regimen_interpreter(drug_ids)
       regimen_type = drug_names.join(' ')
       
@@ -848,9 +847,9 @@ class GenericRegimensController < ApplicationController
       end
     else
       ########################### if patient is being initiated/re started and if given regimen that contains NVP ##########
-      on_tb_treatment = Observation.find(:first, :conditions =>["person_id = ? AND concept_id = ?
+      on_tb_treatment = Observation.where(["person_id = ? AND concept_id = ?
         AND obs_datetime <= ?", @patient.patient_id, ConceptName.find_by_name('TB treatment').concept_id,
-          session_date.strftime('%Y-%m-%d 23:59:59')], :order =>"obs_datetime DESC").to_s #rescue ''
+          session_date.strftime('%Y-%m-%d 23:59:59')]).order("obs_datetime DESC").last.to_s #rescue ''
       
       if on_tb_treatment.match(/Yes/i)
         on_tb_treatment = true 
@@ -1127,9 +1126,8 @@ class GenericRegimensController < ApplicationController
 	end
 
   def suggest_all
-    medications = Drug.find(:all,:joins =>"INNER JOIN moh_regimen_ingredient i 
-      ON i.drug_inventory_id = drug.drug_id", :select => "drug.*, i.*", 
-      :group => 'drug.drug_id')
+    medications = Drug.select("drug.*, i.*").joins("INNER JOIN moh_regimen_ingredient i ON i.drug_inventory_id = drug.drug_id"
+		                          ).group('drug.drug_id')
 
     session_date = session[:datetime].to_date rescue Date.today
     patient = Patient.find(params[:patient_id])
@@ -1146,7 +1144,7 @@ class GenericRegimensController < ApplicationController
       cpt_drug_names = ['TMP/SMX (Cotrimoxazole 120mg tablet)', 'TMP/SMX (Cotrimoxazole 240mg tablet)',
         'Cotrimoxazole (480mg tablet)', 'Cotrimoxazole (960mg)'
       ]
-      cpt_drugs = Drug.find(:all, :conditions => ["name IN (?)", cpt_drug_names])
+      cpt_drugs = Drug.where(["name IN (?)", cpt_drug_names])
       cpt_drugs.each do |cpt_drug|
         medications << cpt_drug
       end
@@ -1168,9 +1166,8 @@ class GenericRegimensController < ApplicationController
 	end
 
   def custom_regimen_options(patient)
-    medications = Drug.find(:all,:joins =>"INNER JOIN moh_regimen_ingredient i
-      ON i.drug_inventory_id = drug.drug_id", :select => "drug.*, i.*",
-      :group => 'drug.drug_id')
+    medications = Drug.select("drug.*, i.*").joins("INNER JOIN moh_regimen_ingredient i
+      ON i.drug_inventory_id = drug.drug_id").group('drug.drug_id')
 
     session_date = session[:datetime].to_date rescue Date.today
 
@@ -1187,7 +1184,7 @@ class GenericRegimensController < ApplicationController
       cpt_drug_names = ['TMP/SMX (Cotrimoxazole 120mg tablet)', 'TMP/SMX (Cotrimoxazole 240mg tablet)',
         'Cotrimoxazole (480mg tablet)', 'Cotrimoxazole (960mg)'
       ]
-      cpt_drugs = Drug.find(:all, :conditions => ["name IN (?)", cpt_drug_names])
+      cpt_drugs = Drug.where(["name IN (?)", cpt_drug_names])
       cpt_drugs.each do |cpt_drug|
         medications << cpt_drug
       end
@@ -1195,7 +1192,7 @@ class GenericRegimensController < ApplicationController
 
     if prescribe_ipt_set == true
       pyridoxine_ipt_drug_names = ['INH or H (Isoniazid 100mg tablet)', 'Pyridoxine (25mg)']
-      pyridoxine_ipt_drugs = Drug.find(:all, :conditions => ["name IN (?)", pyridoxine_ipt_drug_names])
+      pyridoxine_ipt_drugs = Drug.where(["name IN (?)", pyridoxine_ipt_drug_names])
       pyridoxine_ipt_drugs.each do |drug|
         medications << drug
       end
@@ -1219,7 +1216,8 @@ class GenericRegimensController < ApplicationController
 
   def dosing_all
 		@patient = Patient.find(params[:patient_id] || session[:patient_id]) rescue nil
-    @criteria = Regimen.find(:all,:order => 'regimen_index',:conditions => ['program_id = ? AND concept_id =?', 1, params[:id]],:include => :regimen_drug_orders)
+    @criteria = Regimen.where(['program_id = ? AND concept_id =?', 1, params[:id]]
+		                          ).includes(:regimen_drug_orders).order('regimen_index')
 
     #	@criteria = Regimen.criteria(PatientService.get_patient_attribute_value(@patient, "current_weight")).all(:conditions => {:concept_id => params[:id]}, :include => :regimen_drug_orders)
 
@@ -1236,9 +1234,9 @@ class GenericRegimensController < ApplicationController
    
     patient_initiated =  PatientService.patient_initiated(@patient.patient_id, session_date)
       
-    on_tb_treatment = Observation.find(:first, :conditions =>["person_id = ? AND concept_id = ?
+    on_tb_treatment = Observation.where(["person_id = ? AND concept_id = ?
       AND obs_datetime <= ?", @patient.patient_id, ConceptName.find_by_name('TB treatment').concept_id,
-        session_date.to_date.strftime('%Y-%m-%d 23:59:59')], :order =>"obs_datetime DESC").to_s #rescue ''
+        session_date.to_date.strftime('%Y-%m-%d 23:59:59')]).order("obs_datetime DESC").order('regimen_index').last.to_s #rescue ''
     
     if on_tb_treatment.match(/Yes/i)
       on_tb_treatment = true 
@@ -1396,10 +1394,9 @@ class GenericRegimensController < ApplicationController
 
   def formulations_all
     names = params[:names].split('::')
-    medications = Drug.find(:all,:joins =>"INNER JOIN moh_regimen_ingredient i 
-      ON i.drug_inventory_id = drug.drug_id", :select => "drug.*, i.*",
-      :conditions => ["drug.name IN(?)", names], :group => "drug.drug_id")
-
+    medications = Drug.select("drug.*, i.*").where(["drug.name IN(?)", names]).joins(
+				"INNER JOIN moh_regimen_ingredient i ON i.drug_inventory_id = drug.drug_id"
+		).group("drug.drug_id")
     names.each do |drug_name|
       if (drug_name.match(/Cotrimoxazole|Isoniazid|Pyridoxine/i))
         #These drugs are not in moh_regimen_ingredient
@@ -1613,22 +1610,20 @@ class GenericRegimensController < ApplicationController
 	def durations
 		@regimen = Regimen.find_by_concept_id(params[:id], :include => :regimen_drug_orders)
 		@drug_id = @regimen.regimen_drug_orders.first.drug_inventory_id rescue nil
-		render :text => "No matching durations found for regimen" and return unless @drug_id
+		render plain: "No matching durations found for regimen" and return unless @drug_id
 
 		# Grab the 10 most popular durations for this drug
 		amounts = []
-		orders = DrugOrder.find(:all,
-			:select => 'DATEDIFF(orders.auto_expire_date, orders.start_date) as duration_days',
-			:joins => 'LEFT JOIN orders ON orders.order_id = drug_order.order_id AND orders.voided = 0',
-			:limit => 10,
-			:group => 'drug_inventory_id, DATEDIFF(orders.auto_expire_date, orders.start_date)',
-			:order => 'count(*)',
-			:conditions => {:drug_inventory_id => @drug_id})
+		orders = DrugOrder.select('DATEDIFF(orders.auto_expire_date, orders.start_date) as duration_days').where(drug_inventory_id: @drug_id).joins(
+				      'LEFT JOIN orders ON orders.order_id = drug_order.order_id AND orders.voided = 0').limit(10).order('count(*)').group(
+				      'drug_inventory_id, DATEDIFF(orders.auto_expire_date, orders.start_date)')
+
 		orders.each {|order|
 			amounts << "#{order.duration_days.to_f}" unless order.duration_days.blank?
+
 		}
 		amounts = amounts.flatten.compact.uniq
-		render :text => "<li>" + amounts.join("</li><li>") + "</li>"
+		render plain: ("<li>" + amounts.join("</li><li>") + "</li>").html_safe
 	end
 
 	private

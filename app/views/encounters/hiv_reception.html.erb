@@ -154,21 +154,21 @@
       <%= hidden_field_tag("observations[][obs_datetime]", DateTime.now()) %>
     <% end %>
   <% else %>
-    <%= touch_hidden_tag("GUARDIAN PRESENT", @patient, "Yes", {:id=>"guardian_present"}) %>
+    <%= (touch_hidden_tag("GUARDIAN PRESENT", @patient, "Yes", {:id=>"guardian_present"})).html_safe %>
   <% end %>
 
   <% unless @hiv_clinic_registration_date.blank? %>
     <% if @hiv_clinic_registration_date != @session_date %>
       <% if @confirmatory_hiv_test_type  == 'NOT DONE'%>
 
-        <%= touch_select_tag "CONFIRMATORY HIV TEST TYPE", @patient, options_for_select([['HIV Rapid Test','HIV RAPID TEST'],['DNA PCR','HIV DNA polymerase chain reaction'],['NOT Done','NOT DONE']]),
+        <%= (touch_select_tag "CONFIRMATORY HIV TEST TYPE", @patient, options_for_select([['HIV Rapid Test','HIV RAPID TEST'],['DNA PCR','HIV DNA polymerase chain reaction'],['NOT Done','NOT DONE']]),
           {	:id => "type_of_confirmatory_hiv_test",
-          :helpText => "Type of confirmatory HIV test" } %>
+          :helpText => "Type of confirmatory HIV test" }).html_safe %>
 
-        <%= touch_location_tag "CONFIRMATORY HIV TEST LOCATION", @patient, nil,
+        <%= (touch_location_tag "CONFIRMATORY HIV TEST LOCATION", @patient, nil,
           {	:id => "confirmatory_hiv_test_location",
           :condition => '$("type_of_confirmatory_hiv_test").value != "NOT DONE"',
-          :helpText => "Location of confirmatory HIV test"} %>
+          :helpText => "Location of confirmatory HIV test"}).html_safe %>
 
 
         <%= text_field_tag "year_confirmatory_hiv_test", nil,
@@ -193,7 +193,7 @@
           :id => "confirmatory_hiv_test_day" ,
           :validationMessage => "Confirmatory Test Date out of range #{@hiv_test_date.to_date rescue nil} and #{@todayDate.to_date rescue nil}"%>
 
-        <%= touch_hidden_tag "confirmatory hiv test date", @patient, "", :id => "confirmatory_hiv_test_date"%>
+        <%= (touch_hidden_tag "confirmatory hiv test date", @patient, "", :id => "confirmatory_hiv_test_date").html_safe%>
 
       <% end %>
     <% end %>
@@ -234,7 +234,7 @@
   <input type="hidden" value="YES" id="ever_registered_at_ART_clinic"/>
 
   <!---------------------- FAST TRACK -->
-  <%= touch_hidden_tag("FAST", @patient, "", {:id => 'fast-track-input'}) %>
+  <%= (touch_hidden_tag("FAST", @patient, "", {:id => 'fast-track-input'})).html_safe %>
 
   <%= text_field_tag "fast_track_pop_up_input", nil, {
     :id => "fast_track_pop_up_input",
@@ -245,13 +245,13 @@
     :tt_pageStyleClass => "NoControls"
   } %>
 
-  <%= touch_select_tag "STOP REASON", @patient, options_for_select(@fast_track_stop_reasons),{
+  <%= (touch_select_tag "STOP REASON", @patient, options_for_select(@fast_track_stop_reasons),{
     :id => 'fast_track_stop_reason',
     :condition => "__$('fast-track-input').value == 'No'",
     :helpText => 'Select Reason for stopping Fast Track',
     :tt_onLoad => "",
     :tt_onUnLoad => ""
-  } %>
+  }).html_safe %>
 
   <% if @fast_track_patient_but_missed_appointment %>
     <%= text_field_tag "fast_track_pop_up_missed_input", nil, {

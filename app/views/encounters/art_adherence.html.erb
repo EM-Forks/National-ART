@@ -1,4 +1,4 @@
-<%= javascript_include_tag "dateformat" %>
+<%= javascript_include_tag "/javascripts/dateformat" %>
 
 <script src="/javascripts/jquery-1.3.2.min.js" type="text/javascript"></script>
 <link rel="stylesheet" href="/stylesheets/adherence_report_table.css" type="text/css">
@@ -167,7 +167,7 @@ session_date = session[:datetime] || Time.now()
   
   var art_period_in_months = parseInt('<%= @art_duration_in_months %>');
   var hivReceptionOnlyAvailable = '<%= @hiv_reception_only_available %>';
-  var fastTrackAssesmentConcepts = JSON.parse('<%= @fast_track_assesment_concept_names.to_json %>');
+  var fastTrackAssesmentConcepts = JSON.parse('<%= @fast_track_assesment_concept_names.to_json.html_safe %>');
   var patient_id = <%= @patient.id %>;
   var patientOnTBTreatment = '<%= @patient_on_tb_treatment %>';
   var patientTBSuspected = '<%= @patient_tb_suspected %>';
@@ -370,96 +370,94 @@ session_date = session[:datetime] || Time.now()
     <% art_drugs_given_before = MedicationService.art_drug_given_before(@patient, session_date.to_date).uniq
        (art_drugs_given_before || []).each do |order|
         if @retrospective %>
-        <%= touch_numeric_tag "AMOUNT OF DRUG BROUGHT TO CLINIC", @patient, nil,
+        <%= (touch_numeric_tag "AMOUNT OF DRUG BROUGHT TO CLINIC", @patient, nil,
           {	:id        => "amount_brought_#{order.order_id}",
           :units     => "#{order.drug_order.units}",
           :order_id  => "#{order.order_id}",
           :tt_pageStyleClass => "unknownButton",
-          :helpText  => "Total #{order.drug_order.units} of #{order.drug_order.drug.name} brought to clinic"} %>
+          :helpText  => "Total #{order.drug_order.units} of #{order.drug_order.drug.name} brought to clinic"}).html_safe %>
 
         <%if  ask_pills_remaining_at_home %>
-          <%= touch_numeric_tag "AMOUNT OF DRUG REMAINING AT HOME", @patient, nil,
+          <%= (touch_numeric_tag "AMOUNT OF DRUG REMAINING AT HOME", @patient, nil,
             {	:id        => "amount_other_#{order.order_id}",
             :units     => "#{order.drug_order.units}",
             :field_type=> "number",
             :order_id  => "#{order.order_id}",
             :tt_pageStyleClass => "unknownButton",
-            :helpText  => "Total #{order.drug_order.units} of #{order.drug_order.drug.name} <span style='color:red;'>left at home</span>" } %>
+            :helpText  => "Total #{order.drug_order.units} of #{order.drug_order.drug.name} <span style='color:red;'>left at home</span>" }).html_safe %>
         <% else %>
-          <%= touch_hidden_tag "AMOUNT OF DRUG REMAINING AT HOME", @patient, nil,
+          <%= (touch_hidden_tag "AMOUNT OF DRUG REMAINING AT HOME", @patient, nil,
             {	:id        => "amount_other_#{order.order_id}",
             :units     => "#{order.drug_order.units}",
             :order_id  => "#{order.order_id}",
-            :tt_pageStyleClass => "NoControls"} %>
+            :tt_pageStyleClass => "NoControls"}).html_safe %>
         <%end%>
       <% else %>
-        <%= touch_numeric_tag "AMOUNT OF DRUG BROUGHT TO CLINIC", @patient, nil,
+        <%= (touch_numeric_tag "AMOUNT OF DRUG BROUGHT TO CLINIC", @patient, nil,
           {	:id        => "amount_brought_#{order.order_id}",
           :units     => "#{order.drug_order.units}",
           :order_id  => "#{order.order_id}",
-          :helpText  => "Total #{order.drug_order.units} of #{order.drug_order.drug.name} brought to clinic"} %>
+          :helpText  => "Total #{order.drug_order.units} of #{order.drug_order.drug.name} brought to clinic"}).html_safe %>
 
         <%if  ask_pills_remaining_at_home %>
-          <%= touch_numeric_tag "AMOUNT OF DRUG REMAINING AT HOME", @patient, nil,
+          <%= (touch_numeric_tag "AMOUNT OF DRUG REMAINING AT HOME", @patient, nil,
             {	:id        => "amount_other_#{order.order_id}",
             :field_type=> "number",
             :units     => "#{order.drug_order.units}",
             :order_id  => "#{order.order_id}",
             :tt_pageStyleClass => "unknownButton",
-            :helpText  => "Total #{order.drug_order.units} of #{order.drug_order.drug.name} <span style='color:red;'>left at home</span>" } %>
+            :helpText  => "Total #{order.drug_order.units} of #{order.drug_order.drug.name} <span style='color:red;'>left at home</span>" }).html_safe %>
         <% else %>
-          <%= touch_hidden_tag "AMOUNT OF DRUG REMAINING AT HOME", @patient, nil,
+          <%= (touch_hidden_tag "AMOUNT OF DRUG REMAINING AT HOME", @patient, nil,
             {	:id        => "amount_other_#{order.order_id}",
             :units     => "#{order.drug_order.units}",
             :order_id  => "#{order.order_id}",
-            :tt_pageStyleClass => "NoControls"} %>
+            :tt_pageStyleClass => "NoControls"}).html_safe %>
         <%end%>
       <% end %>
 
-      <%= touch_hidden_tag "WHAT WAS THE PATIENTS ADHERENCE FOR THIS DRUG ORDER", @patient, nil,
+      <%= (touch_hidden_tag "WHAT WAS THE PATIENTS ADHERENCE FOR THIS DRUG ORDER", @patient, nil,
         {	:id          => "adherence_#{order.order_id}",
         :helpText    => "Adherence summary for #{order.drug_order.drug.name}",
         :optional    => "true",
         :order_id    => "#{order.order_id}",
-        :tt_pageStyleClass => "NoControls"} %>
+        :tt_pageStyleClass => "NoControls"}).html_safe %>
 
-      <%= touch_hidden_tag "MISSED HIV DRUG CONSTRUCT", @patient, nil,
+      <%= (touch_hidden_tag "MISSED HIV DRUG CONSTRUCT", @patient, nil,
         {	:id          => "doses_missed_#{order.order_id}",
         :helpText    => "Amount of Doses Missed #{order.drug_order.drug.name}",
         :optional    => "true",
         :order_id    => "#{order.order_id}",
-        :tt_pageStyleClass => "NoControls"} %>
+        :tt_pageStyleClass => "NoControls"}).html_safe %>
 
       <script>
         drug_names['<%=order.order_id%>'] = "<%=order.drug_order.drug.name %>";
         daily_consumption['<%=order.order_id%>'] = "<%=order.drug_order.equivalent_daily_dose %>";
         order_start_date['<%=order.order_id%>'] = "<%=order.start_date.strftime('%Y-%m-%d') %>";
-        <%
-          if(order.auto_expire_date.to_date == order.start_date.to_date) and not order.discontinued_date.blank?
-            auto_expire_date = order.discontinued_date.strftime('%Y-%m-%d')
-          else
-            auto_expire_date = order.auto_expire_date.strftime('%Y-%m-%d')
-          end
-      
-          if order.drug_order.quantity.blank?
-            if order.start_date.to_date == order.auto_expire_date.to_date
-              hanging_pills = MedicationService.amounts_brought_to_clinic(@patient, order.start_date.to_date)
-              quantity_given_last_time = hanging_pills[order.drug_order.drug_inventory_id]
-            else
-              quantity_given_last_time = 0
-            end
-          else
-            quantity_given_last_time = order.drug_order.quantity
-          end
-        %>
+        <%if(order.auto_expire_date.to_date == order.start_date.to_date) and not order.discontinued_date.blank? %>
+         <% auto_expire_date = order.discontinued_date.strftime('%Y-%m-%d') %>
+        <%else%>
+          <% auto_expire_date = order.auto_expire_date.strftime('%Y-%m-%d') %>
+        <%end%>
+
+        <%if order.drug_order.quantity.blank?%>
+          <%if order.start_date.to_date == order.auto_expire_date.to_date%>
+            <%hanging_pills = MedicationService.amounts_brought_to_clinic(@patient, order.start_date.to_date)%>
+            <%quantity_given_last_time = hanging_pills[order.drug_order.drug_inventory_id]%>
+          <%else%>
+            <%quantity_given_last_time = 0%>
+          <%end%>
+        <%else%>
+          <%quantity_given_last_time = order.drug_order.quantity%>
+        <% end%>
         order_auto_expire_date['<%=order.order_id%>'] = "<%= auto_expire_date %>";
         amount_given_last_time['<%=order.order_id%>'] = <%= (quantity_given_last_time.to_f rescue 0) %>;
         dose['<%=order.order_id%>'] = "<%= MedicationService.get_medication_dose(order) %>";
-      </script>
-
+       </script>
     <% end rescue [] %>
-    <%= touch_hidden_tag "Reason for poor adherence to antiretroviral therapy", @patient, nil, {
-      :id => 'Reason_for_poor_adherence_to_antiretroviral_therapy'} %>
+
+    <%= (touch_hidden_tag "Reason for poor adherence to antiretroviral therapy", @patient, nil, {
+      :id => 'Reason_for_poor_adherence_to_antiretroviral_therapy'}).html_safe %>
 
     <label for='summary'>Adherence Report</label>
     <%= text_field_tag :summary, nil,
@@ -481,13 +479,13 @@ session_date = session[:datetime] || Time.now()
       :helpText => 'Booked for Fast Track. Continue?'
     } %>
 
-    <%= touch_select_tag "STOP REASON", @patient, options_for_select(@fast_track_stop_reasons),{
+    <%= (touch_select_tag "STOP REASON", @patient, options_for_select(@fast_track_stop_reasons),{
       :id => 'fast_track_stop_reason',
       :condition => "__$('fast_track').value == 'No'",
       :helpText => 'Select Reason for stopping Fast Track',
       :tt_onLoad => "setNextCaption();",
       :tt_onUnLoad => "resetNextCaption();"
-    } %>
+    }).html_safe %>
 
     <script>
       var abnormalAdherence;
@@ -859,21 +857,20 @@ session_date = session[:datetime] || Time.now()
     date = session[:datetime].to_date rescue Date.today
     start_date = date.strftime("%Y-%m-%d 00:00:00")
     end_date = date.strftime("%Y-%m-%d 23:59:59")
-    reception = Encounter.find(:first,:order => "encounter_datetime DESC,date_created DESC",
-      :conditions =>["patient_id = ? AND DATE(encounter_datetime) = ? AND encounter_type = ?
+    reception = Encounter.where(
+        ["patient_id = ? AND DATE(encounter_datetime) = ? AND encounter_type = ?
     AND encounter_datetime >= ? AND encounter_datetime <=?",@patient.id,date,
-        EncounterType.find_by_name('HIV RECEPTION').id,start_date,end_date])
+        EncounterType.find_by_name('HIV RECEPTION').id,start_date,end_date]).order("encounter_datetime DESC,date_created DESC").first
 
     reception = reception.observations.collect{|r|r.to_s.squish}.join(',') rescue ''
     patient_present = reception.match(/PATIENT PRESENT FOR CONSULTATION: YES/i)
 
 
     e = EncounterType.find_by_name('HIV CLINIC CONSULTATION')
-    encounter = Encounter.find(:first,
-      :conditions =>["encounter_type = ? AND patient_id =? AND
+    encounter = Encounter.where(["encounter_type = ? AND patient_id =? AND
     encounter_datetime >= ? AND encounter_datetime <= ?",
         e.id,@patient.id,date.strftime("%Y-%m-%d 00:00:00"),
-        date.strftime("%Y-%m-%d 23:59:59")])
+        date.strftime("%Y-%m-%d 23:59:59")]).first
 
     hiv_clinic_consultation = encounter.observations.collect{|r|r.to_s.squish}.join(',') rescue ''
     refer_to_clinician_already_asked = hiv_clinic_consultation.match(/REFER TO ART CLINICIAN/i)
@@ -881,25 +878,25 @@ session_date = session[:datetime] || Time.now()
   %>
 
     <% if !current_user_roles.include?('Clinician') and patient_present %>
-      <%= touch_yes_no_tag "REFER TO ART CLINICIAN", @patient, nil,
+      <%= (touch_yes_no_tag "REFER TO ART CLINICIAN", @patient, nil,
         {:id => "refer_to_clinician",
-        :helpText => "Refer patient to clinician?" } %>
+        :helpText => "Refer patient to clinician?" }).html_safe %>
     <%else%>
-      <%= touch_hidden_tag "REFER TO ART CLINICIAN", @patient, "NO", :id => "refer_to_clinician" %>
+      <%= (touch_hidden_tag "REFER TO ART CLINICIAN", @patient, "NO", :id => "refer_to_clinician").html_safe %>
     <%end unless refer_to_clinician_already_asked %>
 
     <%if @allergic_to_sulphur.blank? %>
-      <%= touch_yes_no_unknown_tag "Allergic to sulphur", @patient, nil,
+      <%= (touch_yes_no_unknown_tag "Allergic to sulphur", @patient, nil,
         {	:id => "allergic_to_sulphur",
         :condition => "$('refer_to_clinician').value == 'NO'" ,
-        :helpText => "Is patient allergic to sulphur" } %>
+        :helpText => "Is patient allergic to sulphur" }).html_safe %>
     <%end unless refer_to_clinician_already_asked %>
 
     <%if @obs_ans.match(/Prescribe drugs: Yes/i) %>
-      <%= touch_hidden_tag "Prescribe drugs", @patient, "YES", :id => "prescribe_drugs" %>
+      <%= (touch_hidden_tag "Prescribe drugs", @patient, "YES", :id => "prescribe_drugs").html_safe %>
     <%else%>
       <% if @fast_track_patient %>
-        <%= touch_hidden_tag "Prescribe drugs", @patient, "YES", :id => "prescribe_drugs" %>
+        <%= (touch_hidden_tag "Prescribe drugs", @patient, "YES", :id => "prescribe_drugs").html_safe %>
       <% else %>
         <%if @allergic_to_sulphur.blank?
           medication_options = ['ARVs','CPT','IPT','NONE OF THE ABOVE']
@@ -919,15 +916,15 @@ session_date = session[:datetime] || Time.now()
         end%>
 
         <% medication_options = ['ARVs','CPT','IPT','NONE OF THE ABOVE'] %>
-        <%= touch_select_tag "Medication orders", @patient, options_for_select(medication_options),
+        <%= (touch_select_tag "Medication orders", @patient, options_for_select(medication_options),
           {:id => "prescribe_drugs",
           :tt_onLoad => "showCategory2('Prescription');addFastTrackAssesmentButton(); controlNoneSelection(); setIPTOptionForPopup()",
           :tt_onUnLoad => "hideCategory();removeFastTrackAssesmentButton();",
           :condition => "$('refer_to_clinician').value == 'NO'" ,
           :multiple => true,
-          :helpText => "Medication to prescribe during this visit" } %>
+          :helpText => "Medication to prescribe during this visit" }).html_safe %>
 
-        <%= touch_hidden_tag "Prescribe drugs", @patient, "YES", :id => "prescribe_drugs" %>
+        <%= (touch_hidden_tag "Prescribe drugs", @patient, "YES", :id => "prescribe_drugs").html_safe %>
 
 
       <% end %>
@@ -953,7 +950,7 @@ session_date = session[:datetime] || Time.now()
 :tt_pageStyleClass => "NoControls"
 } %>
 
-    <%= touch_hidden_tag("FAST", @patient, "", {:id => 'fast-track-input'}) %>
+    <%= (touch_hidden_tag("FAST", @patient, "", {:id => 'fast-track-input'})).html_safe %>
 
     <% session_date = session[:datetime].to_date rescue nil
     if session_date %>

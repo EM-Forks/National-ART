@@ -12,7 +12,7 @@ class PatientProgram < ActiveRecord::Base
   scope :current, -> { where('date_enrolled < NOW() AND (date_completed IS NULL OR date_completed > NOW())')}
   scope :local, lambda{|| where (['location_id IN (?)',  Location.current_health_center.children.map{|l|l.id} + [Location.current_health_center.id] ])}
 
-  scope :in_programs, lambda{|names| names.blank? ? {} : includes(:program).where(['program.name IN (?)', Array(names)])}
+  scope :in_programs, lambda{|names| names.blank? ? {} : joins(:program).where(['program.name IN (?)', Array(names)])}
   scope :not_completed, lambda{|| where('date_completed IS NULL')}
 
   scope :in_uncompleted_programs, lambda{|names| names.blank? ? {} : includes(:program).where(['program.name IN (?) AND date_completed IS NULL', Array(names)])}

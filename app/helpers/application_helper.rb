@@ -223,14 +223,14 @@ module ApplicationHelper
 
   def concept_set_options(concept_name)
     concept_id = concept_id = ConceptName.find_by_name(concept_name).concept_id
-    set = ConceptSet.find_all_by_concept_set(concept_id, :order => 'sort_weight')
+    set = ConceptSet.where(concept_set: concept_id).order('sort_weight')
     options = set.map{|item|next if item.concept.blank? ; [item.concept.fullname, item.concept.fullname] }
     options_for_select(options)
   end
 
 	def concept_set_options_unknown(concept_name)
 		concept_id = concept_id = ConceptName.find_by_name(concept_name).concept_id
-    set = ConceptSet.find_all_by_concept_set(concept_id, :order => 'sort_weight')
+    set = ConceptSet.where(concept_set: concept_id).order('sort_weight')
     options = set.map{|item|next if item.concept.blank? ; [item.concept.fullname, item.concept.fullname] } - [["Unknown", "Unknown"]]
     options_for_select(options)
 	end
@@ -238,12 +238,12 @@ module ApplicationHelper
   def selected_concept_set_options(concept_name, exclude_concept_name)
     concept_id = concept_id = ConceptName.find_by_name(concept_name).concept_id
 
-    set = ConceptSet.find_all_by_concept_set(concept_id, :order => 'sort_weight')
+    set = ConceptSet.where(concept_set: concept_id).order('sort_weight')
     options = set.map{|item|next if item.concept.blank? ; [item.concept.fullname, item.concept.fullname] }
 
     exclude_concept_id = ConceptName.find_by_name(exclude_concept_name).concept_id
 
-    exclude_set = ConceptSet.find_all_by_concept_set(exclude_concept_id, :order => 'sort_weight')
+    exclude_set = ConceptSet.where(concept_set: exclude_concept_id).order('sort_weight')
     exclude_options = exclude_set.map{|item|next if item.concept.blank? ; [item.concept.fullname, item.concept.fullname] }
 
     options_for_select(options - exclude_options)
@@ -252,7 +252,7 @@ module ApplicationHelper
   def concept_set(concept_name)
     concept_id = ConceptName.find_by_name(concept_name).concept_id
 
-    set = ConceptSet.find_all_by_concept_set(concept_id, :order => 'sort_weight')
+    set = ConceptSet.where(concept_set: concept_id).order('sort_weight')
     options = set.map{|item|next if item.concept.blank? ; [item.concept.fullname] }
     return options
   end
@@ -277,7 +277,7 @@ module ApplicationHelper
   def concept_sets(concept_name)
 	concept_id = ConceptName.find_by_name(concept_name).concept_id
 
-    set = ConceptSet.find_all_by_concept_set(concept_id, :order => 'sort_weight')
+    set = ConceptSet.where(concept_set: concept_id).order('sort_weight')
     set.map{|item|next if item.concept.blank? ; item.concept.fullname }
   end
 
