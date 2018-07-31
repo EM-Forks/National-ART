@@ -13,8 +13,8 @@ class Order < ActiveRecord::Base
   belongs_to :observation, -> { where voided: 0 }, foreign_key: :obs_id, class_name: :Observation
   has_one :drug_order # no default scope
   
-  scope :current,-> { includes(:encounter).where('DATE(encounter.encounter_datetime) = CURRENT_DATE()') }
-  scope :historical, -> { includes(:encounter).where('DATE(encounter.encounter_datetime) <> CURRENT_DATE()') }
+  scope :current,-> { includes(:encounter).references("encounter.encounter_id").where('DATE(encounter.encounter_datetime) = CURRENT_DATE()') }
+  scope :historical, -> { includes(:encounter).references("encounter.encounter_id").where('DATE(encounter.encounter_datetime) <> CURRENT_DATE()') }
   scope :unfinished, -> {where("discontinued = 0 AND auto_expire_date > NOW()")}
   scope :finished, -> {where("discontinued = 1 OR auto_expire_date < NOW()")}
   scope :arv, lambda {|order|
