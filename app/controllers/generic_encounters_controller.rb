@@ -1002,7 +1002,8 @@ class GenericEncountersController < ApplicationController
 			values = ['coded_or_text', 'coded_or_text_multiple', 'group_id', 'boolean', 'coded', 'drug', 'datetime', 'numeric', 'modifier', 'text'].map { |value_name|
 				observation["value_#{value_name}"] unless observation["value_#{value_name}"].blank? rescue nil
 			}.compact
-			
+
+      values = values.flatten.reject { |v| v.empty? }
 			next if values.length == 0
 
 			observation[:value_text] = observation[:value_text].join(", ") if observation[:value_text].present? && observation[:value_text].is_a?(Array)

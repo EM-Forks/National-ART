@@ -137,12 +137,11 @@ class GenericLabController < ApplicationController
     test_date = test_date_or_year.to_date rescue (test_date_or_year.to_s + '-' + test_month.to_s + '-' + test_day.to_s).to_date
     date = test_date
 
-    test_type = LabTestType.find(:first,
-      :conditions =>["TestName = ?",params[:lab_result].to_s])
+    test_type = LabTestType.where(["TestName = ?",params[:lab_result].to_s]).first
 
     test_modifier = params[:test_value].to_s.match(/=|>|</)[0]
     test_value = params[:test_value].to_s.gsub('>','').gsub('<','').gsub('=','')
-    available_test_type = LabTestType.find(:all,:conditions=>["TestType IN (?)", test_type.TestType]).collect{|n|n.Panel_ID}
+    available_test_type = LabTestType.where(["TestType IN (?)", test_type.TestType]).collect{|n|n.Panel_ID}
 
     lab_test_table = LabTestTable.new()
     lab_test_table.TestOrdered = LabPanel.test_name(available_test_type)[0]
@@ -180,7 +179,7 @@ class GenericLabController < ApplicationController
 
     #create an order
 
-    settings = YAML.load_file("#{Rails.root}/config/lims.yml")[Rails.env]
+    settings = YAML.load_file("#{Rails.root.to_s}/config/lims.yml")[Rails.env]
     create_url = "#{settings['national-repo-node']}/create_hl7_order"
     
     if national_lims_activated
@@ -283,9 +282,9 @@ class GenericLabController < ApplicationController
         ORDER BY DATE(TESTDATE) DESC",national_ids,'HIV_viral_load'
       ]).first rescue nil
 
-    vl_lab_sample_obs = Observation.find(:last, :readonly => false, :joins => [:encounter], :conditions => ["
+    vl_lab_sample_obs = Observation.joins([:encounter]).where(["
         person_id =? AND encounter_type =? AND concept_id =? AND accession_number =?",
-        patient.id, encounter_type, viral_load, vl_lab_sample.Sample_ID.to_i]) rescue nil
+        patient.id, encounter_type, viral_load, vl_lab_sample.Sample_ID.to_i]).readonly(false).last rescue nil
     #raise (vl_lab_sample.Sample_ID.to_s + ' : ' + vl_lab_sample_obs.accession_number).inspect
     unless vl_lab_sample.blank?
       enc = patient.encounters.current.find_by_encounter_type(encounter_type)
@@ -322,7 +321,7 @@ class GenericLabController < ApplicationController
     end
 
     if national_lims_activated
-      settings = YAML.load_file("#{Rails.root}/config/lims.yml")[Rails.env]
+      settings = YAML.load_file("#{Rails.root.to_s}/config/lims.yml")[Rails.env]
 
       national_id_type = PatientIdentifierType.find_by_name("National id").id
       npid = patient.patient_identifiers.find_by_identifier_type(national_id_type).identifier
@@ -396,10 +395,10 @@ class GenericLabController < ApplicationController
         ORDER BY DATE(TESTDATE) DESC",national_ids,'HIV_viral_load'
       ]).first rescue nil
 
-    second_line_obs = Observation.find(:last, :readonly => false, :joins => [:encounter], :conditions => ["
-        person_id =? AND encounter_type =? AND concept_id =? AND accession_number =?
+    second_line_obs = Observation.joins([:encounter]).where(["person_id =? AND encounter_type =? AND concept_id =? AND accession_number =?
         AND value_text LIKE (?)",
-        patient.id, encounter_type, viral_load, vl_lab_sample.Sample_ID.to_i, '%Patient switched to second line%']) rescue nil
+        patient.id, encounter_type, viral_load, vl_lab_sample.Sample_ID.to_i, '%Patient switched to second line%']
+    ).readonly(false).last rescue nil
 
     enc = patient.encounters.current.find_by_encounter_type(encounter_type)
     enc ||= patient.encounters.create(:encounter_type => encounter_type)
@@ -430,9 +429,7 @@ class GenericLabController < ApplicationController
   def new
     @available_test = LabTestType.available_test
     @lab_test = ['']
-    LabTestType.find(:all,
-      :conditions =>["REPLACE(TestName,'_',' ') LIKE ?","%#{params[:name]}%"],
-      :order =>"TestName ASC").map{|test|
+    LabTestType.where(["REPLACE(TestName,'_',' ') LIKE ?","%#{params[:name]}%"]).order("TestName ASC").map{|test|
       @lab_test << [test.TestName.gsub('_',' '),test.TestName]
     }
     @patient_id = params[:patient_id]
@@ -443,12 +440,11 @@ class GenericLabController < ApplicationController
     patient_bean = PatientService.get_patient(Person.find(params[:patient_id]))
     date = params[:test_date].to_date rescue "1900-01-01".to_date
 
-    test_type = LabTestType.find(:first,
-      :conditions =>["TestName = ?",params[:lab_result].to_s])
+    test_type = LabTestType.where(["TestName = ?",params[:lab_result].to_s]).first
 
     test_modifier = params[:test_value].to_s.match(/=|>|</)[0]
     test_value = params[:test_value].to_s.gsub('>','').gsub('<','').gsub('=','')
-    available_test_type = LabTestType.find(:all,:conditions=>["TestType IN (?)", test_type.TestType]).collect{|n|n.Panel_ID}
+    available_test_type = LabTestType.where(["TestType IN (?)", test_type.TestType]).collect{|n|n.Panel_ID}
 
     lab_test_table = LabTestTable.new()
     lab_test_table.TestOrdered = LabPanel.test_name(available_test_type)[0]
@@ -514,7 +510,7 @@ class GenericLabController < ApplicationController
     @patient_bean = PatientService.get_patient(@patient.person)
 
     if national_lims_activated
-      settings = YAML.load_file("#{Rails.root}/config/lims.yml")[Rails.env]
+      settings = YAML.load_file("#{Rails.root.to_s}/config/lims.yml")[Rails.env]
       url = settings['lims_national_dashboard_ip'] + "/api/patient_lab_trail?npid=#{npid}"
     end
     data = JSON.parse(RestClient.get(url)) rescue {}
@@ -600,7 +596,7 @@ class GenericLabController < ApplicationController
     #   @patient = Patient.find(params[:patient_id])
       lab_sample_id = params[:lab_sample_id]
       test_type = params[:test_type]
-      lab_parameter = LabParameter.find(:last, :conditions => ["Sample_ID =? AND TESTTYPE=?", lab_sample_id, test_type ])
+      lab_parameter = LabParameter.where(["Sample_ID =? AND TESTTYPE=?", lab_sample_id, test_type ]).last
       @test_result = lab_parameter.Range.to_s + '' + lab_parameter.TESTVALUE.to_s
       lab_sample = LabSample.find(lab_sample_id)
       @test_date = lab_sample.TESTDATE.to_date
@@ -614,7 +610,7 @@ class GenericLabController < ApplicationController
     if national_lims_activated
 
       npid = id_identifiers(@patient)
-      settings = YAML.load_file("#{Rails.root}/config/lims.yml")[Rails.env]
+      settings = YAML.load_file("#{Rails.root.to_s}/config/lims.yml")[Rails.env]
       get_url = "#{settings['lims_national_dashboard_ip']}/api/pull_vl_by_id?id=#{params['lab_sample_id']}"
 
       lab_sample_id = params[:lab_sample_id]
@@ -668,7 +664,7 @@ class GenericLabController < ApplicationController
       test_date = params[:test_date].to_date
 
       ActiveRecord::Base.transaction do
-        lab_parameter = LabParameter.find(:last, :conditions => ["Sample_ID =? AND TESTTYPE=?", lab_sample_id, test_type ])
+        lab_parameter = LabParameter.where(["Sample_ID =? AND TESTTYPE=?", lab_sample_id, test_type ]).last
         lab_parameter.Range = test_modifier
         lab_parameter.TESTVALUE = test_value
         lab_parameter.save
@@ -685,9 +681,9 @@ class GenericLabController < ApplicationController
   def delete_lab_results
     lab_sample_id = params[:lab_sample_id]
     test_type = params[:test_type]
-    lab_parameter = LabParameter.find(:last, :conditions => ["Sample_ID =? AND TESTTYPE=?", lab_sample_id, test_type ])
+    lab_parameter = LabParameter.where(["Sample_ID =? AND TESTTYPE=?", lab_sample_id, test_type ]).last
     sample_id = lab_parameter.Sample_ID rescue ""
-    lab_observations = Observation.find(:all, :conditions => ["accession_number IS NOT NULL AND accession_number=?", sample_id])
+    lab_observations = Observation.where(["accession_number IS NOT NULL AND accession_number=?", sample_id])
     encounter = ""
     ActiveRecord::Base.transaction do
       (lab_observations || []).each do |observation|
@@ -702,7 +698,7 @@ class GenericLabController < ApplicationController
   end
 
   def update_national_id
-    settings = YAML.load_file("#{Rails.root}/config/lims.yml")[Rails.env]
+    settings = YAML.load_file("#{Rails.root.to_s}/config/lims.yml")[Rails.env]
 
     if national_lims_activated
       tracking_number = params['track_num']
