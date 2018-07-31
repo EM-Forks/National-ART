@@ -1,15 +1,13 @@
 class GenericProgramsController < ApplicationController
-  before_filter :find_patient, :except => [:void, :states]
+  before_action :find_patient, :except => [:void, :states,:status]
   
   def new
     session[:return_to] = nil
     session[:return_to] = params[:return_to] unless params[:return_to].blank?
-    program_names = PatientProgram.find(:all,
-      :joins => "INNER JOIN location l ON l.location_id = patient_program.location_id
-                                               INNER JOIN program p ON p.program_id = patient_program.program_id",
-      :select => "p.name program_name ,l.name location_name,patient_program.date_completed date_completed",
-      :conditions =>["voided = 0 AND patient_id = ? AND date_completed IS NULL",params[:patient_id]]
-    ).map{|pat_program|
+    program_names = PatientProgram.select("p.name program_name ,l.name location_name,patient_program.date_completed date_completed").joins(
+        "INNER JOIN location l ON l.location_id = patient_program.location_id
+                                               INNER JOIN program p ON p.program_id = patient_program.program_id"
+    ).where(["voided = 0 AND patient_id = ? AND date_completed IS NULL",params[:patient_id]]).map{|pat_program|
       [pat_program.program_name,pat_program.location_name] if pat_program.date_completed.blank?
     }
     @enrolled_program_names = program_names.to_json                                
@@ -17,7 +15,7 @@ class GenericProgramsController < ApplicationController
   end
 
   def create
-    active_programs = PatientProgram.find(:all,:conditions =>["voided = 0 AND patient_id = ? AND location_id = ? AND program_id = ?",
+    active_programs = PatientProgram.where(["voided = 0 AND patient_id = ? AND location_id = ? AND program_id = ?",
         @patient.id,params[:location_id],params[:program_id]])
     invalid_date = false
     initial_date = params[:initial_date].to_date
@@ -101,7 +99,7 @@ class GenericProgramsController < ApplicationController
     current_location = Location.current_health_center
 
     unless search.blank?
-      @locations = Location.find(:all, :conditions=>["location.retired = 0 AND name LIKE ?", "#{search}%"], :limit => 10)
+      @locations = Location.where(["location.retired = 0 AND name LIKE ?", "#{search}%"]).limit(10)
       unless current_location.blank?
         if (current_location.name.start_with?(search))
           @locations.delete_if{|l|l.location_id == current_location.location_id}
@@ -112,8 +110,8 @@ class GenericProgramsController < ApplicationController
       search = params[:q] || ''
       location_tag_id = LocationTag.find_by_name("#{params[:transfer_type]}").id rescue nil
       unless location_tag_id.blank?
-        location_ids = LocationTagMap.find(:all,:conditions => ["location_tag_id = (?)",location_tag_id]).map{|e|e.location_id}
-        @locations = Location.find(:all, :conditions=>["location.retired = 0 AND location_id IN (?) AND name LIKE ? AND name != ''", location_ids, "#{search}%"])
+        location_ids = LocationTagMap.where(["location_tag_id = (?)",location_tag_id]).map{|e|e.location_id}
+        @locations = Location.where(["location.retired = 0 AND location_id IN (?) AND name LIKE ? AND name != ''", location_ids, "#{search}%"])
       else
         @locations = most_common_locations(params[:q] || '')
       end
@@ -293,7 +291,7 @@ class GenericProgramsController < ApplicationController
       @current_state = patient_program.patient_states.last.program_workflow_state.concept.fullname if patient_program.patient_states.last.end_date.blank?
 
       closed_states = []
-      current_programs = PatientProgram.find(:all,:conditions => ["patient_id = ?",@patient.id])
+      current_programs = PatientProgram.where(["patient_id = ?",@patient.id])
       current_programs.each do | patient_program |
         patient_program.patient_states.each do | state |
           next if state.end_date.blank?

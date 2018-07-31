@@ -3690,7 +3690,7 @@ EOF
     count = appointments.length unless appointments.blank?
     count = '0' if count.blank? 
 
-    render :text => "Next appointment: #{date.strftime('%d/%b/%Y')} (Booked: #{count})"
+    render plain: "Next appointment: #{date.strftime('%d/%b/%Y')} (Booked: #{count})"
   end
 
 
