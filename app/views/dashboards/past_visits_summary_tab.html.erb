@@ -1,5 +1,5 @@
-<%= javascript_include_tag "touchscreen" %>
-<%= stylesheet_link_tag fancy_or_high_contrast_touch %>
+<%= javascript_include_tag "/javascripts/touchscreenToolkit" %>
+<%= stylesheet_link_tag "/stylesheets/"+fancy_or_high_contrast_touch %>
 
 <style type="text/css">
   .visit-summary-header{
@@ -36,13 +36,13 @@
                 %>
                 <%if header == true %>
                   <%header_title = ( encounter_date.strftime("%d/%b/%Y").to_s + " - ").humanize.titleize %>
-                  <tr> <th class="visit-summary-header" colspan="2" style="height:2px;"><%=h(header_title)%></th> </tr>
+                  <tr> <th class="visit-summary-header" colspan="2" style="height:2px;"><%=h(header_title.html_safe)%></th> </tr>
                 <%end%>
                 <% previous_encounter = encounter.name %>
                 <% header = false%>
                 <tr>
                   <td class="visit-summary">
-                    <b><%= ( encounter.name.to_s + ": " ).humanize.titleize.upcase rescue nil %></b><br /> <%= encounter.to_s  rescue nil %> <br />
+                    <b><%= ( encounter.name.to_s.html_safe + ": " ).humanize.titleize.upcase rescue nil %></b><br /> <%= encounter.to_s.html_safe  rescue nil %> <br />
                   </td>
                   <td>
                   </td>

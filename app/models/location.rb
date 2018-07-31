@@ -13,7 +13,7 @@ class Location < ActiveRecord::Base
 
   def children
     return [] if self.name.match(/ - /)
-    Location.find(:all, :conditions => ["name LIKE ?","%" + self.name + " - %"])
+    Location.where(["name LIKE ?","%" + self.name + "%"])
   end
 
   def parent

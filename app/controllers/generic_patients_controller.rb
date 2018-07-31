@@ -1369,7 +1369,7 @@ EOF
         ConceptName.find_by_name('Appointment date').concept_id,
         type.id, patient.id,session_date.strftime("%Y-%m-%d 00:00:00"),
         session_date.strftime("%Y-%m-%d 23:59:59")]
-    ).order("encounter_datetime DESC,encounter.date_created DESC").first != nil
+    ).order("encounter_datetime DESC,encounter.date_created DESC").first rescue nil
 
     #old format "%a %d %B %Y" new_forma "%d/%b/%Y"
     next_appt = Observation.joins("INNER JOIN encounter ON obs.encounter_id = encounter.encounter_id").where(
@@ -1446,7 +1446,8 @@ EOF
     program_id = Program.find_by_name("HIV PROGRAM").id
     location_id = Location.current_health_center.location_id
 
-    patient_hiv_program = PatientProgram.find(:all,:conditions =>["voided = 0 AND patient_id = ? AND program_id = ? AND location_id = ?", patient.id , program_id, location_id])
+    patient_hiv_program = PatientProgram.where(["voided = 0 AND patient_id = ? AND program_id = ? AND location_id = ?",
+                                                patient.id , program_id, location_id])
     on_art = ''
     hiv_status = PatientService.patient_hiv_status(patient)
 
