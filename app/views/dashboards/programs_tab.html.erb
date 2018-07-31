@@ -8,7 +8,7 @@
   var prog_id = null;
   
   function select(node) {
-    $('#states').empty().load('/programs/status/' + node.attr('program'))
+    $('#states').empty().load('/programs/program_status/' + node.attr('program'))
     $('#programs li.data').removeClass("active");
     node.addClass("active");
     showUpdateStateButton(node.attr('parent_program'));
