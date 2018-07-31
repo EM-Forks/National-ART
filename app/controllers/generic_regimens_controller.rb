@@ -653,9 +653,8 @@ class GenericRegimensController < ApplicationController
     ######################################################################################
     fast_track_status = params[:fast_track_yes_no]
     fast_track_encounter_type = EncounterType.find_by_name("FAST TRACK ASSESMENT")
-    fast_track_encounter = @patient.encounters.find(:last,
-      :conditions => ["encounter_type =? AND DATE(encounter_datetime) =?",
-        fast_track_encounter_type, session_date.to_date])
+    fast_track_encounter = @patient.encounters.where(["encounter_type =? AND DATE(encounter_datetime) =?",
+        fast_track_encounter_type, session_date.to_date]).last
     #concept_ids = params[:fast_track_concept_ids].split(",")
 
     unless params[:fast_track_yes_no].blank? 
@@ -1717,7 +1716,7 @@ class GenericRegimensController < ApplicationController
 
 	def formulation(patient,regimen_id)
     #criteria =  Regimen.find(:all,:order => 'regimen_index',:conditions => ['concept_id =?',regimen_id],:include => :regimen_drug_orders)
-		criteria = Regimen.criteria(PatientService.get_patient_attribute_value(patient, "current_weight")).all(:conditions => {:concept_id => regimen_id}, :include => :regimen_drug_orders)
+		criteria = Regimen.criteria(PatientService.get_patient_attribute_value(patient, "current_weight")).includes(:regimen_drug_orders).where({:concept_id => regimen_id})
 		options = []
     criteria.map do | r |
 			r.regimen_drug_orders.map do | order |

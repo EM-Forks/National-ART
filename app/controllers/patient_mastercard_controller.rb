@@ -9,11 +9,10 @@ class PatientMastercardController < ApplicationController
       'HIV CLINIC CONSULTATION','ART ADHERENCE',
       'TREATMENT','DISPENSING'
     ]
-    encounter_types = EncounterType.find(:all,:conditions =>["name IN(?)", art_encounters]).map(&:id)
+    encounter_types = EncounterType.where(["name IN(?)", art_encounters]).map(&:id)
 
     encounter_datetimes = []
-    Encounter.find(:all,:conditions =>["patient_id = ? AND encounter_type IN(?)",
-      patient_id, encounter_types], :group =>"DATE(encounter_datetime)").map do |e|
+    Encounter.where(["patient_id = ? AND encounter_type IN(?)", patient_id, encounter_types]).group("DATE(encounter_datetime)").map do |e|
         encounter_datetimes << e.encounter_datetime.to_date
     end
 
@@ -48,17 +47,11 @@ class PatientMastercardController < ApplicationController
     weight_concept_id = ConceptName.find_by_name('Weight (Kg)').concept_id
     
 
-    height = Observation.find(:last, 
-      :conditions =>["person_id = ? AND concept_id = ?
-      AND obs_datetime BETWEEN ? AND ?", 
-      patient_id, height_concept_id,
-      start_date, end_date]).value_numeric rescue nil
+    height = Observation.where(["person_id = ? AND concept_id = ? AND obs_datetime BETWEEN ? AND ?",
+      patient_id, height_concept_id, start_date, end_date]).last.value_numeric rescue nil
 
-    weight = Observation.find(:last, 
-      :conditions =>["person_id = ? AND concept_id = ?
-      AND obs_datetime BETWEEN ? AND ?", 
-      patient_id, weight_concept_id,
-      start_date, end_date]).value_numeric rescue nil
+    weight = Observation.where(["person_id = ? AND concept_id = ? AND obs_datetime BETWEEN ? AND ?",
+      patient_id, weight_concept_id, start_date, end_date]).last.value_numeric rescue nil
     
     if not weight.blank? and not height.blank?
       bmi = (weight.to_f/(height.to_f*height.to_f)*10000).round(1)
@@ -73,9 +66,8 @@ class PatientMastercardController < ApplicationController
     if bmi.blank? 
       age = Person.find(patient_id).age(visit_date.to_date)
       if age >= 18
-        height_obs = Observation.find(:last, 
-          :conditions =>["concept_id = ? AND person_id = ? AND obs_datetime <= ?",
-          ConceptName.find_by_name('Height (cm)').concept_id, patient_id, end_date])
+        height_obs = Observation.where(["concept_id = ? AND person_id = ? AND obs_datetime <= ?",
+          ConceptName.find_by_name('Height (cm)').concept_id, patient_id, end_date]).last
 
         if not height_obs.blank? and not weight.blank?
           begin
@@ -113,9 +105,7 @@ class PatientMastercardController < ApplicationController
     start_date  = visit_date.to_date.strftime('%Y-%m-%d 00:00:00')
     end_date    = visit_date.to_date.strftime('%Y-%m-%d 23:59;59')
 
-    data = Observation.find(:all, 
-      :conditions =>["person_id = ? AND concept_id = ?
-      AND obs_datetime BETWEEN ? AND ?", 
+    data = Observation.where(["person_id = ? AND concept_id = ? AND obs_datetime BETWEEN ? AND ?",
       patient_id, concpet.concept_id, start_date, end_date])
 
     pills_brought = []
@@ -138,9 +128,7 @@ class PatientMastercardController < ApplicationController
     start_date  = visit_date.to_date.strftime('%Y-%m-%d 00:00:00')
     end_date    = visit_date.to_date.strftime('%Y-%m-%d 23:59;59')
 
-    adherences = Observation.find(:all, 
-      :conditions =>["person_id = ? AND concept_id = ?
-      AND obs_datetime BETWEEN ? AND ?", 
+    adherences = Observation.where(["person_id = ? AND concept_id = ? AND obs_datetime BETWEEN ? AND ?",
       patient_id, adherence_concpet.concept_id, start_date, end_date])
 
     art_adherences = []
@@ -171,10 +159,8 @@ class PatientMastercardController < ApplicationController
     start_date  = visit_date.to_date.strftime('%Y-%m-%d 00:00:00')
     end_date    = visit_date.to_date.strftime('%Y-%m-%d 23:59;59')
 
-    dispensed = Observation.find(:last, 
-      :conditions =>["person_id = ? AND concept_id = ?
-      AND obs_datetime BETWEEN ? AND ?", 
-      patient_id, amount_dispensed, start_date, end_date])
+    dispensed = Observation.where(["person_id = ? AND concept_id = ? AND obs_datetime BETWEEN ? AND ?",
+      patient_id, amount_dispensed, start_date, end_date]).last
 
     unless dispensed.blank?
     reg = ActiveRecord::Base.connection.select_one <<EOF
@@ -192,8 +178,8 @@ EOF
     start_date  = visit_date.to_date.strftime('%Y-%m-%d 00:00:00')
     end_date    = visit_date.to_date.strftime('%Y-%m-%d 23:59;59')
 
-    orders = Order.find(:all, :conditions =>["patient_id = ? AND order_type_id = ?
-      AND start_date BETWEEN ? AND ?", patient_id, order_type, start_date, end_date])
+    orders = Order.where(["patient_id = ? AND order_type_id = ? AND start_date BETWEEN ? AND ?",
+        patient_id, order_type, start_date, end_date])
 
     gave = []
     (orders || []).each do |order|
@@ -232,9 +218,8 @@ EOF
 
     results = []
     (malawi_side_effects_ids || []).each do |row|
-      obs_group = Observation.find(:first, 
-        :conditions =>["concept_id = ? AND obs_group_id = ?",
-          row['value_coded'].to_i, row['obs_id'].to_i]) rescue nil 
+      obs_group = Observation.where(["concept_id = ? AND obs_group_id = ?",
+          row['value_coded'].to_i, row['obs_id'].to_i]).first rescue nil
 
       if obs_group.blank?
           next if no_side_effects_concept_id == row['value_coded'].to_i

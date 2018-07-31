@@ -28,7 +28,7 @@ class ReportController < GenericReportController
 			demographics[r.obs_id] = {	:first_name => patient.first_name,
         :last_name => patient.last_name,
         :gender => patient.sex,
-        :birthdate => patient.birth_dat"encounter.encounter_datetime ASC"e,
+        :birthdate => patient.birth_date,
         :visit_date => r.obs_datetime,
         :patient_id => r.person_id,
         :identifier => patient.filing_number || patient.arv_number }
@@ -48,10 +48,9 @@ class ReportController < GenericReportController
 
     required_encounters_ids.sort!
 
-    Encounter.where(["obs.voided = 0 AND encounter_type IN (?) AND DATE(encounter_datetime) = ?",required_encounters_ids,date]
-      ).joins(["INNER JOIN obs     ON obs.encounter_id    = encounter.encounter_id",
-               "INNER JOIN patient ON patient.patient_id  = encounter.patient_id"]).order("encounter.encounter_datetime ASC").group("encounter.patient_id,DATE(encounter_datetime)")(:all,
-
+    Encounter.joins(["INNER JOIN obs ON obs.encounter_id = encounter.encounter_id", "INNER JOIN patient ON patient.patient_id = encounter.patient_id"]).where(
+      ["obs.voided = 0 AND encounter_type IN (?) AND DATE(encounter_datetime) = ?",required_encounters_ids,date]
+    ).order("encounter.encounter_datetime ASC").group("encounter.patient_id,DATE(encounter_datetime)")
   end
 
   def drug_menu

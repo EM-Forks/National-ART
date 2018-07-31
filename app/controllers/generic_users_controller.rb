@@ -67,7 +67,7 @@ class GenericUsersController < ApplicationController
     else
       @users_with_provider_role = []
       users.each do |user|
-        is_provider = UserRole.find_all_by_user_id(user.user_id).map(&:role).include?("Provider") rescue nil
+        is_provider = UserRole.where(["user_id =?", user.user_id]).map(&:role).include?("Provider") rescue nil
         @users_with_provider_role << user if is_provider
       end
       users = @users_with_provider_role.map{| u | "<li value='#{u.username}'>#{u.username}</li>" }
@@ -83,7 +83,7 @@ class GenericUsersController < ApplicationController
 
   def list_clinicians
     @clinician_role = Role.find_by_role("clinician").id
-    @clinicians = UserRole.find_all_by_role_id(@clinician_role)
+    @clinicians = UserRole.where(["role_id =?", @clinician_role])
   end
 
   def logout
@@ -114,13 +114,13 @@ class GenericUsersController < ApplicationController
 
   def voided_list
     session[:voided_list] = false
-    @user_pages, @users = paginate(:users, :per_page => 50,:conditions =>["voided=1"])
+    @user_pages, @users = User.where(["voided=1"]).paginate(per_page: 50)#paginate(:users, :per_page => 50,:conditions =>["voided=1"])
     render :view => 'list'
   end
 
   def list
     session[:voided_list] = true
-    @user_pages, @users = paginate(:users, :per_page => 50,:conditions =>["voided=0"])
+    @user_pages, @users = User.where(["voided=0"]).paginate(per_page: 50)#paginate(:users, :per_page => 50,:conditions =>["voided=0"])
   end
 
   def show
@@ -252,10 +252,10 @@ class GenericUsersController < ApplicationController
       flash[:notice] = "You have successfuly added the role of #{params[:user_role][:role_id]}"
       redirect_to :action => "show"
     else
-      user_roles = UserRole.find_all_by_user_id(@user.user_id).collect{|ur|ur.role.role}
+      user_roles = UserRole.where(["user_id =?", @user.user_id]).collect{|ur|ur.role.role}
       all_roles = Role.all.collect{|r|r.role}
       @roles = (all_roles - user_roles)
-      @show_super_user = true if UserRole.find_all_by_user_id(@user.user_id).collect{|ur|ur.role.role != "superuser" }
+      @show_super_user = true if UserRole.where(["user_id =?", @user.user_id]).collect{|ur|ur.role.role != "superuser" }
     end
   end
 
@@ -344,7 +344,7 @@ class GenericUsersController < ApplicationController
     #.gsub('Hiv','HIV').gsub('Tb','TB').gsub('Art','ART').gsub('hiv','HIV')
 
     @encounter_types = EncounterType.all.map{|enc|enc.name.gsub(/.*\//,"").gsub(/\..*/,"").humanize}
-    @available_encounter_types = Dir.glob(Rails.root.to_s+"/app/views/encounters/*.html.erb").map{|file|file.gsub(/.*\//,"").gsub(/\..*/,"").humanize}
+    @available_encounter_types = Dir.glob(Rails.root.to_s + "/app/views/encounters/*.html.erb").map{|file|file.gsub(/.*\//,"").gsub(/\..*/,"").humanize}
     @available_encounter_types -= @available_encounter_types - @encounter_types
 
     available_privileges_not_from_encounters_folder = []

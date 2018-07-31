@@ -40,7 +40,7 @@ class PrescriptionsController < GenericPrescriptionsController
     @set_names = {}
     @set_descriptions = {}
 
-    GeneralSet.find_all_by_status("active").each do |set|
+    GeneralSet.where(["status =?", "active"]).each do |set|
 
       @drug_sets[set.set_id] = {}
       @set_names[set.set_id] = set.name

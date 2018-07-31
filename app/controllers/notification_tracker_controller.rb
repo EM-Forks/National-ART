@@ -180,9 +180,8 @@ EOF
     end_date    = notification_datetime.to_date.strftime('%Y-%m-%d 23:59:59')
 
     concept_id  = ConceptName.find_by_name('FAMILY PLANNING, ACTION TO TAKE').concept_id
-    answers     = Observation.find(:last, :conditions =>["concept_id = ? AND creator = ?
-      AND person_id = ? AND obs_datetime BETWEEN ? AND ?", 
-      concept_id, user_id, patient_id, start_date, end_date])
+    answers     = Observation.where(["concept_id = ? AND creator = ? AND person_id = ? AND obs_datetime BETWEEN ? AND ?",
+      concept_id, user_id, patient_id, start_date, end_date]).last
 
     ans = []
     (answers || []).each do |a|
