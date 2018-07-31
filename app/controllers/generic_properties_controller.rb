@@ -178,7 +178,7 @@ class GenericPropertiesController < ApplicationController
       role = params[:role]['title']
       privileges = params[:role]['privileges']
 
-      RolePrivilege.find(:all,:conditions => ["role = ?",role]).each do | privilege |
+      RolePrivilege.where(["role = ?",role]).each do | privilege |
         privilege.destroy
       end
 
@@ -194,14 +194,13 @@ class GenericPropertiesController < ApplicationController
         redirect_to "/clinic" and return
       end
     else
-      @privileges = Privilege.find(:all).collect{|r|r.privilege}
-      @activities = RolePrivilege.find(:all).collect{ |r|r.privilege.privilege }
+      @privileges = Privilege.all.collect{|r|r.privilege}
+      @activities = RolePrivilege.all.collect{ |r|r.privilege.privilege }
     end
   end
 
   def selected_roles
-    render :text => "<li>" + RolePrivilege.find(:all, 
-      :conditions =>["role = ?", params[:role]]).collect { |r|
+    render :text => "<li>" + RolePrivilege.where(["role = ?", params[:role]]).collect { |r|
       r.privilege.privilege
     }.uniq.join("</li><li>") + "</li>"
   end

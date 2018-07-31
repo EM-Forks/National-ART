@@ -4,7 +4,7 @@ class GenericPersonAttributesController < ApplicationController
     if request.post? && params[:type] && params[:attribute]
       patient = Patient.find(params[:id])
       attribute_type = PersonAttributeType.find(params[:type])
-      current_attributes = patient.person.person_attributes.find_all_by_person_attribute_type_id(attribute_type.id)
+      current_attributes = patient.person.person_attributes.where(["person_attribute_type_id =?", attribute_type.id])
       current_attributes.each do |attribute|
         attribute.void('given another attribute')
       end if current_attributes

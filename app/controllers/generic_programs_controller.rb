@@ -129,16 +129,17 @@ class GenericProgramsController < ApplicationController
   end
   
   def workflows
-    @workflows = ProgramWorkflow.all(:conditions => ['program_id = ?', params[:program]], :include => :concept)
+    @workflows = ProgramWorkflow.includes(:concept).where(['program_id = ?', params[:program]])
     @names = @workflows.map{|workflow| "<li value='#{workflow.id}'>#{workflow.concept.fullname}</li>" }
     render :text => @names.join('')
   end
   
   def states
     if params[:show_non_terminal_states_only].to_s == true.to_s
-      @states = ProgramWorkflowState.all(:conditions => ['program_workflow_id = ? AND terminal = 0', params[:workflow]], :include => :concept)
+      @states = ProgramWorkflowState.includes(:concept).where(['program_workflow_id = ? AND terminal = 0',
+          params[:workflow]])
     else
-      @states = ProgramWorkflowState.all(:conditions => ['program_workflow_id = ?', params[:workflow]], :include => :concept)
+      @states = ProgramWorkflowState.includes(:concept).where(['program_workflow_id = ?', params[:workflow]])
     end
     
     @names = @states.map{|state|
@@ -214,7 +215,7 @@ class GenericProgramsController < ApplicationController
 
             #updates the state of all patient_programs to patient died and save the
             #end_date of the last active state.
-            current_programs = PatientProgram.find(:all,:conditions => ["patient_id = ?",@patient.id])
+            current_programs = PatientProgram.where(["patient_id = ?",@patient.id])
             current_programs.each do |program|
               if patient_program.to_s != program.to_s
                 current_active_state = program.patient_states.last
@@ -276,9 +277,9 @@ class GenericProgramsController < ApplicationController
       end
       @patient = patient_program.patient
       @patient_program_id = patient_program.patient_program_id
-      program_workflow = ProgramWorkflow.all(:conditions => ['program_id = ?', patient_program.program_id], :include => :concept)
+      program_workflow = ProgramWorkflow.includes(:concept).where(['program_id = ?', patient_program.program_id])
       @program_workflow_id = program_workflow.first.program_workflow_id
-      @states = ProgramWorkflowState.all(:conditions => ['program_workflow_id = ?', @program_workflow_id], :include => :concept)
+      @states = ProgramWorkflowState.includes(:concept).where(['program_workflow_id = ?', @program_workflow_id])
       @names = @states.map{|state|
         concept = state.concept
         next if concept.blank?
