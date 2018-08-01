@@ -792,9 +792,9 @@ who_stage_iv = @who_stage_iv - @who_stage_peds_iv - @who_stage_adults_iv
 
 	<% if @patient_bean.sex == 'Female' and  @patient_bean.age > 14
 	  obs_date = session[:datetime].to_date rescue Date.today
-	  patient_pregnant = Observation.find(:first,:conditions =>["concept_id = ? AND person_id = ? AND DATE(obs_datetime) = ?",
+	  patient_pregnant = Observation.where(["concept_id = ? AND person_id = ? AND DATE(obs_datetime) = ?",
 		  ConceptName.find_by_name('IS PATIENT PREGNANT?').concept_id,
-		  @patient.id,obs_date]) %>
+		  @patient.id,obs_date]).first %>
 
 	  <% if @patient_is_transfer_in && (@patient_transfer_in_date == session[:datetime])%>
 		<% if patient_pregnant.blank? %>

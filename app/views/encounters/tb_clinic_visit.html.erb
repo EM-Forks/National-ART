@@ -210,9 +210,8 @@
 	<% end %>
 
 	<% session_date = session[:datetime].to_date rescue Date.today 
-		reception = Encounter.find(:first,:order => "encounter_datetime DESC",
-			:conditions => ["DATE(encounter_datetime) = ? AND patient_id = ? AND encounter_type = ?",
-			session_date,@patient.id,EncounterType.find_by_name('TB RECEPTION').id])
+		reception = Encounter.where(["DATE(encounter_datetime) = ? AND patient_id = ? AND encounter_type = ?",
+			session_date,@patient.id,EncounterType.find_by_name('TB RECEPTION').id]).order("encounter_datetime DESC").first
 		reception_obs = reception.observations.map{|obs|obs.to_s.strip.upcase} rescue []
 	%>
 

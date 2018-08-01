@@ -619,7 +619,7 @@
 
     /*assigning rules and rule descriptions from the ValidationRule table*/
     function initSetRulesDescriptions() {
-        <%ValidationRule.find(:all,:conditions =>['type_id = 1']).each do |r| %>
+        <%ValidationRule.where(['type_id = 1']).each do |r| %>
         set_rules.push("<%=r.expr%>");
         set_rules_descriptions.push('Failed: ' + "<%=r.desc%>");
         <%end%>

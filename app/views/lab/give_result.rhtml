@@ -11,17 +11,6 @@
 </style>
 <%
 patient = Patient.find(params[:patient_id])
-=begin
-identifier_type = ["Legacy Pediatric id","National id","Legacy National id","Old Identification Number"]
-identifier_types = PatientIdentifierType.find(:all, :conditions=>["name IN (?)",identifier_type]
-).collect{| type |type.id }
-
-identifiers = []
-PatientIdentifier.find(:all, :conditions=>["patient_id=? AND identifier_type IN (?)",
-patient.id,identifier_types]).each{| i | 
-identifiers << i.identifier
-}
-=end
 identifiers = LabController.new.id_identifiers(patient)
 results = Lab.latest_result_by_test_type(patient, 'HIV_viral_load', identifiers) rescue nil
 latest_result = results[1]["TestValue"] rescue nil

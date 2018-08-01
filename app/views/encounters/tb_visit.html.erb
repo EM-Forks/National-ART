@@ -378,11 +378,10 @@ end
   date = session[:datetime].to_date rescue Date.today
   visit_type = []
   visit_type << 'TB CLINIC VISIT'
-  types = EncounterType.find(:all,:conditions => ["name IN (?)",visit_type]).collect{|n|n.encounter_type_id}
+  types = EncounterType.where(["name IN (?)",visit_type]).collect{|n|n.encounter_type_id}
 
-  tb_clinic = Encounter.find(:first,:order => "encounter_datetime DESC",
-	:conditions =>["DATE(encounter_datetime) = ? AND patient_id = ? AND encounter_type IN (?)",
-	  date,@patient.id,types])
+  tb_clinic = Encounter.where(["DATE(encounter_datetime) = ? AND patient_id = ? AND encounter_type IN (?)",
+	  date,@patient.id,types]).order("encounter_datetime DESC").first
   if tb_clinic.blank? and not (@current_user_role.include?("Doctor") || @current_user_role.include?("Clinician")) || ! @patient_present.to_s.match(/patient present for consultation:  no/i)
   %>
 	<%= touch_yes_no_tag "ANY NEED TO SEE A CLINICIAN", @patient, nil,

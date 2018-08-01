@@ -1,7 +1,7 @@
 
 <%=form_tag(:action => "set_workstation_room") %>
 
-  <!--%= @health_centres = Location.find(:all,  :order => "name").map{|r|[r.name, r.location_id]} 
+  <!--%= @health_centres = Location.order("name").map{|r|[r.name, r.location_id]}
 
       select(:health_centre, :location_id, @health_centres, {}, :onChange => "new Ajax.Updater('health_center_rooms', '/user/health_centre_rooms'+'?id='+this.value, {asynchronous:true, evalScripts:true});")
   
