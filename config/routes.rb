@@ -4,6 +4,7 @@ Rails.application.routes.draw do
   #get '/location', controller: :sessions, action: :location
   get '/location', to: "sessions#location"
   get '/user/programs/:id', to: 'user#programs'
+  get '/programs/status/:id', to: 'programs#status'
   get  '/admin', controller: 'admin', action: 'index'
   get  '/login', controller: 'sessions', action: 'new'
   post '/logout', controller:  'sessions', action:  'destroy'
@@ -12,11 +13,11 @@ Rails.application.routes.draw do
   post '/encounters/new/:encounter_type', controller:  'encounters', action: 'new'
   get '/encounters/new/:encounter_type/:id', controller: 'encounters', action: 'new'
   post '/encounters/new/:encounter_type/:id', controller: 'encounters', action: 'new'
-  get '/:controller/:action'
   get '/:controller/:action/:id'
+  get '/:controller/:action'
+  match ':controller/:action/:id',via: [:get,:post]
   post '/:controller/:action'
   get '/logout', controller: 'sessions', action: 'destroy'
-  get '/people', to: "clinic#index"
   get '/render_date_enrolled_in_art', controller: 'patients', action: 'render_date_enrolled_in_art'
   post '/:controller/:action/:id'
 

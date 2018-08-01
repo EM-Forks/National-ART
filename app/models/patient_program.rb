@@ -15,7 +15,7 @@ class PatientProgram < ActiveRecord::Base
   scope :in_programs, lambda{|names| names.blank? ? {} : joins(:program).where(['program.name IN (?)', Array(names)])}
   scope :not_completed, lambda{|| where('date_completed IS NULL')}
 
-  scope :in_uncompleted_programs, lambda{|names| names.blank? ? {} : includes(:program).where(['program.name IN (?) AND date_completed IS NULL', Array(names)])}
+  scope :in_uncompleted_programs, lambda{|names| names.blank? ? {} : includes(:program).references("program.program_id").where(['program.name IN (?) AND date_completed IS NULL', Array(names)])}
 
   validates_presence_of :date_enrolled, :program_id
 

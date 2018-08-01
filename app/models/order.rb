@@ -9,7 +9,7 @@ class Order < ActiveRecord::Base
   belongs_to :concept, -> { where retired: 0 }
   belongs_to :encounter, -> { where voided: 0 }
   belongs_to :patient, -> { where voided: 0 }
-  belongs_to :provider, -> { where voided: 0 }, foreign_key: :orderer, class_name: :User
+  belongs_to :provider, -> { where retired: 0 }, foreign_key: :orderer, class_name: :User
   belongs_to :observation, -> { where voided: 0 }, foreign_key: :obs_id, class_name: :Observation
   has_one :drug_order # no default scope
   

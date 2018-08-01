@@ -1,9 +1,9 @@
 
-<%= javascript_include_tag 'notification_tracker'%>
-<%= javascript_include_tag 'miscellaneous.js'%>
-<%=  stylesheet_link_tag  'miscellaneous.css'%>
+<%= javascript_include_tag '/javascripts/notification_tracker'%>
+<%= javascript_include_tag '/javascripts/miscellaneous.js'%>
+<%=  stylesheet_link_tag  '/stylesheets/miscellaneous.css'%>
 
-<%= stylesheet_link_tag 'yes_no_btn'%>
+<%= stylesheet_link_tag '/stylesheets/yes_no_btn'%>
 
 <div id="confirmatory-test-popup-div">
   <div id="confirmatory-test-popup-header">
@@ -220,11 +220,11 @@
 
 
 
-<%= javascript_include_tag("miscellaneous")%>
-<%= stylesheet_link_tag("miscellaneous")%>
-<%= javascript_include_tag "Highcharts/js/jquery.min.js" %>
-<%= javascript_include_tag("numericKeypad")%>
-<%= stylesheet_link_tag("fast_track_table")%>
+<%= javascript_include_tag("/javascripts/miscellaneous")%>
+<%= stylesheet_link_tag("/stylesheets/miscellaneous")%>
+<%= javascript_include_tag "/javascripts/Highcharts/js/jquery.min.js" %>
+<%= javascript_include_tag("/javascripts/numericKeypad")%>
+<%= stylesheet_link_tag("/stylesheets/fast_track_table")%>
 <style type="text/css">
   .FastTrackBtn {
     width: 175px !important;
@@ -797,29 +797,29 @@
 
 </style>
 
-<%= javascript_include_tag "prototype"%>
+<%= javascript_include_tag "/javascripts/prototype"%>
 <script>
   var patient_id = "<%= @patient.patient_id %>";
   var tt_cancel_destination = "/patients/treatment_dashboard/<%= @patient.patient_id %>"
-  var current_regimens_for_programs = <%= @current_regimens_for_programs.to_json -%>;
-  var current_regimen_names_for_programs = <%= @current_regimen_names_for_programs.to_json -%>;
+  var current_regimens_for_programs = <%= @current_regimens_for_programs.to_json.html_safe -%>;
+  var current_regimen_names_for_programs = <%= @current_regimen_names_for_programs.to_json.html_safe -%>;
   var reason_for_art = "<%= @reason_for_art_eligibility %>";
   var prescribeTBDrugs = "<%= @prescribe_tb_drugs %>";
   var prescribeARTDrugs = "<%= @prescribe_art_drugs %>";
   var artVisit = "<%= @hiv_clinic_consultation %>";
-  var adverse_events = <%= @adverse_events.to_json %>
+  var adverse_events = <%= @adverse_events.to_json.html_safe %>
   var regimen_index = '<%= @regimen_index %>';
   var regimen_id = null;
   var tb_regimen_id = null;
   var other_regimen = null;
-  var sideEffectsAnswers = <%= @side_effects_answers.to_json %>;
+  var sideEffectsAnswers = <%= @side_effects_answers.to_json.html_safe %>;
   var currentRegimenIndex = "<%= @current_regimen.to_i rescue '' %>";
   var today = "<%= @today %>";
-  var history_of_side_effects = <%= @history_of_side_effects.to_json -%>;
-  var patient_contraindications = <%= @patient_contraindications.to_json -%>;
+  var history_of_side_effects = <%= @history_of_side_effects.to_json.html_safe -%>;
+  var patient_contraindications = <%= @patient_contraindications.to_json.html_safe -%>;
   var date_of_first_hiv_clinic_enc = new Date('<%= @date_of_first_hiv_clinic_enc %>');
   var date_of_first_hiv_clinic_enc_string = '<%= @date_of_first_hiv_clinic_enc %>';
-  var side_effects_contraindications  = <%= @side_effects_contraindications.to_json -%>
+  var side_effects_contraindications  = <%= @side_effects_contraindications.to_json.html_safe -%>
 
   var reasons = ['Treatment failure', 'Jandice/hepatitis','Anaemia < 8g/dl','Renal failure', 'Abacavir hypersensitivity', 'Lypodystrophy', 'Lactic Acidosis', 'Drug Rash', 'Other'] ;
 <% if @patient_bean.age < 12 %>
@@ -948,7 +948,7 @@
 
   function contraindicators_rewritten(){
     var foundEvents = []
-    symptoms = '<%= @found_symptoms.join(',').humanize %>';
+    symptoms = '<%= @found_symptoms.join(',').html_safe.humanize %>';
     symptoms = symptoms.split(',');
     id = document.getElementById("regimen_concept_id").value
     if (other_regimen != "yes"){
@@ -2178,7 +2178,7 @@
     var resultString = '';
 
 <% if @patient_bean.sex == 'Female' && @patient_bean.age > 14 %>
-      resultString = '<b>Pregnancy Status:</b><%=" #{@is_patient_pregnant_value}"%><br><br>'
+      resultString = '<b>Pregnancy Status:</b><%=" #{@is_patient_pregnant_value.html_safe}"%><br><br>'
 <% end %>
 
 <% if @family_planning_methods.length != 0 %>
@@ -2189,8 +2189,8 @@
   end
 end
 %>
-
-    resultString += <%= "'#{family_planning_methods}'" %>
+   <% refactored_family_planning_methods = family_planning_methods.instance_of?(String) ? family_planning_methods.html_safe : ""%>
+    resultString += '<%= refactored_family_planning_methods %>'
     resultString += '</ul>'
 
     innerHtml = '<div id="summary"><div>' +
@@ -3017,12 +3017,12 @@ pyridoxine_options = ["","25", "50"]
 
     <% unless @transfer_out_patient %>
 
-      <%= touch_yes_no_tag "Prescribe drugs", @patient, nil,
+      <%= (touch_yes_no_tag "Prescribe drugs", @patient, nil,
         { :optional => false,
         :id => 'prescribe_tb_drugs',
         :condition => 'isRegisteredForTB() == true',
         :helpText => "Prescribe TB Regimen?",
-        :tt_onLoad => "showCategory2('Prescription');"} %>
+        :tt_onLoad => "showCategory2('Prescription');"}).html_safe %>
 
     <%end%>
 
@@ -3082,7 +3082,7 @@ pyridoxine_options = ["","25", "50"]
         optionsString += "<option value = '" + days.to_s + "'>" + duration + "</option>"
       end
     %>
-      <%= select_tag :tb_duration, optionsString,
+      <%= select_tag :tb_duration, optionsString.html_safe,
         { :condition => '$("prescribe_tb_drugs").value == "YES"',
         :tt_onLoad => "__$('keyboard').style.display = 'none';showCategory2('Prescription');",
         :helpText => 'Duration' } %>
@@ -3091,12 +3091,12 @@ pyridoxine_options = ["","25", "50"]
     <%end%>
 
     <% if @transfer_out_patient %>
-      <%= touch_yes_no_tag "Prescribe drugs", @patient, nil,
+      <%= (touch_yes_no_tag "Prescribe drugs", @patient, nil,
         { :optional => false,
         :id => 'prescribe_continuation_tb_drugs',
         :condition => 'isRegisteredForTB() == true',
         :helpText => "Prescribe Continuation TB Regimen?",
-        :tt_onLoad => "showCategory2('Prescription');"} %>
+        :tt_onLoad => "showCategory2('Prescription');"}).html_safe %>
 
       <%= select_tag :tb_continuation_regimen_concept_id, nil,
         { :ajaxUrl => "",
@@ -3127,7 +3127,7 @@ pyridoxine_options = ["","25", "50"]
         optionsString += "<option value = '" + days.to_s + "'>" + duration + "</option>"
       end
     %>
-      <%= select_tag :tb_continuation_duration, optionsString,
+      <%= select_tag :tb_continuation_duration, optionsString.html_safe,
         { :condition => '$("prescribe_continuation_tb_drugs").value == "YES"',
         :helpText => 'Duration of TB drugs',
         :tt_onLoad => "showCategory2('Prescription');"} %>
@@ -3147,7 +3147,7 @@ pyridoxine_options = ["","25", "50"]
     <%end%>
 
     <% if @fast_track_patient == true && !@current_regimen.blank? %>
-      <%= touch_hidden_tag("PRESCRIBE ARVS", @patient, 'YES', {:id => 'prescribe_arvs'}) %>
+      <%= (touch_hidden_tag("PRESCRIBE ARVS", @patient, 'YES', {:id => 'prescribe_arvs'})).html_safe %>
     <% else %>
   <%#= touch_yes_no_tag "PRESCRIBE ARVS", @patient, nil,
   {:id => 'prescribe_arvs',
@@ -3156,9 +3156,9 @@ pyridoxine_options = ["","25", "50"]
   :helpText => "Prescribe ARVs?",
   :tt_onLoad => "showCategory2('Prescription');"} %>
       <%if @prescribe_arvs_set %>
-        <%= touch_hidden_tag("PRESCRIBE ARVS", @patient, 'YES', {:id => 'prescribe_arvs'}) %>
+        <%= (touch_hidden_tag("PRESCRIBE ARVS", @patient, 'YES', {:id => 'prescribe_arvs'})).html_safe %>
       <% else %>
-        <%= touch_hidden_tag("PRESCRIBE ARVS", @patient, 'NO', {:id => 'prescribe_arvs'}) %>
+        <%= (touch_hidden_tag("PRESCRIBE ARVS", @patient, 'NO', {:id => 'prescribe_arvs'})).html_safe %>
       <% end %>
     <% end %>
 
@@ -3173,8 +3173,8 @@ pyridoxine_options = ["","25", "50"]
 :tt_onUnLoad => 'resetAttributes();',
 :condition => 'existingRegimen();',
 :helpText => "Continue current ARV drugs?"}%>
-    <%= touch_hidden_tag "Reason antiretrovirals changed or stopped", @patient, nil, {
-      :id => 'reason_antiretrovirals_changed_or_stopped'} %>
+    <%= (touch_hidden_tag "Reason antiretrovirals changed or stopped", @patient, nil, {
+      :id => 'reason_antiretrovirals_changed_or_stopped'}).html_safe %>
 
     <%= hidden_field_tag("continue_existing_regimen", 'NO', {:id => 'continue_existing_regimen'}) %>
 
@@ -3248,7 +3248,7 @@ pyridoxine_options = ["","25", "50"]
 
 
 
-    <%= select_tag :duration, optionsString, {
+    <%= select_tag :duration, optionsString.html_safe, {
       :id => "interval_to_next_visit",
       :condition => '$("prescribe_arvs").value == "YES" || $("cpt_given").value == "YES" || $("ipt_given").value == "YES"',
       :tt_onLoad => "checkIfStarterPack();addPrescriptionBtn();__$('keyboard').style.display = 'none';
@@ -3256,7 +3256,7 @@ pyridoxine_options = ["","25", "50"]
       :tt_onUnLoad => "removePrescriptionBtn();hideStockLevelDetails(); removeOnclickEvent();",
       :helpText => 'Interval to next visit' } %>
 
-    <%= touch_hidden_tag "Appointment type", @patient, nil, :id => "appointment_interval_type" %>
+    <%= (touch_hidden_tag "Appointment type", @patient, nil, :id => "appointment_interval_type").html_safe %>
 
     <!-- Fast  track questions -->
     <% enable_fast_track = GlobalProperty.find_by_property('enable.fast.track').property_value == 'true' rescue false %>
@@ -3297,7 +3297,7 @@ pyridoxine_options = ["","25", "50"]
     <!-- CPT & IPT-->
     <%if not @allergic_to_sulphur.blank?
       if @allergic_to_sulphur.upcase == 'YES'%>
-        <%= touch_hidden_tag "Prescribe cotramoxazole", @patient, "NO", :id => "cpt_given" %>
+        <%= (touch_hidden_tag "Prescribe cotramoxazole", @patient, "NO", :id => "cpt_given").html_safe %>
         <input type='hidden' name='cpt_mgs' id='cpt_mgs' />
       <%else%>
     <%#= touch_yes_no_tag "Prescribe cotramoxazole", @patient, nil,
@@ -3307,7 +3307,7 @@ pyridoxine_options = ["","25", "50"]
     :helpText => "Prescribe CPT",
     :tt_onLoad => "showCategory2('Prescription');"} %>
         <input type='hidden' name='cpt_mgs' id='cpt_mgs' />
-        <%= touch_hidden_tag "Prescribe cotramoxazole", @patient, "#{@prescribe_cpt_set == true ? 'YES' : 'NO'}", :id => "cpt_given" %>
+        <%= (touch_hidden_tag "Prescribe cotramoxazole", @patient, "#{@prescribe_cpt_set == true ? 'YES' : 'NO'}", :id => "cpt_given").html_safe %>
 
     <%#= select_tag :cpt_mgs, options_for_select(options), {
     :allowFreeText => 'false',
@@ -3318,7 +3318,7 @@ pyridoxine_options = ["","25", "50"]
     :tt_onmousedown => "show_confirm_cpt_mgs()"} %>
       <%end%>
     <% else %>
-      <%= touch_hidden_tag "Prescribe cotramoxazole", @patient, "NO", :id => "cpt_given" %>
+      <%= (touch_hidden_tag "Prescribe cotramoxazole", @patient, "NO", :id => "cpt_given").html_safe %>
       <input type='hidden' name='cpt_mgs' id='cpt_mgs' />
     <%end%>
 
@@ -3335,7 +3335,7 @@ pyridoxine_options = ["","25", "50"]
 
           <% ipt_ans = 'YES' if @prescribe_ipt_set
           ipt_ans = 'NO' if not @prescribe_ipt_set %>
-          <%= touch_hidden_tag "ISONIAZID", @patient, ipt_ans, :id => "ipt_given" %>
+          <%= (touch_hidden_tag "ISONIAZID", @patient, ipt_ans, :id => "ipt_given").html_safe %>
           <input type='hidden' name='ipt_mgs' id='ipt_mgs' />
       <%#= select_tag :ipt_mgs, options_for_select(ipt_options), {
       :allowFreeText => 'false',
@@ -3344,7 +3344,7 @@ pyridoxine_options = ["","25", "50"]
       :tt_onLoad => "showCategory2('Prescription');"} %>
 
         <%else%>
-          <%= touch_hidden_tag "ISONIAZID", @patient, "", :id => "ipt_given" %>
+          <%= (touch_hidden_tag "ISONIAZID", @patient, "", :id => "ipt_given").html_safe %>
           <input type='hidden' name='ipt_mgs' id='ipt_mgs' />
         <%end %>
 
@@ -3359,7 +3359,7 @@ pyridoxine_options = ["","25", "50"]
 
           <% ipt_ans = 'YES' if @prescribe_ipt_set
           ipt_ans = 'NO' if not @prescribe_ipt_set %>
-          <%= touch_hidden_tag "ISONIAZID", @patient, ipt_ans, :id => "ipt_given" %>
+          <%= (touch_hidden_tag "ISONIAZID", @patient, ipt_ans, :id => "ipt_given").html_safe %>
           <input type='hidden' name='ipt_mgs' id='ipt_mgs' />
       <%#= select_tag :ipt_mgs, options_for_select(ipt_options), {
       :allowFreeText => 'false',
@@ -3367,7 +3367,7 @@ pyridoxine_options = ["","25", "50"]
       :helpText => "IPT milligrams",
       :tt_onLoad => "showCategory2('Prescription');"} %>
         <%else%>
-          <%= touch_hidden_tag "ISONIAZID", @patient, "", :id => "ipt_given" %>
+          <%= (touch_hidden_tag "ISONIAZID", @patient, "", :id => "ipt_given").html_safe %>
           <input type='hidden' name='ipt_mgs' id='ipt_mgs' />
         <%end %>
       <% end %>
@@ -3384,7 +3384,7 @@ pyridoxine_options = ["","25", "50"]
 
         <% ipt_ans = 'YES' if @prescribe_ipt_set
         ipt_ans = 'NO' if not @prescribe_ipt_set %>
-        <%= touch_hidden_tag "ISONIAZID", @patient, ipt_ans, :id => "ipt_given" %>
+        <%= (touch_hidden_tag "ISONIAZID", @patient, ipt_ans, :id => "ipt_given").html_safe %>
         <input type='hidden' name='ipt_mgs' id='ipt_mgs' />
     <%#= select_tag :ipt_mgs, options_for_select(ipt_options), {
     :allowFreeText => 'false',
@@ -3392,13 +3392,13 @@ pyridoxine_options = ["","25", "50"]
     :helpText => "IPT milligrams",
     :tt_onLoad => "showCategory2('Prescription');"} %>
       <% else %>
-        <%= touch_hidden_tag "ISONIAZID", @patient, "", :id => "ipt_given" %>
+        <%= (touch_hidden_tag "ISONIAZID", @patient, "", :id => "ipt_given").html_safe %>
         <input type='hidden' name='ipt_mgs' id='ipt_mgs' />
       <% end %>
 
     <% end %>
 
-    <%= touch_hidden_tag "pyridoxine", @patient, "", :id => "pyridoxine" %>
+    <%= (touch_hidden_tag "pyridoxine", @patient, "", :id => "pyridoxine").html_safe %>
     <input type='hidden' name='pyridoxine_value' id='pyridoxine_value' />
 
 <%#= touch_yes_no_tag "pyridoxine", @patient, nil,

@@ -10,9 +10,7 @@ class Program < ActiveRecord::Base
   # Actually returns +Concept+s of suitable +Regimen+s for the given +weight+
   # and this +Program+
   def regimens(weight=nil)
-    Regimen.program(program_id).criteria(weight).all(
-      :select => 'concept_id', 
-      :group => 'concept_id, program_id',
-      :include => :concept, :order => 'regimen_id').map(&:concept)
+    Regimen.program(program_id).criteria(weight).select('concept_id').includes(:concept).group('concept_id, program_id'
+    ).order('regimen_id').map(&:concept)
   end
 end

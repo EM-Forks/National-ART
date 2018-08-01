@@ -3118,7 +3118,7 @@ EOF
   
    
     dispensed_arvs = Observation.where(["person_id = ?
-      AND concept_id = ? AND obs_datetime <= ?", patient_id, concept_id, end_date]).last.map(&:value_drug)
+      AND concept_id = ? AND obs_datetime <= ?", patient_id, concept_id, end_date]).map(&:value_drug)
 
     return 'Initiation' if dispensed_arvs.blank?
     arv_drug_concepts = MedicationService.arv_drugs.map(&:concept_id) 

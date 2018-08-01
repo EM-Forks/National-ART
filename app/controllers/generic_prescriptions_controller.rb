@@ -118,7 +118,7 @@ class GenericPrescriptionsController < ApplicationController
     filter_list = params[:filter_list].split(/, */) rescue []    
     @drug_concepts = ConceptName.joins("INNER JOIN drug ON drug.concept_id = concept_name.concept_id AND drug.retired = 0").where(
       ["concept_name.name LIKE ?", '%' + search_string + '%']).select("concept_name.name").group("drug.concept_id")
-    render :text => "<li>" + @drug_concepts.map{|drug_concept| drug_concept.name }.uniq.join("</li><li>") + "</li>"
+    render plain: ("<li>" + @drug_concepts.map{|drug_concept| drug_concept.name }.uniq.join("</li><li>") + "</li>").html_safe
   end
   
   # Look up all of the matching drugs for the given generic drugs
@@ -128,14 +128,14 @@ class GenericPrescriptionsController < ApplicationController
     render :text => "" and return if @concept_ids.blank?
     search_string = (params[:search_string] || '').upcase
     @drugs = Drug.where(["concept_id IN (?) AND name LIKE ?", @concept_ids, '%' + search_string + '%']).select("name")
-    render :text => "<li>" + @drugs.map{|drug| drug.name }.join("</li><li>") + "</li>"
+    render plain: ("<li>" + @drugs.map{|drug| drug.name }.join("</li><li>") + "</li>").html_safe
   end
   
   # Look up likely durations for the drug
   def durations
     @formulation = (params[:formulation] || '').upcase
     drug = Drug.find_by_name(@formulation) rescue nil
-    render :text => "No matching drugs found for #{params[:formulation]}" and return unless drug
+    render plain: "No matching drugs found for #{params[:formulation]}" and return unless drug
 
     # Grab the 10 most popular durations for this drug
     amounts = []
@@ -147,7 +147,7 @@ class GenericPrescriptionsController < ApplicationController
       amounts << "#{order.duration_days.to_f}" unless order.duration_days.blank?
     }  
     amounts = amounts.flatten.compact.uniq
-    render :text => "<li>" + amounts.join("</li><li>") + "</li>"
+    render plain: ("<li>" + amounts.join("</li><li>") + "</li>").html_safe
   end
 
   # Look up likely dose_strength for the drug
@@ -166,15 +166,15 @@ class GenericPrescriptionsController < ApplicationController
       amounts << "#{order.dose}"
     }  
     amounts = amounts.flatten.compact.uniq
-    render :text => "<li>" + amounts.join("</li><li>") + "</li>"
+    render plain: ("<li>" + amounts.join("</li><li>") + "</li>").html_safe
   end
 
 	# Look up the units for the first substance in the drug, ideally we should re-activate the units on drug for aggregate units
 	def units
 		@formulation = (params[:formulation] || '').upcase
 		drug = Drug.find_by_name(@formulation) rescue nil
-		render :text => "per dose" and return unless drug && !drug.units.blank?
-		render :text => drug.units
+		render plain: "per dose" and return unless drug && !drug.units.blank?
+		render plain: drug.units
 	end
   
 	def suggested
@@ -190,7 +190,7 @@ class GenericPrescriptionsController < ApplicationController
 	def name
 		search_string = (params[:search_string] || '').upcase
 		@drugs = Drug.where(["name LIKE ?", '%' + search_string + '%']).select("name")
-		render :text => "<li>" + @drugs.map{|drug| drug.name }.join("</li><li>") + "</li>"
+		render plain: ("<li>" + @drugs.map{|drug| drug.name }.join("</li><li>") + "</li>").html_safe
 	end
 
 	def generic_advanced_prescription
@@ -217,8 +217,7 @@ class GenericPrescriptionsController < ApplicationController
 		encounter  = MedicationService.current_treatment_encounter(@patient)
     
 		if params[:prescription].blank?
-			next if params[:formulation].blank?
-          	formulation = (params[:formulation] || '').upcase
+      formulation = (params[:formulation] || '').upcase
 			drug = Drug.find_by_name(formulation) rescue nil
 			unless drug
 				flash[:notice] = "No matching drugs found for formulation #{params[:formulation]}"

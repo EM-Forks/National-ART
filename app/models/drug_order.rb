@@ -1,4 +1,7 @@
 class DrugOrder < ActiveRecord::Base
+  before_save :before_save
+  before_create :before_create
+
   self.table_name = "drug_order"
   self.primary_key = "order_id"
   include Openmrs
@@ -113,10 +116,10 @@ class DrugOrder < ActiveRecord::Base
       end
     end
     ActiveRecord::Base.transaction do
-      order = encounter.orders.create(
+      order = encounter.orders.create!(
         :order_type_id => 1, 
         :concept_id => drug.concept_id, 
-        :orderer => User.current.user_id, 
+        :orderer => User.current.id,
         :patient_id => patient.id,
         :start_date => start_date,
         :auto_expire_date => auto_expire_date,
