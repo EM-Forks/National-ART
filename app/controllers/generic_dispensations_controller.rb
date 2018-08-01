@@ -13,6 +13,7 @@ class GenericDispensationsController < ApplicationController
 	end
 
   def create
+
     if (params[:identifier])
       params[:drug_id] = params[:identifier].match(/^\d+/).to_s
       params[:quantity] = params[:identifier].match(/\d+$/).to_s
@@ -214,14 +215,14 @@ class GenericDispensationsController < ApplicationController
           redirect_to "/patients/treatment_dashboard?id=#{@patient.patient_id}&dispensed_order_id=#{@order_id}"
         end
       else
-        render :text => 'complete' and return
+        render plain: 'complete' and return
       end
     else
       unless params[:location]
         #(flash[:error] = "Insufficient stock for: #{@drug.name rescue nil} by #{missing_quantity} #{@drug.units}" ) if insufficient_stock
         redirect_to "/patients/treatment_dashboard?id=#{@patient.patient_id}&dispensed_order_id=#{@order_id}"
       else
-        render :text => 'complete' and return
+        render plain: 'complete' and return
       end
     end
   end  

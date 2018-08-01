@@ -1165,7 +1165,7 @@ class GenericRegimensController < ApplicationController
 
   def custom_regimen_options(patient)
     medications = Drug.select("drug.*, i.*").joins("INNER JOIN moh_regimen_ingredient i
-      ON i.drug_inventory_id = drug.drug_id").group('drug.drug_id')
+      ON i.drug_inventory_id = drug.drug_id").group('drug.drug_id').to_a
 
     session_date = session[:datetime].to_date rescue Date.today
 
@@ -1205,7 +1205,8 @@ class GenericRegimensController < ApplicationController
   
 	def dosing
 		@patient = Patient.find(params[:patient_id] || session[:patient_id]) rescue nil
-		@criteria = Regimen.criteria(PatientService.get_patient_attribute_value(@patient, "current_weight")).all(:conditions => {:concept_id => params[:id]}, :include => :regimen_drug_orders)
+		@criteria = Regimen.criteria(PatientService.get_patient_attribute_value(@patient, "current_weight")).where(
+				concept_id: params[:id]).includes(:regimen_drug_orders)
 		@options = @criteria.map do |r|
 			[r.regimen_id, r.regimen_drug_orders.map(&:to_s).join('; ')]
 		end
@@ -1234,7 +1235,7 @@ class GenericRegimensController < ApplicationController
       
     on_tb_treatment = Observation.where(["person_id = ? AND concept_id = ?
       AND obs_datetime <= ?", @patient.patient_id, ConceptName.find_by_name('TB treatment').concept_id,
-        session_date.to_date.strftime('%Y-%m-%d 23:59:59')]).order("obs_datetime DESC").order('regimen_index').last.to_s #rescue ''
+        session_date.to_date.strftime('%Y-%m-%d 23:59:59')]).order("obs_datetime DESC").last.to_s #rescue ''
     
     if on_tb_treatment.match(/Yes/i)
       on_tb_treatment = true 
@@ -1338,7 +1339,7 @@ class GenericRegimensController < ApplicationController
       [r[:drug_name] , r[:am] , r[:pm], r[:units] , r[:regimen_index] , r[:category]]
     end
 
-    render :text => @options.to_json
+    render plain: @options.to_json
 	end
 
   def formulations_cpt_or_ipt
@@ -1405,7 +1406,7 @@ class GenericRegimensController < ApplicationController
     @options = (medications || []).map do | m |
       [m.name , m.units, m.drug_id ]
     end
-    render :text => @options.to_json
+    render plain: @options.to_json
 
 	end
 
