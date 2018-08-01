@@ -418,7 +418,7 @@ EOF
   def hiv_viral_load
     @person = Patient.find(params[:patient_id]).person
     #@template variable is used to access helper method in a controller.
-    if !(@template.improved_viral_load_check(@person.patient) == true)
+    if !(helpers.improved_viral_load_check(@person.patient) == true)
       redirect_to (next_task(@person.patient)) and return
     end
     session_date = session[:datetime].blank? ? Date.today : session[:datetime].to_date

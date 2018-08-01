@@ -137,7 +137,7 @@ module MedicationService
 
   def self.get_arv_regimen(patient_id, dispension_date)
     possible_combinations = {}
-    csv_url =  RAILS_ROOT + "/doc/regimens_possible_combinations.csv"
+    csv_url =  Rails.root.to_s + "/doc/regimens_possible_combinations.csv"
 
     CSV.foreach("#{csv_url}") do |row|
       next if row[0].strip.match(/regimen/i)

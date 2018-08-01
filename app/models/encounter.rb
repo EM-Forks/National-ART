@@ -10,8 +10,8 @@ class Encounter < ActiveRecord::Base
   include Openmrs
 
   has_many :observations, -> { where voided: 0 }, dependent: :destroy
-  has_many :drug_orders, foreign_key: "order_id", through: "orders"
   has_many :orders, -> { where voided: 0 }, dependent: :destroy
+  has_many :drug_orders, foreign_key: "order_id", through: "orders"
   belongs_to :type, -> { where retired: 0 }, class_name: "EncounterType", foreign_key: "encounter_type"  
   belongs_to :provider, -> { where voided: 0 }, class_name: "Person", foreign_key: "provider_id"
   belongs_to :patient, -> { where voided: 0 }
