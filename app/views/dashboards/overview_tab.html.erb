@@ -95,7 +95,6 @@
             <!-- h2>Treatment</h2 -->
             <ul class="list small" style="height:140px; border-radius: 15px;">
               <% for presc in @prescriptions do %>
-              <% raise presc.inspect %>
                   <li class="data <%= cycle('even', 'odd') %>" prescription="<%= presc.id %>">
                     <div class="prescription"><%=h presc.to_s %></div>
                   </li>

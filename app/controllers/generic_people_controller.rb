@@ -1555,7 +1555,7 @@ EOF
       bmi = (weight.to_f/(height.to_f*height.to_f)*10000).round(1)
     end
 
-    render :text => {
+    render plain: {
       :weight => weight,:height => height, :bmi => bmi}.to_json
   end
 
