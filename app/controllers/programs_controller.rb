@@ -217,7 +217,7 @@ class ProgramsController < GenericProgramsController
     required_states = []
     concept_set("EXIT FROM CARE").each{|concept| required_states << concept.uniq.to_s}
 
-    @states = ProgramWorkflowState.all(:conditions => ['program_workflow_id = ?', params[:workflow]], :include => :concept)
+    @states = ProgramWorkflowState.where(['program_workflow_id = ?', params[:workflow]]).includes(:concept)
 
     @names = @states.map{|state|
       next if ! required_states.include? state.concept.fullname
@@ -225,7 +225,7 @@ class ProgramsController < GenericProgramsController
       next if name.blank?
       "<li value='#{state.id}'>#{name}</li>" unless name == params[:current_state]
     }
-    render plain:  @names.join('')
+    render plain:  @names.join('').html_safe
   end
 
   def update_exitcare
@@ -239,7 +239,7 @@ class ProgramsController < GenericProgramsController
     # set current location via params if given
     Location.current_location = Location.find(params[:location]) if params[:location]
     #state_concept = ConceptName.find_by_name(params[:current_state]).concept
-    state_concept = ConceptName.find_all_by_name(params[:current_state])
+    state_concept = ConceptName.where(name: params[:current_state])
     state = ProgramWorkflowState.where(["concept_id IN (?)",state_concept.map{|c|c.concept_id}]).first.program_workflow_state_id
 =begin
     program_workflow_state = ProgramWorkflowState.find(:first, 
@@ -251,10 +251,11 @@ class ProgramsController < GenericProgramsController
       :state => program_workflow_state.id,
       :start_date => params[:current_date])
 =end
-    patient_state = patient_program.patient_states.build(
+    patient_state = PatientState.create!(
+        :patient_program_id => patient_program.id,
       :state => state,
       :start_date => params[:current_date])
-    if patient_state.save
+    if patient_state
      
       # Close and save current_active_state if a new state has been created
       current_active_state.save!
@@ -300,7 +301,7 @@ end
           unless params[:current_date].blank?
             person.death_date = params[:current_date].to_date
           end
-          person.save
+          person.save!
 
           #updates the state of all patient_programs to patient died and save the
           #end_date of the last active state.
@@ -312,16 +313,16 @@ end
 
               Location.current_location = Location.find(params[:location]) if params[:location]
 
-              patient_state = program.patient_states.build(
+              patient_state = PatientState.create!(
+                                              :patient_program_id=>program_id,
                 :state => state,
                 :start_date => params[:current_date])
-              if patient_state.save
+              if patient_state
                 current_active_state.save
 
                 # date_completed = session[:datetime].to_time rescue Time.now()
                 date_completed = params[:current_date].to_date rescue Time.now()
-                PatientProgram.update_all "date_completed = '#{date_completed.strftime('%Y-%m-%d %H:%M:%S')}'",
-                  "patient_program_id = #{program.patient_program_id}"
+                PatientProgram.update(program.patient_program_id, :date_completed => date_completed.strftime('%Y-%m-%d %H:%M:%S'))
               end
             end
           end
@@ -329,15 +330,13 @@ end
 
         # date_completed = session[:datetime].to_time rescue Time.now()
         date_completed = params[:current_date].to_date rescue Time.now()
-        PatientProgram.update_all "date_completed = '#{date_completed.strftime('%Y-%m-%d %H:%M:%S')}'",
-          "patient_program_id = #{patient_program.patient_program_id}"
+        PatientProgram.update( patient_program.patient_program_id, :date_completed => date_completed.strftime('%Y-%m-%d %H:%M:%S'))
       else
         person = patient_program.patient.person
         person.dead = 0
         person.save
         date_completed = nil
-        PatientProgram.update_all "date_completed = NULL",
-          "patient_program_id = #{patient_program.patient_program_id}"
+        PatientProgram.update( patient_program.patient_program_id,:date_completed => NULL)
       end
       params[:patient_state_id] = patient_state.patient_state_id unless patient_state.patient_state_id.blank?
       create_exit_from_care_encounter(params)
