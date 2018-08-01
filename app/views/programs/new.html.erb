@@ -6,7 +6,7 @@
 </style>
 <script>
   var tt_cancel_destination = "/patients/programs_dashboard/<%= @patient.patient_id %>"
-  var enrolled_program_names = <%=@enrolled_program_names%>
+  var enrolled_program_names = <%=@enrolled_program_names.html_safe%>
   var selected_program = null
   
   function set_program_for_workflows() {

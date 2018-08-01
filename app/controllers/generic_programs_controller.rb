@@ -31,15 +31,21 @@ class GenericProgramsController < ApplicationController
       redirect_to :controller => "patients" ,:action => "programs",
         :error => error,:patient_id => @patient.id  and return
     end
-    
-    @patient_program = @patient.patient_programs.build(
+    #using native create method because build and save were not working
+
+    @patient_program = PatientProgram.create(
+       :patient_id=>@patient.id,
       :program_id => params[:program_id],
       :date_enrolled => params[:initial_date],
-      :location_id => params[:location_id])      
-    @patient_state = @patient_program.patient_states.build(
+      :location_id => params[:location_id])
+
+     #using native create method again
+    @patient_state = PatientState.create(
+       :patient_program_id=> @patient_program.id,
       :state => params[:initial_state],
-      :start_date => params[:initial_date]) 
-    if @patient_program.save && @patient_state.save
+      :start_date => params[:initial_date])
+
+    if @patient_program && @patient_state
       redirect_to session[:return_to] and return unless session[:return_to].blank?
       redirect_to :controller => :patients, :action => :programs_dashboard, :patient_id => @patient.patient_id
     else 
@@ -48,7 +54,7 @@ class GenericProgramsController < ApplicationController
     end
   end
 
-  def status
+  def program_status
     @program = PatientProgram.find(params[:id])
     render :layout => false    
   end
@@ -125,21 +131,20 @@ class GenericProgramsController < ApplicationController
       "<li value='#{location.location_id}'>#{location.name}</li>" 
     end
 
-    render :text => @names.join('')
+    render plain: @names.join('').html_safe
   end
   
   def workflows
-    @workflows = ProgramWorkflow.includes(:concept).where(['program_id = ?', params[:program]])
+    @workflows = ProgramWorkflow.where(['program_id = ?', params[:program]]).includes(:concept)
     @names = @workflows.map{|workflow| "<li value='#{workflow.id}'>#{workflow.concept.fullname}</li>" }
-    render :text => @names.join('')
+    render plain: @names.join('').html_safe
   end
   
   def states
     if params[:show_non_terminal_states_only].to_s == true.to_s
-      @states = ProgramWorkflowState.includes(:concept).where(['program_workflow_id = ? AND terminal = 0',
-          params[:workflow]])
+      @states = ProgramWorkflowState.where(['program_workflow_id = ? AND terminal = 0', params[:workflow]]).includes(:concept)
     else
-      @states = ProgramWorkflowState.includes(:concept).where(['program_workflow_id = ?', params[:workflow]])
+      @states = ProgramWorkflowState.where(['program_workflow_id = ?', params[:workflow]]).includes(:concept)
     end
     
     @names = @states.map{|state|
@@ -148,7 +153,7 @@ class GenericProgramsController < ApplicationController
       next if name.blank?
       "<li value='#{state.id}'>#{name}</li>" unless name == params[:current_state]
     }
-    render :text => @names.join('')  
+    render plain:  @names.join('').html_safe
   end
 
   def update
@@ -254,7 +259,7 @@ class GenericProgramsController < ApplicationController
         if params[:location].blank?
           redirect_to :controller => :patients, :action => :programs_dashboard, :patient_id => params[:patient_id]
         else
-          render :text => "import suceeded" and return
+          render plain: "import suceeded" and return
         end
         
       else
@@ -262,7 +267,7 @@ class GenericProgramsController < ApplicationController
         if params[:location].blank?
           redirect_to :controller => :patients, :action => :programs_dashboard, :patient_id => params[:patient_id],:error => "Unable to update state"
         else
-          render :text => "import suceeded" and return
+          render plain: "import suceeded" and return
         end
       end
       
@@ -272,14 +277,14 @@ class GenericProgramsController < ApplicationController
         if params[:location].blank?
           flash[:error] = "The patient has already completed this program!"
         else
-          render :text => "import suceeded" and return
+          render plain: "import suceeded" and return
         end
       end
       @patient = patient_program.patient
       @patient_program_id = patient_program.patient_program_id
-      program_workflow = ProgramWorkflow.includes(:concept).where(['program_id = ?', patient_program.program_id])
+      program_workflow = ProgramWorkflow.all(:conditions => ['program_id = ?', patient_program.program_id], :include => :concept)
       @program_workflow_id = program_workflow.first.program_workflow_id
-      @states = ProgramWorkflowState.includes(:concept).where(['program_workflow_id = ?', @program_workflow_id])
+      @states = ProgramWorkflowState.where(['program_workflow_id = ?', @program_workflow_id]).includes(:concept)
       @names = @states.map{|state|
         concept = state.concept
         next if concept.blank?
