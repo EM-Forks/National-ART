@@ -1,4 +1,4 @@
-<%= javascript_include_tag "date" %>
+<%= javascript_include_tag "/javascripts/date" %>
 <script>
   var tt_cancel_destination = "/patients/show/<%= @patient.patient_id -%>";
 <% @session_date = "#{session[:datetime].to_date rescue Date.today}" %>
@@ -126,11 +126,11 @@
   <%= hidden_field_tag "encounter[encounter_datetime]", DateTime.now() %>
   <%= hidden_field_tag "encounter[provider_id]", current_user.user_id %>
 
-  <%= touch_select_tag "HIV STATUS", @patient, options_for_select(@select_options['hiv_status']),
+  <%= (touch_select_tag "HIV STATUS", @patient, options_for_select(@select_options['hiv_status']),
 	{:id => "hiv_status",
 	:multiple => false,
 	:tt_pageStyleClass => "NoKeyboard",
-	:helpText => "HIV Status" } %>
+	:helpText => "HIV Status" }).html_safe %>
 
   <%= text_field_tag "hiv_test_year", nil,
 	{:helpText => 'HIV test year',
@@ -165,35 +165,35 @@
 :condition => '(updateTestDate() == true && $("hiv_status").value == "NEGATIVE") || ($("hiv_status").value == "UNKNOWN");'} 
 %>
 
-  <%= touch_location_tag "LOCATION OF HIV TEST", @patient, nil,
+  <%= (touch_location_tag "LOCATION OF HIV TEST", @patient, nil,
 	{:id => "location_of_hiv_test",
 	:condition => '$("hiv_status").value == "POSITIVE"',
 	:ajaxURL => '/encounters/locations?search_string=',
-	:helpText => "Location of HIV test" } %>
+	:helpText => "Location of HIV test" }).html_safe %>
 
-  <%= touch_numeric_tag "HTC SERIAL NUMBER", @patient, nil,
+  <%= (touch_numeric_tag "HTC SERIAL NUMBER", @patient, nil,
 	{:id => "htc_serial_number",
 	:condition => '$("hiv_status").value == "POSITIVE"',
 	:tt_pageStyleClass => "Numeric NumbersOnly",
-	:helpText => "HTC serial number" } %>
+	:helpText => "HTC serial number" }).html_safe %>
 
-  <%= touch_hidden_tag "ART initiation date", @patient, nil, {:id => "hiv_initiation_date", :value_datetime => true}%>
-  <%= touch_hidden_tag "HIV TEST DATE", @patient, nil, {:id => "hiv_test_date", :value_datetime => true}%>
+  <%= (touch_hidden_tag "ART initiation date", @patient, nil, {:id => "hiv_initiation_date", :value_datetime => true}).html_safe%>
+  <%= (touch_hidden_tag "HIV TEST DATE", @patient, nil, {:id => "hiv_test_date", :value_datetime => true}).html_safe%>
 
-  <%= touch_yes_no_unknown_tag "Refer to HTC", @patient, nil,
+  <%= (touch_yes_no_unknown_tag "Refer to HTC", @patient, nil,
 	{:id => "refer_to_htc",
 	:condition => '$("hiv_status").value == "NEGATIVE" && updateTestDate() == true',
 	:tt_pageStyleClass => "NoKeyboard",
-	:helpText => "Patient has been -ve for more than 3 months. Refer patient to HTC?" } %>
+	:helpText => "Patient has been -ve for more than 3 months. Refer patient to HTC?" }).html_safe %>
 
-  <%= touch_yes_no_unknown_tag "Refer to HTC", @patient, nil,
+  <%= (touch_yes_no_unknown_tag "Refer to HTC", @patient, nil,
       {:id => "refer_to_htc",
       :condition => '$("hiv_status").value == "UNKNOWN"',
       :tt_pageStyleClass => "NoKeyboard",
-      :helpText => "Refer patient to HTC?" } %>
+      :helpText => "Refer patient to HTC?" }).html_safe %>
 
-  <%= touch_hidden_tag "Refer to HTC", @patient, "NO", {:id => "refer_to_htc",
-	:condition => '$("refer_to_htc").value != "NO" && $("refer_to_htc").value != "YES" && $("refer_to_htc").value != "UNKNOWN"'}%>
+  <%= (touch_hidden_tag "Refer to HTC", @patient, "NO", {:id => "refer_to_htc",
+	:condition => '$("refer_to_htc").value != "NO" && $("refer_to_htc").value != "YES" && $("refer_to_htc").value != "UNKNOWN"'}).html_safe%>
 
   <% session_date = session[:datetime].to_date rescue nil
   if session_date %>

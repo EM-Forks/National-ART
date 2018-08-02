@@ -31,10 +31,10 @@ Check applicability of code below
 <% else %>
 <form id='appointment' action="/encounters/lab" method='post'>
   <%= hidden_field_tag "encounter[patient_id]", @patient.id %>
-  <%= touch_select_tag "SELECT LAB ACTIVITY", @patient, options_for_select(@lab_activities),
+  <%= (touch_select_tag "SELECT LAB ACTIVITY", @patient, options_for_select(@lab_activities),
     {:id => "select_lab_activity",
      :tt_pageStyleClass => "NoKeyboard",
-     :helpText => "Select Lab activity" } %>
+     :helpText => "Select Lab activity" }).html_safe %>
      
   <%= submit_tag "Finish" %>    
 </form>

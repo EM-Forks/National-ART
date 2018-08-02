@@ -84,48 +84,48 @@
   <% end %>    
   
   <% if ask_standard_art_side_effects %>
-    <%= touch_select_tag "MALAWI ART SIDE EFFECTS", @patient, concept_set_options('MALAWI ART SIDE EFFECTS'),
+    <%= (touch_select_tag "MALAWI ART SIDE EFFECTS", @patient, concept_set_options('MALAWI ART SIDE EFFECTS'),
       {:id => 'side_effects',
        :optional => true,
        :multiple => true,
-       :helpText => "Side effects (select all that apply)" } %>
+       :helpText => "Side effects (select all that apply)" }).html_safe %>
   <% else %>
-    <%= touch_select_tag "SYMPTOM PRESENT", @patient, concept_set_options('MALAWI ART SYMPTOM SET'),
+    <%= (touch_select_tag "SYMPTOM PRESENT", @patient, concept_set_options('MALAWI ART SYMPTOM SET'),
       {:id => 'symptoms',
        :optional => true,
        :multiple => true,
-       :helpText => "Symptoms (select all that apply)" } %>
+       :helpText => "Symptoms (select all that apply)" }).html_safe %>
 
-    <%= touch_select_tag "DRUG INDUCED", @patient, options_for_select([['', '']]),
+    <%= (touch_select_tag "DRUG INDUCED", @patient, options_for_select([['', '']]),
       {:id => 'drug_induced_effects',
        :optional => true,
        :multiple => true,
        :condition => 'getNumberOfSymptoms() > 0',
        :helpText => "Select which of these symptoms are likely drug induced<br />(select all that apply)",
-       :tt_onLoad => "getSelectedSymptoms()" } %>
+       :tt_onLoad => "getSelectedSymptoms()" }).html_safe %>
   <% end %>
 
-  <%= touch_select_tag "TB STATUS", @patient, concept_set_options('TB STATUS'),
+  <%= (touch_select_tag "TB STATUS", @patient, concept_set_options('TB STATUS'),
     {:id => 'tb_status',
      :optional => true,
      :multiple => false,
-     :helpText => "TB Status" } %>
+     :helpText => "TB Status" }).html_safe %>
 
   <%if @patient_is_child_bearing_female%>
   <%#= touch_yes_no_unknown_tag "DEPO-PROVERA", @patient, nil,
       {:optional => false,
        :helpText => "Depo-provera injection given?" } %>
 
-  <%= touch_yes_no_unknown_tag "CURRENTLY USING FAMILY PLANNING METHOD", @patient, nil,
+  <%= (touch_yes_no_unknown_tag "CURRENTLY USING FAMILY PLANNING METHOD", @patient, nil,
       {:id => "on_fpm",
-        :helpText => "Currently using family planning method" } %>
+        :helpText => "Currently using family planning method" }).html_safe %>
 
-  <%= touch_select_tag "FAMILY PLANNING METHOD", @patient, options_for_select(@select_options['family_planning_methods']),
+  <%= (touch_select_tag "FAMILY PLANNING METHOD", @patient, options_for_select(@select_options['family_planning_methods']),
     {:id => "fpm_used",
      :condition => '$("on_fpm").value == "YES"',
      :multiple => true,
      :tt_pageStyleClass => "NoKeyboard",
-     :helpText => "What method?" } %>
+     :helpText => "What method?" }).html_safe %>
   <%end%>
 
   <%# if @patient_bean.age >= 14 %>
@@ -134,12 +134,12 @@
        :helpText => "Number of condoms given" } %>
   <%# end %>
 
-  <%= touch_yes_no_unknown_tag "Prescribe ARVs this visit", @patient, nil,
+  <%= (touch_yes_no_unknown_tag "Prescribe ARVs this visit", @patient, nil,
     {:optional => false,
-     :helpText => "Prescribe Drugs this visit?" } %>
+     :helpText => "Prescribe Drugs this visit?" }).html_safe %>
 
-  <%= touch_text_area_tag("CLINICAL NOTES CONSTRUCT", @patient, nil,
-    {:optional => true,:helpText => "Clinical notes (optional)"}, time=DateTime.now()) %>
+  <%= (touch_text_area_tag("CLINICAL NOTES CONSTRUCT", @patient, nil,
+    {:optional => true,:helpText => "Clinical notes (optional)"}, time=DateTime.now())).html_safe %>
 
   <% session_date = session[:datetime].to_date rescue nil                       
     if session_date %>

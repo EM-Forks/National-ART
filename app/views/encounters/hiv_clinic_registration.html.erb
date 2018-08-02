@@ -1233,11 +1233,11 @@
     <%= hidden_field_tag("programs[][date_enrolled]", session[:datetime] ) %>
     <%= hidden_field_tag("programs[][states][][state]", "Pre-ART (Continue)") %>
 
-    <%= touch_yes_no_tag "FOLLOW UP AGREEMENT", @patient, nil,
+    <%= (touch_yes_no_tag "FOLLOW UP AGREEMENT", @patient, nil,
       {	:id => "agrees_to_followup",
-      :helpText => "Agrees to be contacted by phone/visited at home?" } %>
+      :helpText => "Agrees to be contacted by phone/visited at home?" }).html_safe %>
 
-    <%= touch_select_tag("EVER RECEIVED ART", @patient, options_for_select([['Yes','YES'],['No','NO']]), {:id => 'ever_received_art'}) %>
+    <%= (touch_select_tag("EVER RECEIVED ART", @patient, options_for_select([['Yes','YES'],['No','NO']]), {:id => 'ever_received_art'})).html_safe %>
 
   <%#= touch_date_tag "DATE ART LAST TAKEN", @patient, nil,
   {	:id => "date_art_last_taken",
@@ -1272,18 +1272,18 @@
       :id => "day_art_last_taken" ,
       :validationMessage => "Date ARV last taken out of range"%>
 
-    <%= touch_hidden_tag "DATE ART LAST TAKEN", @patient, nil, {:id => "date_art_last_taken", :value_datetime => true}%>
+    <%= (touch_hidden_tag "DATE ART LAST TAKEN", @patient, nil, {:id => "date_art_last_taken", :value_datetime => true}).html_safe%>
 
 
-    <%= touch_yes_no_unknown_tag "HAS THE PATIENT TAKEN ART IN THE LAST TWO MONTHS", @patient, nil,
+    <%= (touch_yes_no_unknown_tag "HAS THE PATIENT TAKEN ART IN THE LAST TWO MONTHS", @patient, nil,
       {	:id => "taken_art_in_last_two_months",
       :condition => '$("year_art_last_taken").value.toUpperCase() == "UNKNOWN"',
-      :helpText => "Taken ARV&apos;s in the last two months? <span style='font-size:0.7em;font-style:italic'>(Kodi mwamwa ma ARV m'miyezi iwiri yapitayi?)</span>" } %>
+      :helpText => "Taken ARV&apos;s in the last two months? <span style='font-size:0.7em;font-style:italic'>(Kodi mwamwa ma ARV m'miyezi iwiri yapitayi?)</span>" }).html_safe %>
 
-    <%= touch_yes_no_unknown_tag "HAS THE PATIENT TAKEN ART IN THE LAST TWO WEEKS", @patient, nil,
+    <%= (touch_yes_no_unknown_tag "HAS THE PATIENT TAKEN ART IN THE LAST TWO WEEKS", @patient, nil,
       {	:id => "taken_art_in_last_two_weeks",
       :condition => '$("taken_art_in_last_two_months").value == "YES" && $("year_art_last_taken").value.toUpperCase() == "UNKNOWN"',
-      :helpText => "Taken ARV's in the last two weeks? <span style='font-size:0.7em;font-style:italic'>(Kodi mwamwa ma ARV sabata ziwiri zapitazi?)</span>" } %>
+      :helpText => "Taken ARV's in the last two weeks? <span style='font-size:0.7em;font-style:italic'>(Kodi mwamwa ma ARV sabata ziwiri zapitazi?)</span>" }).html_safe %>
 
   <%#= touch_select_tag "LAST ART DRUGS TAKEN", @patient, options_for_select(@arv_drugs),
   {	:id => "last_art_drugs_taken",
@@ -1343,21 +1343,21 @@
     :helpText  => "Total tabs of #{key.squish} brought to clinic"} %>
     <% end %>
 
-    <%= touch_yes_no_tag "Ever registered at ART clinic", @patient, nil,
+    <%= (touch_yes_no_tag "Ever registered at ART clinic", @patient, nil,
       {	:id => "ever_registered_at_ART_clinic",
       :condition => "$('ever_received_art').value == 'YES'",
-      :helpText => "Ever registered at an ART clinic?" } %>
+      :helpText => "Ever registered at an ART clinic?" }).html_safe %>
 
     <!-- NEW ADDITIONS-->
   <%#= raise @patient.person.observations.to_s %>
     <% if ! @patient.person.observations.to_s.include?('On ART:  Yes') %>
 
-      <%= touch_location_tag "LOCATION OF ART INITIATION", @patient, nil,
+      <%= (touch_location_tag "LOCATION OF ART INITIATION", @patient, nil,
         {	:id => "location_of_art_initialization",
         :condition => '$("ever_registered_at_ART_clinic").value == "YES" && $("ever_received_art").value == "YES"',
         :tt_onLoad => "showCategory2('when starting ART')" ,
         :tt_onUnLoad => "hideCategory()",
-        :helpText => "Location of ART initiation" } %>
+        :helpText => "Location of ART initiation" }).html_safe %>
 
 
       <%= text_field_tag "year_started_art", nil,
@@ -1380,7 +1380,7 @@
         :condition => '$("year_started_art").value.toUpperCase() == "UNKNOWN"',
         :ttMatchFromBeginning => "true")%>
 
-      <%= touch_hidden_tag "Drug start date", @patient, "", :id => "drug_start_date", :value_datetime => true %>
+      <%= (touch_hidden_tag "Drug start date", @patient, "", :id => "drug_start_date", :value_datetime => true).html_safe %>
 
       <%= select_tag "month_started_art", month_name_options,
         {	:helpText => 'Month started ART',
@@ -1399,24 +1399,24 @@
         :tt_onUnLoad => "hideCategory();updateStartDate();setUnkownStage();",
         :validationMessage => "Date ART started out of range #{@hiv_test_date.to_date rescue nil} and #{@todayDate.to_date rescue nil}"%>
 
-      <%= touch_hidden_tag "Date antiretrovirals started", @patient, "", :id => "date_started_art", :value_datetime => true %>
+      <%= (touch_hidden_tag "Date antiretrovirals started", @patient, "", :id => "date_started_art", :value_datetime => true).html_safe %>
     <% end %>
     <!-- END OF NEW ADDITIONS-->
 
-    <%= touch_text_field_tag "ART NUMBER AT PREVIOUS LOCATION", @patient, nil,
+    <%= (touch_text_field_tag "ART NUMBER AT PREVIOUS LOCATION", @patient, nil,
       {	:id => "previous_art_number",
       :condition => '$("ever_registered_at_ART_clinic").value == "YES" && $("ever_received_art").value == "YES"',
       :tt_onLoad => "showCategory2('when starting ART')" ,
       :tt_onUnLoad => "hideCategory()",
-      :helpText => "ART number at previous location" } %>
+      :helpText => "ART number at previous location" }).html_safe %>
 
-    <%= touch_yes_no_tag "HAS TRANSFER LETTER", @patient, nil,
+    <%= (touch_yes_no_tag "HAS TRANSFER LETTER", @patient, nil,
       {	:id => "has_transfer_letter",
       :tt_onUnload=>  "$('programs__states__state').value = 'Patient transferred in'",
       :condition => "$('ever_registered_at_ART_clinic').value == 'YES' && $('ever_received_art').value == 'YES'",
       :tt_onLoad => "showCategory2('when starting ART')" ,
       :tt_onUnLoad => "hideCategory()",
-      :helpText => "Has staging information?" } %>
+      :helpText => "Has staging information?" }).html_safe %>
 
     <%= text_field_tag "observations[][value_numeric]", nil,
       {	:id => "height",
@@ -1464,24 +1464,24 @@
 
     <% if @patient_bean.age > 9 %>
 
-      <%= touch_yes_no_unknown_tag "IS PATIENT PREGNANT?", @patient, nil,
+      <%= (touch_yes_no_unknown_tag "IS PATIENT PREGNANT?", @patient, nil,
         {:id => "pregnant" ,
         :condition => "patientGender != 'MALE' && showConditions() == true",
         :tt_onUnLoad => 'hideCategory();',
         :tt_onLoad => "showCategory2('when starting ART');",
-        :helpText => "Pregnant at initiation?" } %>
+        :helpText => "Pregnant at initiation?" }).html_safe %>
 
-      <%= touch_yes_no_unknown_tag "IS PATIENT BREAST FEEDING?", @patient, nil,
+      <%= (touch_yes_no_unknown_tag "IS PATIENT BREAST FEEDING?", @patient, nil,
         {	:id => "breast_feeding" ,
         :condition => "patientGender != 'MALE' && showConditions() == true",
         :tt_onUnLoad => 'hideCategory();',
         :tt_onLoad => "showCategory2('when starting ART');",
-        :helpText => "Breastfeeding at initiation?" } %>
+        :helpText => "Breastfeeding at initiation?" }).html_safe %>
 
     <% end %>
 
 
-    <%= touch_select_tag "WHO STAGES CRITERIA PRESENT", @patient,  options_for_select(@who_stage_iv),
+    <%= (touch_select_tag "WHO STAGES CRITERIA PRESENT", @patient,  options_for_select(@who_stage_iv),
       {:id => "stage_4_conditions",
       :multiple => true,
       :optional => true,
@@ -1489,9 +1489,9 @@
       :tt_onLoad => "showCategory2('when starting ART'); hideTextInput(); displayCountOfSelectedConditions();",
       :condition => 'showConditions() == true && age >= 15',
       :helpText => "Stage 4 Conditions",
-      :tt_pageStyleClass => "NoKeyboard NoInput small"  } %>
+      :tt_pageStyleClass => "NoKeyboard NoInput small"  }).html_safe %>
 
-    <%= touch_select_tag "WHO STAGES CRITERIA PRESENT", @patient,  options_for_select(@who_stage_iv_paeds),
+    <%= (touch_select_tag "WHO STAGES CRITERIA PRESENT", @patient,  options_for_select(@who_stage_iv_paeds),
       {:id => "stage_4_conditions",
       :class => "stage_4_conditions",
       :multiple => true,
@@ -1500,9 +1500,9 @@
       :tt_onLoad => "showCategory2('when starting ART'); preselectSevereWeightLossPaeds(); hideTextInput(); displayCountOfSelectedConditions();",
       :condition => 'showConditions() == true && age <= 14',
       :helpText => "Stage 4 Conditions",
-      :tt_pageStyleClass => "NoKeyboard NoInput small"  } %>
+      :tt_pageStyleClass => "NoKeyboard NoInput small"  }).html_safe %>
 
-    <%= touch_select_tag "WHO STAGES CRITERIA PRESENT", @patient,  options_for_select(@who_stage_iii),
+    <%= (touch_select_tag "WHO STAGES CRITERIA PRESENT", @patient,  options_for_select(@who_stage_iii),
       {:id => "stage_3_conditions",
       :multiple => true,
       :optional => true,
@@ -1510,9 +1510,9 @@
       :tt_onLoad => "showCategory2('when starting ART'); preselectSevereWeightLoss(); disableSevereWeightLossInputForNormalBMI(); hideTextInput(); displayCountOfSelectedConditions();" ,
       :condition => 'showConditions() == true && age >= 15',
       :helpText => "Stage 3 Conditions",
-      :tt_pageStyleClass => "NoKeyboard NoInput small"  } %>
+      :tt_pageStyleClass => "NoKeyboard NoInput small"  }).html_safe %>
 
-    <%= touch_select_tag "WHO STAGES CRITERIA PRESENT", @patient,  options_for_select(@who_stage_iii_paeds),
+    <%= (touch_select_tag "WHO STAGES CRITERIA PRESENT", @patient,  options_for_select(@who_stage_iii_paeds),
       {:id => "stage_3_conditions",
       :class => "stage_3_conditions",
       :multiple => true,
@@ -1521,9 +1521,9 @@
       :tt_onLoad => "showCategory2('when starting ART'); preselectModerateWeightLossPaeds(); hideTextInput(); displayCountOfSelectedConditions();" ,
       :condition => 'showConditions() == true && age <= 14',
       :helpText => "Stage 3 Conditions",
-      :tt_pageStyleClass => "NoKeyboard NoInput small"  } %>
+      :tt_pageStyleClass => "NoKeyboard NoInput small"  }).html_safe %>
 
-    <%= touch_select_tag "WHO STAGES CRITERIA PRESENT", @patient,  options_for_select(@who_stage_ii),
+    <%= (touch_select_tag "WHO STAGES CRITERIA PRESENT", @patient,  options_for_select(@who_stage_ii),
       {:id => "stage_2_conditions",
       :multiple => true,
       :optional => true,
@@ -1531,9 +1531,9 @@
       :tt_onLoad => "showCategory2('when starting ART'); preselectModerateWeightLoss(); disableModerateWeightLossOptionForNormalBMI(); hideTextInput(); displayCountOfSelectedConditions();" ,
       :condition => 'showConditions() == true && age >= 15',
       :helpText => "Stage 2 Conditions",
-      :tt_pageStyleClass => "NoKeyboard NoInput small"  } %>
+      :tt_pageStyleClass => "NoKeyboard NoInput small"  }).html_safe %>
 
-    <%= touch_select_tag "WHO STAGES CRITERIA PRESENT", @patient,  options_for_select(@who_stage_ii_paeds),
+    <%= (touch_select_tag "WHO STAGES CRITERIA PRESENT", @patient,  options_for_select(@who_stage_ii_paeds),
       {:id => "stage_2_conditions",
       :class => "stage_2_conditions",
       :multiple => true,
@@ -1542,9 +1542,9 @@
       :tt_onLoad => "showCategory2('when starting ART'); hideTextInput(); displayCountOfSelectedConditions();" ,
       :condition => 'showConditions() == true && age <= 14',
       :helpText => "Stage 2 Conditions",
-      :tt_pageStyleClass => "NoKeyboard NoInput small"  } %>
+      :tt_pageStyleClass => "NoKeyboard NoInput small"  }).html_safe %>
 
-    <%= touch_select_tag "WHO STAGES CRITERIA PRESENT", @patient, options_for_select(@who_stage_i),
+    <%= (touch_select_tag "WHO STAGES CRITERIA PRESENT", @patient, options_for_select(@who_stage_i),
       {:id => "stage_1_conditions",
       :multiple => true,
       :optional => true,
@@ -1552,9 +1552,9 @@
       :tt_onUnLoad => "showCategory2('when starting ART');setSelectedStageConditions(1); resetStageDefiningConditions();",
       :condition => 'showConditions() == true && age >= 15',
       :helpText => "Stage 1 Conditions",
-      :tt_pageStyleClass => "NoKeyboard NoInput small" } %>
+      :tt_pageStyleClass => "NoKeyboard NoInput small" }).html_safe %>
 
-    <%= touch_select_tag "WHO STAGES CRITERIA PRESENT", @patient, options_for_select(@who_stage_i_paeds),
+    <%= (touch_select_tag "WHO STAGES CRITERIA PRESENT", @patient, options_for_select(@who_stage_i_paeds),
       {:id => "stage_1_conditions",
       :class => "stage_1_conditions",
       :multiple => true,
@@ -1563,7 +1563,7 @@
       :tt_onUnLoad => "showCategory2('when starting ART');setSelectedStageConditions(1); resetStageDefiningConditions();",
       :condition => 'showConditions() == true && age <= 14',
       :helpText => "Stage 1 Conditions",
-      :tt_pageStyleClass => "NoKeyboard NoInput small" } %>
+      :tt_pageStyleClass => "NoKeyboard NoInput small" }).html_safe %>
 
     <%
     @reasons = ["WHO stage I","WHO stage II","WHO stage III","WHO stage IV",
@@ -1604,13 +1604,13 @@
   :tt_onLoad => "__$('keyboard').style.display = 'none';calculateWHOstage();",
   :tt_pageStyleClass => 'NoKeyboard' } %>
 
-    <%= touch_hidden_tag "WHO STAGE", @patient, "", :id => "who_stage" %>
+    <%= (touch_hidden_tag "WHO STAGE", @patient, "", :id => "who_stage").html_safe %>
 
-    <%= touch_hidden_tag "CD4 COUNT LESS THAN OR EQUAL TO 250", @patient, "", :id => "cd4_count_less_than_250" %>
-    <%= touch_hidden_tag "CD4 COUNT LESS THAN OR EQUAL TO 350", @patient, "", :id => "cd4_count_less_than_350" %>
-    <%= touch_hidden_tag "CD4 COUNT LESS THAN OR EQUAL TO 500", @patient, "", :id => "cd4_count_less_than_500" %>
-    <%= touch_hidden_tag "CD4 PERCENT LESS THAN 25", @patient, "", :id => "cd4_percent_less_than_25" %>
-    <%= touch_hidden_tag "REASON FOR ART ELIGIBILITY", @patient, "", :id => "reason_for_art_eligibility" %>
+    <%= (touch_hidden_tag "CD4 COUNT LESS THAN OR EQUAL TO 250", @patient, "", :id => "cd4_count_less_than_250").html_safe %>
+    <%= (touch_hidden_tag "CD4 COUNT LESS THAN OR EQUAL TO 350", @patient, "", :id => "cd4_count_less_than_350").html_safe %>
+    <%= (touch_hidden_tag "CD4 COUNT LESS THAN OR EQUAL TO 500", @patient, "", :id => "cd4_count_less_than_500").html_safe %>
+    <%= (touch_hidden_tag "CD4 PERCENT LESS THAN 25", @patient, "", :id => "cd4_percent_less_than_25").html_safe %>
+    <%= (touch_hidden_tag "REASON FOR ART ELIGIBILITY", @patient, "", :id => "reason_for_art_eligibility").html_safe %>
 
     <%= select_tag "new_cd4_count_available", options_for_select([['Yes','YES'],['No','NO']]),
       :id => 'new_cd4_count_available',
@@ -1618,12 +1618,12 @@
       :helpText => "CD4 Count available",
       :tt_pageStyleClass => 'NoKeyboard' %>
 
-    <%= touch_location_tag "CD4 COUNT LOCATION", @patient, nil,
+    <%= (touch_location_tag "CD4 COUNT LOCATION", @patient, nil,
       {	:id => "cd4_count_location",
       :condition => '$("new_cd4_count_available").value == "YES" && showConditions()',
       :tt_onLoad => "showCategory2('when starting ART')" ,
       :tt_onUnLoad => "hideCategory();" ,
-      :helpText => "CD4 Count Location"} %>
+      :helpText => "CD4 Count Location"}) %>
 
 
     <%= text_field_tag "year_of_cd4", nil,
@@ -1653,7 +1653,7 @@
       :tt_onUnLoad => 'hideCategory();checkCd4Date();',
       :id => "day_of_cd4" %>
 
-    <%= touch_hidden_tag "CD4 COUNT DATETIME", @patient, nil, {:id => "cd4_count_date", :value_datetime => true}%>
+    <%= (touch_hidden_tag "CD4 COUNT DATETIME", @patient, nil, {:id => "cd4_count_date", :value_datetime => true}).html_safe%>
 
 
   <%#= touch_date_tag "CD4 COUNT DATETIME", @patient, nil,
@@ -1663,17 +1663,17 @@
   :helpText => "CD4 Count Date",
   :max => "#{session[:datetime].to_date rescue Date.today}"} %>
 
-    <%= touch_cd4_count_numeric_tag "CD4 COUNT", @patient, nil,
+    <%= (touch_cd4_count_numeric_tag "CD4 COUNT", @patient, nil,
       {	:id => "cd4_count",
       :condition => '$("new_cd4_count_available").value == "YES" && showConditions()',
       :helpText => "CD4 Count",
       :max => 1000 ,
       :min => 1 ,
       :tt_onLoad => "showCategory2('when starting ART');updateCD4CountKeyPad();",
-      :tt_onUnLoad => "hideCategory();updateCD4Count();"} %>
+      :tt_onUnLoad => "hideCategory();updateCD4Count();"}).html_safe %>
 
-    <%= touch_hidden_tag "CD4 COUNT LESS THAN OR EQUAL TO 250", @patient, "", :id => "cd4_count_less_than_250" %>
-    <%= touch_hidden_tag "CD4 COUNT LESS THAN OR EQUAL TO 350", @patient, "", :id => "cd4_count_less_than_350" %>
+    <%= (touch_hidden_tag "CD4 COUNT LESS THAN OR EQUAL TO 250", @patient, "", :id => "cd4_count_less_than_250").html_safe %>
+    <%= (touch_hidden_tag "CD4 COUNT LESS THAN OR EQUAL TO 350", @patient, "", :id => "cd4_count_less_than_350").html_safe %>
 
     <%= select_tag "new_cd4_percent_available", options_for_select([['Yes','YES'],['No','NO']]),
       :id => 'new_cd4_percent_available',
@@ -1683,16 +1683,16 @@
       :tt_onUnLoad => "hideCategory();" ,
       :tt_pageStyleClass => 'NoKeyboard' %>
 
-    <%= touch_cd4_count_numeric_tag "CD4 PERCENT", @patient, nil,
+    <%= (touch_cd4_count_numeric_tag "CD4 PERCENT", @patient, nil,
       {	:id => "cd4_percent",
       :condition => '$("new_cd4_percent_available").value == "YES" && showConditions()',
       :helpText => "CD4 Percent",
       :tt_onLoad => "showCategory2('when starting ART');updateCD4CountKeyPad();",
-      :tt_onUnLoad => 'hideCategory();updateCD4Percent()'} %>
+      :tt_onUnLoad => 'hideCategory();updateCD4Percent()'}).html_safe %>
 
-    <%= touch_hidden_tag "CD4 PERCENT LESS THAN 25", @patient, "", :id => "cd4_percent_less_than_25" %>
+    <%= (touch_hidden_tag "CD4 PERCENT LESS THAN 25", @patient, "", :id => "cd4_percent_less_than_25").html_safe %>
 
-    <%= touch_hidden_tag "WHO STAGE", @patient, "", :id => "who_stage" %>
+    <%= (touch_hidden_tag "WHO STAGE", @patient, "", :id => "who_stage").html_safe %>
 
 
     <%  if @cell_number.to_i != 0 %>
@@ -1709,15 +1709,15 @@
       :tt_pageStyleClass => "NoControls"
     } %>
 
-    <%= touch_select_tag "CONFIRMATORY HIV TEST TYPE", @patient, options_for_select([['Rapid antibody test','HIV RAPID TEST'],['DNA PCR','HIV DNA polymerase chain reaction'],['Not done','NOT DONE']]),
+    <%= (touch_select_tag "CONFIRMATORY HIV TEST TYPE", @patient, options_for_select([['Rapid antibody test','HIV RAPID TEST'],['DNA PCR','HIV DNA polymerase chain reaction'],['Not done','NOT DONE']]),
       {	:id => "type_of_confirmatory_hiv_test",
       :tt_onLoad => "setUnknownConfirmatoryTestForPopup();",
-      :helpText => "Confirmatory HIV test" } %>
+      :helpText => "Confirmatory HIV test" }).html_safe %>
 
-    <%= touch_location_tag "CONFIRMATORY HIV TEST LOCATION", @patient, nil,
+    <%= (touch_location_tag "CONFIRMATORY HIV TEST LOCATION", @patient, nil,
       {	:id => "confirmatory_hiv_test_location",
       :condition => '$("type_of_confirmatory_hiv_test").value != "NOT DONE"',
-      :helpText => "Location of confirmatory HIV test"} %>
+      :helpText => "Location of confirmatory HIV test"}).html_safe %>
 
   <%#= touch_date_tag "CONFIRMATORY HIV TEST DATE", @patient, nil,
   {	:id => "confirmatory_hiv_test_date",
@@ -1752,7 +1752,7 @@
       :id => "confirmatory_hiv_test_day" ,
       :validationMessage => "Confirmatory Test Date out of range #{@hiv_test_date.to_date rescue nil} and #{@todayDate.to_date rescue nil}"%>
 
-    <%= touch_hidden_tag "confirmatory hiv test date", @patient, "", :id => "confirmatory_hiv_test_date", :value_datetime => true %>
+    <%= (touch_hidden_tag "confirmatory hiv test date", @patient, "", :id => "confirmatory_hiv_test_date", :value_datetime => true).html_safe %>
     <% if @retrospective %>
       <p><label for="filter_provider">Staff who provided the information (Provider)</label></br>
         <%= text_field "filter" , 'provider', :helpText => 'Staff who provided the information (Provider)', :ajaxURL => '/user/username?username=' %></p>
