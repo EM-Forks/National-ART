@@ -4,7 +4,7 @@ class ConceptName < ActiveRecord::Base
 
   has_many :concept_name_tag_maps # no default scope
   has_many :tags, :through => :concept_name_tag_maps, :class_name => 'ConceptNameTag'
-  belongs_to :concept, -> { where retired: 0 }
+  belongs_to :concept, -> { where retired: 0 }, optional: true
 
   scope :tagged, ->(tags) {tags.blank? ? {} :  joins(:tags).where('concept_name_tag.tag IN (?)', Array(tags)) }
   scope :typed, ->(tags) {tags.blank? ? {} :  where('concept_name_type IN (?)', Array(tags)) }

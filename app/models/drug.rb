@@ -2,8 +2,8 @@ class Drug < ActiveRecord::Base
   self.table_name = "drug"
   self.primary_key = "drug_id"
   include Openmrs
-  belongs_to :concept,->{where(retired: 0)}
-  belongs_to :form, -> {where(retired: 0)},foreign_key: :dosage_form, class_name: 'Concept'
+  belongs_to :concept,->{where(retired: 0)}, optional: true
+  belongs_to :form, -> {where(retired: 0)},foreign_key: :dosage_form, class_name: 'Concept', optional: true
   has_many :drug_order_barcodes
 =begin
   # Need to make this a lot more generic	

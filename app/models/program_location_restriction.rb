@@ -2,8 +2,8 @@ class ProgramLocationRestriction < ActiveRecord::Base
   self.table_name = "program_location_restriction"
   self.primary_key = "program_location_restriction_id"
   include Openmrs
-  belongs_to :program,->{where(retired: 0)}
-  belongs_to :location, ->{where(retired: 0)}
+  belongs_to :program,->{where(retired: 0)}, optional: true
+  belongs_to :location, ->{where(retired: 0)}, optional: true
   
   def filter_programs(programs)
     programs.reject {|program| self.program_id == program.program_id}

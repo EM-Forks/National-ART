@@ -25,7 +25,7 @@ class User < ActiveRecord::Base
 	#attr_accessor :login
 	#attr_accessible :login, :username, :password, :secret_question
 
-	belongs_to :person, -> { where voided: 0 }, foreign_key: :person_id
+	belongs_to :person, -> { where voided: 0 }, foreign_key: :person_id, optional: true
 	has_many :user_properties, foreign_key: :user_id # no default scope
 	has_many :user_roles, foreign_key: :user_id, dependent: :delete_all # no default scope
 	#has_many :names, :class_name => 'PersonName', :foreign_key => :person_id, :dependent => :destroy, :order => 'person_name.preferred DESC', :conditions => {:voided =>  0}

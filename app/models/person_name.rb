@@ -4,7 +4,7 @@ class PersonName < ActiveRecord::Base
   self.table_name = "person_name"
   self.primary_key = "person_name_id"
   include Openmrs
-  belongs_to :person, ->{where(voided:0)},foreign_key: :person_id
+  belongs_to :person, ->{where(voided:0)},foreign_key: :person_id, optional: true
   has_one :person_name_code, foreign_key: :person_name_id # no default scope
   def before_save
 

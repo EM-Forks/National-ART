@@ -39,12 +39,6 @@ module Openmrs
       self.date_created = Time.now if self.has_attribute?("date_created")
     end
 
-    if self.instance_of?(Encounter)
-    self.provider_id = User.current.person if self.provider_id.blank?
-    # TODO, this needs to account for current visit, which needs to account for possible retrospective entry
-    self.encounter_datetime = Time.now if self.encounter_datetime.blank?
-    end
-
     self.uuid = ActiveRecord::Base.connection.select_one("SELECT UUID() as uuid")['uuid'] if self.has_attribute?("uuid")
   end
 

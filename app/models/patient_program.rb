@@ -4,9 +4,9 @@ class PatientProgram < ActiveRecord::Base
   self.table_name = "patient_program"
   self.primary_key = "patient_program_id"
   include Openmrs
-  belongs_to :patient, -> {where(voided: 0)}
-  belongs_to :program, -> {where(retired: 0)}
-  belongs_to :location, -> {where(retired: 0)}
+  belongs_to :patient, -> {where(voided: 0)}, optional: true
+  belongs_to :program, -> {where(retired: 0)}, optional: true
+  belongs_to :location, -> {where(retired: 0)}, optional: true
   has_many :patient_states, -> {where(voided: 0)}, class_name: 'PatientState' # :order => 'start_date, date_created', :dependent => :destroy
 
   scope :current, -> { where('date_enrolled < NOW() AND (date_completed IS NULL OR date_completed > NOW())')}

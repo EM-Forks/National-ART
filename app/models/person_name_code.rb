@@ -6,7 +6,7 @@ class PersonNameCode < ActiveRecord::Base
   self.primary_key =  "person_name_code_id"
 
   include Openmrs
-  belongs_to :person_name, ->{where(voided:0)}
+  belongs_to :person_name, ->{where(voided:0)}, optional: true
 
   def before_save
 

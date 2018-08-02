@@ -7,7 +7,7 @@ class PersonAddress < ActiveRecord::Base
 
   include Openmrs
 
-  belongs_to :person, ->{where(voided:0)}, foreign_key: :person_id
+  belongs_to :person, ->{where(voided:0)}, foreign_key: :person_id, optional: true
   
   # Looks for the most commonly used element in the database and sorts the results based on the first part of the string
   def self.find_most_common(field_name, search_string)
