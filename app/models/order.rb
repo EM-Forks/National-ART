@@ -5,12 +5,12 @@ class Order < ActiveRecord::Base
   self.table_name = "orders"
   self.primary_key = "order_id"
   include Openmrs
-  belongs_to :order_type, -> { where retired: 0 }
-  belongs_to :concept, -> { where retired: 0 }
-  belongs_to :encounter, -> { where voided: 0 }
-  belongs_to :patient, -> { where voided: 0 }
-  belongs_to :provider, -> { where retired: 0 }, foreign_key: :orderer, class_name: :User
-  belongs_to :observation, -> { where voided: 0 }, foreign_key: :obs_id, class_name: :Observation
+  belongs_to :order_type, -> { where retired: 0 }, optional: true
+  belongs_to :concept, -> { where retired: 0 }, optional: true
+  belongs_to :encounter, -> { where voided: 0 }, optional: true
+  belongs_to :patient, -> { where voided: 0 }, optional: true
+  belongs_to :provider, -> { where retired: 0 }, foreign_key: :orderer, class_name: :User, optional: true
+  belongs_to :observation, -> { where voided: 0 }, foreign_key: :obs_id, class_name: :Observation, optional: true
   has_one :drug_order # no default scope
   
   scope :current,-> { includes(:encounter).references("encounter.encounter_id").where('DATE(encounter.encounter_datetime) = CURRENT_DATE()') }

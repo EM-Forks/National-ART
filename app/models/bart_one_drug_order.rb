@@ -2,7 +2,7 @@ class BartOneDrugOrder < ActiveRecord::Base
   self.table_name = "drug_order"
   self.primary_key =  "drug_order_id"
 
-  belongs_to :drug, foreign_key: :drug_inventory_id
+  belongs_to :drug, foreign_key: :drug_inventory_id, optional: true
   belongs_to :order
 
 

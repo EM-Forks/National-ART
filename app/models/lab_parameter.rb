@@ -2,7 +2,7 @@
 	  self.table_name = "Lab_Parameter"
     self.primary_key = "ID"
 
-    belongs_to :lab_sample, foreign_key: :sample_id
+    belongs_to :lab_sample, foreign_key: :sample_id, optional: true
     
     def self.find_by_sample_id(sample_id)
       return LabParameter.where(["sample_id =?", sample_id])

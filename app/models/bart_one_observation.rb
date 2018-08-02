@@ -5,13 +5,13 @@ class BartOneObservation < ActiveRecord::Base
   has_many :notes, foreign_key:  :obs_id
   has_many :concept_proposals, foreign_key: :obs_id
   belongs_to :drug, foreign_key: :value_drug
-  belongs_to :concept, foreign_key: :concept_id
-  belongs_to :patient, foreign_key:  :patient_id
-  belongs_to :order, foreign_key: :order_id
-  belongs_to :user, foreign_key: :user_id
-  belongs_to :bart_one_encounter, foreign_key:  :encounter_id
-  belongs_to :location, foreign_key: :location_id
-  belongs_to :answer_concept, class_name:  "Concept", foreign_key: :value_coded
+  belongs_to :concept, foreign_key: :concept_id, optional: true
+  belongs_to :patient, foreign_key:  :patient_id, optional: true
+  belongs_to :order, foreign_key: :order_id, optional: true
+  belongs_to :user, foreign_key: :user_id, optional: true
+  belongs_to :bart_one_encounter, foreign_key:  :encounter_id, optional: true
+  belongs_to :location, foreign_key: :location_id, optional: true
+  belongs_to :answer_concept, class_name:  "Concept", foreign_key: :value_coded, optional: true
 
 
   def to_short_s

@@ -5,8 +5,8 @@ class PatientState < ActiveRecord::Base
   self.primary_key = "patient_state_id"
   include Openmrs
 
-  belongs_to :patient_program, -> {where(voided: 0)}
-  belongs_to :program_workflow_state,foreign_key: :state,class_name: 'ProgramWorkflowState'
+  belongs_to :patient_program, -> {where(voided: 0)}, optional: true
+  belongs_to :program_workflow_state,foreign_key: :state,class_name: 'ProgramWorkflowState', optional: true
 #, :conditions => {:retired => 0}
 
   scope :current, -> {where(['start_date IS NOT NULL AND DATE(start_date) <= ? AND (end_date IS NULL OR DATE(end_date) > ?)',Date.today,Date.today])}

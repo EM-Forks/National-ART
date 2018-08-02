@@ -1,7 +1,7 @@
 class DrugOrderBarcode < ActiveRecord::Base
   self.table_name = "drug_order_barcodes"
   self.primary_key = "drug_order_barcode_id"
-  belongs_to :drug, foreign_key: :drug_id
+  belongs_to :drug, foreign_key: :drug_id, optional: true
 
   def self.reset
     barcodes = {}

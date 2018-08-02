@@ -1,6 +1,6 @@
 require 'rest-client'
 class ValidationResult < ActiveRecord::Base
-  belongs_to :validation_rule, :foreign_key => "rule_id"
+  belongs_to :validation_rule, :foreign_key => "rule_id", optional: true
 
   def self.add_record(data)
   	file = "#{Rails.root}/config/couchdb_config.yml"

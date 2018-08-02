@@ -103,11 +103,11 @@
   var tstCurrentDate = '<%= session[:datetime].to_date.strftime("%Y-%m-%d") rescue Date.today.strftime("%Y-%m-%d") %>';
   var firstPositiveHivTestType = "<%= @confirmatory_hiv_test_type -%>";
   var age = <%= @patient_bean.age -%>;
-  var regimen_formulations = <%= @regimen_formulations.to_json -%>;
+  var regimen_formulations = <%= @regimen_formulations.to_json.html_safe -%>;
   var birthdate = new Date("<%= @patient.person.birthdate.to_date.strftime("%m/%d/%Y") %>")
   var dateCreated = new Date("<%=@patient.person.date_created %>");
   var patientBirthdateEstimated = "<%=@patient.person.birthdate_estimated %>";
-  var median_weight_height = <%= @median_weight_height.to_json -%>;
+  var median_weight_height = <%= @median_weight_height.to_json.html_safe -%>;
   var sessionDate = new Date('<%=  @session_date.to_date.strftime('%d/%b/%Y') %>');
   var birthYear = parseInt('<%= @birth_date.year %>');
   var birthMonth = parseInt('<%= @birth_date.month %>');
