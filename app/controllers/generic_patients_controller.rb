@@ -220,9 +220,8 @@ The following block of code should be replaced by a more cleaner function
     @patient = Patient.find(params[:patient_id])
     type = EncounterType.find_by_name('TREATMENT')
     session_date = session[:datetime].to_date rescue Date.today
-    @prescriptions = Order.find(:all,
-      :joins => "INNER JOIN encounter e USING (encounter_id)",
-      :conditions => ["encounter_type = ? AND e.patient_id = ?",type.id,@patient.id])
+    @prescriptions = Order.where(
+           ["encounter_type = ? AND e.patient_id = ?",type.id,@patient.id]).joins("INNER JOIN encounter e USING (encounter_id)")
 
     @historical = @patient.orders.historical.prescriptions.all
     @restricted = ProgramLocationRestriction.where({:location_id => Location.current_health_center.id })

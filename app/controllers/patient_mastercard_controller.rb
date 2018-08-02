@@ -22,7 +22,7 @@ class PatientMastercardController < ApplicationController
     end 
   
     encounter_datetimes = encounter_datetimes.uniq rescue []
-    render :text => (encounter_datetimes.map{|d| d.to_date.strftime('%Y-%m-%d')}.sort).to_json 
+    render plain: (encounter_datetimes.map{|d| d.to_date.strftime('%Y-%m-%d')}.sort).to_json
   end
 
   def get_visit
@@ -80,7 +80,7 @@ class PatientMastercardController < ApplicationController
       end
     end
 
-    render :text => {
+    render plain: {
       :height          => height,
       :weight          => weight,
       :bmi             => bmi,

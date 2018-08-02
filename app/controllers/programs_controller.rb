@@ -2,8 +2,7 @@ class ProgramsController < GenericProgramsController
 
   def create_exit_from_care_encounter(given_params)
     states_to_create_encounter_for = []
-    concept_set("EXIT FROM CARE").each{|concept| states_to_create_encounter_for << concept.uniq.to_s}
-   
+    concept_set("EXIT FROM CARE").each{|concept| states_to_create_encounter_for << concept.uniq.join("").to_s}
     current_state = given_params[:current_state]
 
     if states_to_create_encounter_for.include? current_state
@@ -229,7 +228,7 @@ class ProgramsController < GenericProgramsController
   end
 
   def update_exitcare
-    
+
     patient_program = PatientProgram.find(params[:patient_program_id])
     #we don't want to have more than one open states - so we have to close the current active on before opening/creating a new one
 
