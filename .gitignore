@@ -14,7 +14,7 @@ schema.rb
 mockups
 rerun.txt
 nbproject
-Gemfile.lock
+*.lock
 log/*
 .idea/*
 .ruby-version
@@ -27,3 +27,4 @@ public/data/disaggregated_cohort/*
 tmp/*
 .project
 *.log
+*.pid
