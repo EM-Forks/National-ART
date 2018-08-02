@@ -1,6 +1,6 @@
 class BartOneEncounter < ActiveRecord::Base
  self.table_name = "encounter"
-  has_many :bart_one_observations, foreign_key: :encounter_id, optional: true, dependent: :destroy do
+  has_many :bart_one_observations, foreign_key: :encounter_id, dependent: :destroy do
     def find_by_concept_id(concept_id)
       where(["voided = 0 and concept_id = ?", concept_id])
     end

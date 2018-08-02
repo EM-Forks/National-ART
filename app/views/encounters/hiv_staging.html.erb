@@ -1006,9 +1006,9 @@ end %>
         <%= (touch_numeric_tag "LYMPHOCYTE COUNT", @patient, nil,
           {:id => "lymphocyte_count",
           :condition => '$("new_lymphocyte_count_available").value == "YES"',
-          :helpText => "Lymphocyte Count"} %>
+          :helpText => "Lymphocyte Count"}).html_safe %>
       <% else %>
-        <%= hidden_field_tag("new_lymphocyte_count_available", "")).html_safe %>
+        <%= (hidden_field_tag("new_lymphocyte_count_available", "")).html_safe %>
       <% end %>
 
       <%

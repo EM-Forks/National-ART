@@ -19,6 +19,11 @@ class Encounter < ActiveRecord::Base
   # TODO, this needs to account for current visit, which needs to account for possible retrospective entry
   scope :current, -> {where('DATE(encounter.encounter_datetime) = CURRENT_DATE()')}
 
+  def before_save
+    self.provider = User.current.person if self.provider.blank?
+    # TODO, this needs to account for current visit, which needs to account for possible retrospective entry
+    self.encounter_datetime = Time.now if self.encounter_datetime.blank?
+  end
 
   def after_save
     self.add_location_obs
