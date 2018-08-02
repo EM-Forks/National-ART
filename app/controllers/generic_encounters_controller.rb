@@ -1485,7 +1485,7 @@ class GenericEncountersController < ApplicationController
     patient_id = params[:encounter]["patient_id"].to_i
     encounter_datetime = params[:encounter]['encounter_datetime'].to_time.strftime('%Y-%m-%d %H:%M:%S')
 
-    encounter = Encounter.create!(
+    encounter = Encounter.create(
       :encounter_type => encounter_type.id,
       :patient_id => patient_id,
       :encounter_datetime => encounter_datetime
