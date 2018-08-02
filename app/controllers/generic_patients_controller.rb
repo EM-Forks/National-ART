@@ -1173,8 +1173,7 @@ EOF
 
     count = appointments.length unless appointments.blank?
     count = '0' if count.blank?
-
-    render :text => (count.to_i >= 0 ? {params[:date] => count}.to_json : 0)
+    render plain: (count.to_i >= 0 ? {params[:date] => count}.to_json : 0) and return
   end
 
   def recent_lab_orders_print

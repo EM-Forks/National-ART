@@ -118,7 +118,7 @@ if @clinic_days.blank?
 end
 
 %>
-  var clinic_holidays = <%= clinic_holidays %>
+  var clinic_holidays = <%= clinic_holidays.html_safe %>
   var totalWeekend = new Array;
   var totalHoliday = new Array;
   function summary() {

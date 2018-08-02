@@ -105,7 +105,7 @@ class GenericClinicController < ApplicationController
       end
     end
 
-    @types = gCoreService.get_global_property_value("statistics.show_encounter_types") rescue EncounterType.all.map(&:name).join(",")
+    @types = CoreService.get_global_property_value("statistics.show_encounter_types") rescue EncounterType.all.map(&:name).join(",")
     @types = @types.split(/,/)
 
     @me = Encounter.statistics(@types,
