@@ -8,11 +8,11 @@
   <%= hidden_field_tag "encounter[encounter_datetime]", DateTime.now() %>
   <%= hidden_field_tag "encounter[provider_id]", current_user.user_id %>
 
-<%= touch_location_tag 'REFERRAL CLINIC IF REFERRED', @patient, nil,
+<%= (touch_location_tag 'REFERRAL CLINIC IF REFERRED', @patient, nil,
     {:id => 'location_id',
      :field_type => 'alpha',
      :helpText => "REFERRED TO",
      :ajaxURL => '/programs/locations?q=',
-     :allowFreeText => false } %>
+     :allowFreeText => false }).html_safe %>
 
 </form>

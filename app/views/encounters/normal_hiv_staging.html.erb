@@ -33,8 +33,8 @@
   }
 
 </style>
-<%= javascript_include_tag "prototype" %>
-<%= stylesheet_link_tag "cohort" %>
+<%= javascript_include_tag "/javascipts/prototype" %>
+<%= stylesheet_link_tag "/stylesheets/cohort" %>
 <script src="/javascripts/jquery-1.3.2.min.js" type="text/javascript"></script>
 <script type="text/javascript">
 <% firstPositiveHivTestType = @confirmatory_hiv_test_type %>
@@ -782,12 +782,12 @@ who_stage_iv = @who_stage_iv - @who_stage_peds_iv - @who_stage_adults_iv
   <%= hidden_field_tag "staging_conditions", "YES"%>
 
   <% if @patient_bean.age_in_months < 12 and @confirmatory_hiv_test_type == 'HIV rapid test' %>
-	<%= touch_select_tag "PRESUMED SEVERE HIV CRITERIA PRESENT", @patient, concept_set_options('PRESUMED SEVERE HIV CRITERIA IN INFANTS'),
+	<%= (touch_select_tag "PRESUMED SEVERE HIV CRITERIA PRESENT", @patient, concept_set_options('PRESUMED SEVERE HIV CRITERIA IN INFANTS'),
 	  {	:id => "presumed_severe_hiv_conditions",
 	  :multiple => true,
 	  :optional => true,
 	  :helpText => "Presumed severe HIV criteria (infants only)",
-	  :tt_pageStyleClass => "NoKeyboard NoInput small"  } %>
+	  :tt_pageStyleClass => "NoKeyboard NoInput small"  }).html_safe %>
   <% else %>
 
 	<% if @patient_bean.sex == 'Female' and  @patient_bean.age > 14
@@ -798,38 +798,38 @@ who_stage_iv = @who_stage_iv - @who_stage_peds_iv - @who_stage_adults_iv
 
 	  <% if @patient_is_transfer_in && (@patient_transfer_in_date == session[:datetime])%>
 		<% if patient_pregnant.blank? %>
-		  <%= touch_yes_no_unknown_tag "IS PATIENT PREGNANT?", @patient, nil,
+		  <%= (touch_yes_no_unknown_tag "IS PATIENT PREGNANT?", @patient, nil,
 			{	:id => "pregnant" ,
 			:optional => false ,
 			:validationCode => "checkPregnancyAndAge() == 'false'",
 			:validationMessage => "Patient (#{@patient_bean.name}) is #{@patient_bean.age} years old. Is she pregnant?",
-			:helpText => "Patient pregnant at initiation?" } %>
+			:helpText => "Patient pregnant at initiation?" }).html_safe %>
 		<% end %>
 
-		<%= touch_yes_no_unknown_tag "IS PATIENT BREAST FEEDING?", @patient, nil,
+		<%= (touch_yes_no_unknown_tag "IS PATIENT BREAST FEEDING?", @patient, nil,
 		  {	:id => "breast_feeding" ,
 		  :optional => false ,
 		  :condition => '$("pregnant").value == "NO"',
 		  :validationCode => "checkBreastfeedingAndAge() == 'false'",
 		  :validationMessage => "Patient (#{@patient_bean.name}) is #{@patient_bean.age} years old. Is she breastfeeding?",
-		  :helpText => "Patient breast feeding at initiation?" } %>
+		  :helpText => "Patient breast feeding at initiation?" }).html_safe %>
 	  <% else %>
 		<% if patient_pregnant.blank? %>
-		  <%= touch_yes_no_unknown_tag "IS PATIENT PREGNANT?", @patient, nil,
+		  <%= (touch_yes_no_unknown_tag "IS PATIENT PREGNANT?", @patient, nil,
 			{	:id => "pregnant" ,
 			:optional => false ,
 			:validationCode => "checkPregnancyAndAge() == 'false'",
 			:validationMessage => "Patient (#{@patient_bean.name}) is #{@patient_bean.age} years old. Is she pregnant?",
-			:helpText => "Is patient pregnant?" } %>
+			:helpText => "Is patient pregnant?" }).html_safe %>
 		<% end %>
 
-		<%= touch_yes_no_unknown_tag "IS PATIENT BREAST FEEDING?", @patient, nil,
+		<%= (touch_yes_no_unknown_tag "IS PATIENT BREAST FEEDING?", @patient, nil,
 		  {	:id => "breast_feeding" ,
 		  :optional => false ,
 		  :condition => '$("pregnant").value == "NO"',
 		  :validationCode => "checkBreastfeedingAndAge() == 'false'",
 		  :validationMessage => "Patient (#{@patient_bean.name}) is #{@patient_bean.age} years old. Is she breastfeeding?",
-		  :helpText => "Is patient breast feeding?" } %>
+		  :helpText => "Is patient breast feeding?" }).html_safe %>
 
 	  <% end %>
 	<% end %>
@@ -840,42 +840,42 @@ who_stage_iv = @who_stage_iv - @who_stage_peds_iv - @who_stage_adults_iv
   <label for='new_cd4_count_available'>Recent CD4 count results available?</label>
   <%= select_tag "new_cd4_count_available", options_for_select([['Yes','YES'],['No','NO']]), :id => 'new_cd4_count_available', :tt_pageStyleClass => 'NoKeyboard' %>
 
-  <%= touch_date_tag "CD4 COUNT DATETIME", @patient, nil,
+  <%= (touch_date_tag "CD4 COUNT DATETIME", @patient, nil,
 	{:id => "cd4_count_date",
 	:condition => '$("new_cd4_count_available").value == "YES"',
 	:helpText => "CD4 Count Date",
-	:max => "#{session[:datetime].to_date rescue Date.today}"} %>
+	:max => "#{session[:datetime].to_date rescue Date.today}"}).html_safe %>
 
-  <%= touch_cd4_count_numeric_tag "CD4 COUNT", @patient, nil,
+  <%= (touch_cd4_count_numeric_tag "CD4 COUNT", @patient, nil,
 	{:id => "cd4_count",
 	:condition => '$("new_cd4_count_available").value == "YES"',
 	:helpText => "CD4 Count",
 	:max => 1000 ,
 	:min => 1 ,
 	:tt_onLoad => "updateCD4CountKeyPad();",
-	:tt_onUnLoad => "updateCD4Count();"} %>
+	:tt_onUnLoad => "updateCD4Count();"}).html_safe %>
 
-  <%= touch_hidden_tag "CD4 COUNT LESS THAN OR EQUAL TO 250", @patient, "", :id => "cd4_count_less_than_250" %>
-  <%= touch_hidden_tag "CD4 COUNT LESS THAN OR EQUAL TO 350", @patient, "", :id => "cd4_count_less_than_350" %>
+  <%= (touch_hidden_tag "CD4 COUNT LESS THAN OR EQUAL TO 250", @patient, "", :id => "cd4_count_less_than_250").html_safe %>
+  <%= (touch_hidden_tag "CD4 COUNT LESS THAN OR EQUAL TO 350", @patient, "", :id => "cd4_count_less_than_350").html_safe %>
 
   <% if @patient_bean.age <= 14 %>
 
 	<label for='new_cd4_percent_available'>New CD4 percent available?</label>
 	<%= select_tag "new_cd4_percent_available", options_for_select([['Yes','YES'],['No','NO']]), :id => 'new_cd4_percent_available', :tt_pageStyleClass => 'NoKeyboard' %>
 
-	<%= touch_date_tag "CD4 PERCENT DATETIME", @patient, (Time.now - 1.month).year,
+	<%= (touch_date_tag "CD4 PERCENT DATETIME", @patient, (Time.now - 1.month).year,
 	  {:id => "cd4_percent_date",
 	  :condition => '$("new_cd4_percent_available").value == "YES"',
 	  :helpText => "CD4 Percent Date",
-	  :max => "#{session[:datetime].to_date rescue Date.today}"} %>
+	  :max => "#{session[:datetime].to_date rescue Date.today}"}).html_safe %>
 
-	<%= touch_numeric_tag "CD4 PERCENT", @patient, nil,
+	<%= (touch_numeric_tag "CD4 PERCENT", @patient, nil,
 	  {:id => "cd4_percent",
 	  :condition => '$("new_cd4_percent_available").value == "YES"',
 	  :helpText => "CD4 Percent",
-	  :tt_onUnLoad => 'updateCD4Percent()'} %>
+	  :tt_onUnLoad => 'updateCD4Percent()'}).html_safe %>
 
-	<%= touch_hidden_tag "CD4 PERCENT LESS THAN 25", @patient, "", :id => "cd4_percent_less_than_25" %>
+	<%= (touch_hidden_tag "CD4 PERCENT LESS THAN 25", @patient, "", :id => "cd4_percent_less_than_25").html_safe %>
 
   <% else %>
 	<%= hidden_field_tag "new_cd4_percent_available", "" %>
@@ -884,28 +884,28 @@ who_stage_iv = @who_stage_iv - @who_stage_peds_iv - @who_stage_adults_iv
   <label for='new_lymphocyte_count_available'>New Lymphocyte count available?</label>
   <%= select_tag "new_lymphocyte_count_available", options_for_select([['Yes','YES'],['No','NO']]), :id => 'new_lymphocyte_count_available', :tt_pageStyleClass => 'NoKeyboard' %>
 
-  <%= touch_date_tag "LYMPHOCYTE COUNT DATETIME", @patient, nil,
+  <%= (touch_date_tag "LYMPHOCYTE COUNT DATETIME", @patient, nil,
 	{:id => "lymphocyte_count_date",
 	:condition => '$("new_lymphocyte_count_available").value == "YES"',
 	:helpText => "Lymphocyte Count Date",
-	:max => "#{session[:datetime].to_date rescue Date.today}"} %>
+	:max => "#{session[:datetime].to_date rescue Date.today}"}).html_safe %>
 
-  <%= touch_numeric_tag "LYMPHOCYTE COUNT", @patient, nil,
+  <%= (touch_numeric_tag "LYMPHOCYTE COUNT", @patient, nil,
 	{:id => "lymphocyte_count",
 	:condition => '$("new_lymphocyte_count_available").value == "YES"',
-	:helpText => "Lymphocyte Count"} %>
+	:helpText => "Lymphocyte Count"}).html_safe %>
 
-  <%= touch_location_tag "CD4 PERCENT LOCATION", @patient, nil,
+  <%= (touch_location_tag "CD4 PERCENT LOCATION", @patient, nil,
 	{	:id => "cd4_percent_location",
 	:condition => '$("new_cd4_percent_available").value == "YES" || $("new_lymphocyte_count_available").value == "YES" || ($("new_cd4_count_available").value == "YES" && transferInPatient() == false)',
-	:helpText => "CD4 or Lymphocyte count location"} %>
+	:helpText => "CD4 or Lymphocyte count location"}).html_safe %>
 
-  <%= touch_text_area_tag("CLINICAL NOTES CONSTRUCT", @patient, nil,
-	{	:optional => true,:helpText => "Clinical notes (optional)"}, time=DateTime.now()) %>
+  <%= (touch_text_area_tag("CLINICAL NOTES CONSTRUCT", @patient, nil,
+	{	:optional => true,:helpText => "Clinical notes (optional)"}, time=DateTime.now())).html_safe %>
 
-  <%= touch_hidden_tag "WHO STAGES CRITERIA PRESENT", @patient, "", :id => "calculated_who_stage_4" %>
-  <%= touch_hidden_tag "WHO STAGE", @patient, "", :id => "who_stage" %>
-  <%= touch_hidden_tag "REASON FOR ART ELIGIBILITY", @patient, "", :id => "reason_for_art_eligibility" %>
+  <%= (touch_hidden_tag "WHO STAGES CRITERIA PRESENT", @patient, "", :id => "calculated_who_stage_4").html_safe %>
+  <%= (touch_hidden_tag "WHO STAGE", @patient, "", :id => "who_stage").html_safe %>
+  <%= (touch_hidden_tag "REASON FOR ART ELIGIBILITY", @patient, "", :id => "reason_for_art_eligibility").html_safe %>
 
   <label for='summary'>Summary</label>
   <%= text_field_tag :summary, nil, {:tt_onUnLoad => "clearConditions();", :tt_onLoad => "summary();clearConditions();__$('keyboard').style.display = 'none';", :optional => "true", :tt_pageStyleClass => "NoControls" } %>

@@ -30,12 +30,12 @@ function changeNextButton(text){
 
 </script>
 <%if @ipt_contacts.blank?%>
-  <% form_tag :controller => "people", :action => "new_tb_contact_person", :source => "create_ipt", :patient_id => @patient.id  do |f| %>
+  <%= form_tag :controller => "people", :action => "new_tb_contact_person", :source => "create_ipt", :patient_id => @patient.id  do |f| %>
     <select><option value="0" onmousedown="changeNextButton('Create new contact')">No contacts registered </option></select>
     <%= submit_tag 'Finish' %>
 <% end %>
 <%else%>
-<% form_tag :controller => "encounters", :action => "create" do |f| %>
+<%= form_tag :controller => "encounters", :action => "create" do |f| %>
 	<%= hidden_field_tag "encounter[encounter_type_name]", "IPT CONTACT PERSON" %>
 	<%= hidden_field_tag "encounter[patient_id]", @patient.id %>
 	<%= hidden_field_tag "encounter[encounter_datetime]", DateTime.now() %>
@@ -60,23 +60,23 @@ function changeNextButton(text){
 
   <%@prescribe_for_drugs = ["", "YES", "NO"]%>
 
-  <%= touch_select_tag "START DRUGS", @patient, options_for_select(@prescribe_for_drugs),
+  <%= (touch_select_tag "START DRUGS", @patient, options_for_select(@prescribe_for_drugs),
     {:id =>  "prescribe_for_drugs",
-    :helpText => "Prescribe IPT Drugs?" } %>
+    :helpText => "Prescribe IPT Drugs?" }).html_safe %>
 
   <%@regimen = ["", "ISONIAZID"]%>
 
-  <%= touch_select_tag "PRIMARY REGIMEN", @patient, options_for_select(@regimen),
+  <%= (touch_select_tag "PRIMARY REGIMEN", @patient, options_for_select(@regimen),
     {:id =>  "regimen",
     :condition => "$('prescribe_for_drugs').value == 'YES'",
-    :helpText => "Select Regimen" } %>
+    :helpText => "Select Regimen" }).html_safe %>
 
   <%@prescription_period = ["", "2 Weeks", "1 Month"]%>
 
-  <%= touch_select_tag "IPT DURATION", @patient, options_for_select(@prescription_period),
+  <%= (touch_select_tag "IPT DURATION", @patient, options_for_select(@prescription_period),
     {:id =>  "prescription_period",
     :condition => "$('prescribe_for_drugs').value == 'YES'",
-    :helpText => "Prescription Time Period" } %>
+    :helpText => "Prescription Time Period" }).html_safe %>
 
   <%= submit_tag 'Finish' %>
 <% end %>

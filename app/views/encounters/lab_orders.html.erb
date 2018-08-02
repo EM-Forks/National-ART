@@ -153,11 +153,11 @@
 			:tt_onUnLoad => 'updateLaborderUrl($("main_tests").value);'}%>
 
 
-	<%= touch_select_tag "TESTS ORDERED", @patient, options_for_select([]),
+	<%= (touch_select_tag "TESTS ORDERED", @patient, options_for_select([]),
 		{	:id => "lab_orders",
 			:tt_onLoad => "$('clearButton').style.display='block'",
 			:multiple => true,
-			:helpText => "Select test" } %>
+			:helpText => "Select test" }).html_safe %>
 
 
 
