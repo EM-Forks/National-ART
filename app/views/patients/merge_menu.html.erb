@@ -1,7 +1,7 @@
 <html>
 <head>
-  <%= javascript_include_tag "prototype" %>
-  <%= javascript_include_tag 'jquery' %>
+  <%= javascript_include_tag "/javascripts/prototype" %>
+  <%= javascript_include_tag '/javascripts/jquery' %>
  <!--<link rel="stylesheet" type="text/css" href="/touchscreentoolkit/lib/stylesheets/touch-fancy.css"></link>-->
 <script src="/touchscreentoolkit/lib/javascripts/standard.js" type="text/javascript"></script>
 
@@ -151,13 +151,13 @@ div{
 <br/>
 
 <div id='primary_patient_div'>
-  Find primary patient <%=  "&nbsp;" * 2 %> <input id="primary_patient" name="primary_patient" type="text" />
+  Find primary patient <%=  ("&nbsp;" * 2).html_safe %> <input id="primary_patient" name="primary_patient" type="text" />
   <a id = "primary_button" onmousedown="showKeyPad('primary_patient')" class ='find_buttons'>Find patients</a>
   <span style="display:none" id = "disabled_button_left">Find patients</span>
 </div>
 
 <div id='second_patient_div'>
-  Find secondary patient <%=  "&nbsp;" * 2 %> <input id="secondary_patient" name="secondary_patient" type="text" />
+  Find secondary patient <%=  ("&nbsp;" * 2).html_safe %> <input id="secondary_patient" name="secondary_patient" type="text" />
   <a id = "secondary_button" onmousedown="showKeyPad('secondary_patient')" class ='find_buttons'>Find patients</a>
   <span style="display:none" id = "disabled_button_right">Find patients</span>
 </div>

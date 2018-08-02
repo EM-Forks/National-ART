@@ -4499,11 +4499,13 @@ EOF
     end
 
     @html+="</table></body></html>"
-    render :text => @html ; return
+    render plain: @html.html_safe ; return
   end
 
   def merge_similar_patients
-    if request.method == :post
+
+    if request.method.eql?("POST")
+
       params[:patient_ids].split(":").each do | ids |
         master = ids.split(',')[0].to_i
         slaves = ids.split(',')[1..-1]

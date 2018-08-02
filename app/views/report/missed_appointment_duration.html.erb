@@ -1,6 +1,6 @@
-<%= javascript_include_tag "prototype" %>
-<%= javascript_include_tag 'jquery' %>
-<%= stylesheet_link_tag 'extra_buttons' %>
+<%= javascript_include_tag "/javascripts/prototype" %>
+<%= javascript_include_tag '/javascripts/jquery' %>
+<%= stylesheet_link_tag '/stylesheets/extra_buttons' %>
 <style>
 
     .tt_controls_start_month .keyboard{display:none;}
@@ -25,7 +25,7 @@
   <% else %>
   <form action="/report/defaulted_patients_report" method='post' >
   <% end %>
-  <% month_names = month_name_options.gsub('<option value="Unknown">Unknown</option>', '') %>
+  <% month_names = month_name_options.gsub('<option value="Unknown">Unknown</option>', '').html_safe %>
 
 <% if params[:type] == "missed" or params[:type] == 'disaggregated'%>
   <%= text_field_tag "start_year", nil,

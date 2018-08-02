@@ -10,15 +10,15 @@
         tstCurrentDate = "<%= Time.now.strftime("%Y-%m-%d") %>";
         var tt_cancel_destination = '/';
     </script>
-    <%= stylesheet_link_tag fancy_or_high_contrast_touch %>
-    <%= stylesheet_link_tag "dashboard" %>
-    <%= javascript_include_tag "barcode" %>
-    <%= javascript_include_tag "prototype" %>
-    <%= javascript_include_tag 'jquery' %>
-    <%= stylesheet_link_tag 'extra_buttons' %>
-    <%= javascript_include_tag 'jquery_data_table.js' %>
-    <%= stylesheet_link_tag 'jquery.dataTables' %>
-    <%=javascript_include_tag "jquery.table2CSV.min" %>
+    <%= stylesheet_link_tag "/stylesheets/"+fancy_or_high_contrast_touch %>
+    <%= stylesheet_link_tag "/stylesheets/dashboard" %>
+    <%= javascript_include_tag "/javascripts/barcode" %>
+    <%= javascript_include_tag "/javascripsts/prototype" %>
+    <%= javascript_include_tag '/javascripts/jquery' %>
+    <%= stylesheet_link_tag '/stylesheets/extra_buttons' %>
+    <%= javascript_include_tag '/javascripts/jquery_data_table.js' %>
+    <%= stylesheet_link_tag '/stylesheets/jquery.dataTables' %>
+    <%=javascript_include_tag "/javascripts/jquery.table2CSV.min" %>
     <script type="text/javascript" charset="utf8" src="/javascripts/jquery.dataTables.min.js"></script>
 
     <script type="text/javascript">
@@ -355,7 +355,7 @@
 <body id="mateme">
 <div id="container">
     <div id="content" style = "position : relative; width : 96%; margin-left : -48%">
-        <%= image_tag(@logo, :class => "logo")%>
+        <%= image_tag("/images/"+@logo, :class => "logo")%>
         <br /><b style="margin-left:175px; margin-top: 0px"><%= @current_location_name %></b><br />
         <b style="position:relative; top:0px; margin-left:175px">
             Total patients
