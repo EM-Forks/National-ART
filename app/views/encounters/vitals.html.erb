@@ -673,7 +673,7 @@ Find more at: http://www.skillsyouneed.com/num/percent-change.html#ixzz4TIacWujf
   <% if @retrospective %>
     <%= text_field "filter" , 'provider',
       {	:helpText => 'Staff who provided the information (Provider)',
-      :ajaxURL => '/user/username?username='} %>
+      :ajaxURL => '/users/username?username='} %>
   <% else %>
     <%= hidden_field_tag "filter[provider]", nil %>
   <%end%>

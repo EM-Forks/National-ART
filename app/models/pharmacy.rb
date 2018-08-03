@@ -372,8 +372,7 @@ EOF
                       pharmacy_encounter_type.id , drug_id , start_date , end_date]).sum(:value_numeric) rescue 0
   end
 
-  def self.latest_phys
-    ical_counted(drug_id, latest_date)
+  def self.latest_physical_counted(drug_id, latest_date)
     pharmacy_encounter_type = PharmacyEncounterType.find_by_name('Tins currently in stock')
 
     latest_physical_count = Pharmacy.find_by_sql(
@@ -392,6 +391,28 @@ EOF
           ) LIMIT 1;"
     ).last.value_numeric rescue 0 #To avoid double count of clinic and supervision data
     
+    return latest_physical_count
+  end
+
+  def self.latest_physical_counted(drug_id, latest_date)
+    pharmacy_encounter_type = PharmacyEncounterType.find_by_name('Tins currently in stock')
+
+    latest_physical_count = Pharmacy.find_by_sql(
+      "SELECT * FROM pharmacy_obs p WHERE p.drug_id = #{drug_id}
+        AND p.pharmacy_module_id = (
+              SELECT MAX(pharmacy_module_id) FROM pharmacy_obs t
+              WHERE t.encounter_date = p.encounter_date AND t.drug_id = p.drug_id
+              AND t.pharmacy_encounter_type = #{pharmacy_encounter_type.id}
+              AND t.encounter_date >= '#{latest_date}' AND t.encounter_date <= '#{latest_date}'
+            )
+        AND p.encounter_date = (
+            SELECT max(encounter_date) from pharmacy_obs t2
+            where t2.encounter_date = p.encounter_date AND t2.drug_id = p.drug_id
+            AND t2.pharmacy_encounter_type = #{pharmacy_encounter_type.id}
+            AND t2.encounter_date >= '#{latest_date}' AND t2.encounter_date <= '#{latest_date}'
+          ) LIMIT 1;"
+    ).last.value_numeric rescue 0 #To avoid double count of clinic and supervision data
+
     return latest_physical_count
   end
 
@@ -454,7 +475,7 @@ EOF
     current_drug_stock = Pharmacy.current_drug_stock(drug_id)
 
     pharmacy_obs = Pharmacy.where(["pharmacy_encounter_type =? AND drug_id =? AND
-        value_text = ?", edited_stock_encounter_id, drug_id, 'Current Stock'])
+        value_text = ?", edited_stock_encounter_id, drug_id, 'Current Stock']).last
 
     if pharmacy_obs.blank?
       pharmacy_obs =  Pharmacy.new()

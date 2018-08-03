@@ -545,7 +545,7 @@ class GenericRegimensController < ApplicationController
     #raise params[:assess_fast_track].inspect
 		#raise prescribe_pyridoxine.to_yaml
 		@patient = Patient.find(params[:patient_id] || session[:patient_id]) rescue nil
-		session_date = session[:datetime] || Time.now()
+		session_date = (session[:datetime].to_date rescue Time.now())
     weight = @current_weight = PatientService.get_patient_attribute_value(@patient, "current_weight")
     unless params[:regimen_main].blank?
       params[:regimen] = params[:regimen_main] #This is a hack. Going back and forth when custom regimens have been selected things were crashing

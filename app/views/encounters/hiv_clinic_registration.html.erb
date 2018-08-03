@@ -1755,7 +1755,7 @@
     <%= (touch_hidden_tag "confirmatory hiv test date", @patient, "", :id => "confirmatory_hiv_test_date", :value_datetime => true).html_safe %>
     <% if @retrospective %>
       <p><label for="filter_provider">Staff who provided the information (Provider)</label></br>
-        <%= text_field "filter" , 'provider', :helpText => 'Staff who provided the information (Provider)', :ajaxURL => '/user/username?username=' %></p>
+        <%= text_field "filter" , 'provider', :helpText => 'Staff who provided the information (Provider)', :ajaxURL => '/users/username?username=' %></p>
     <% else %>
       <%= hidden_field_tag "filter[provider]", nil %>
     <%end%>

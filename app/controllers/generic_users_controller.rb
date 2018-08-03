@@ -73,7 +73,7 @@ class GenericUsersController < ApplicationController
       users = @users_with_provider_role.map{| u | "<li value='#{u.username}'>#{u.username}</li>" }
     end
 
-    render :text => users.join('') and return
+    render plain: users.join('') and return
   end
 
   def health_centres

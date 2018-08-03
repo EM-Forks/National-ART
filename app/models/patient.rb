@@ -353,7 +353,7 @@ EOF
   def self.allergic_to_sulpher(patient, date = Date.today)
     return  Observation.find(Observation.where(["person_id = ? AND concept_id = ?
       AND DATE(obs_datetime) <= ?", patient.id, ConceptName.find_by_name("Allergic to sulphur"
-    ).concept_id, date]).order("obs_datetime DESC,date_created DESC").first).answer_string.strip.squish rescue ''
+    ).concept_id, date]).order("obs_datetime DESC,date_created DESC").first.id).answer_string.strip.squish rescue ''
   end
 
   def self.obs_available_in(patient, encounter_array, date = Date.today)
