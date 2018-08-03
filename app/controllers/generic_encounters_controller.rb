@@ -967,12 +967,12 @@ class GenericEncountersController < ApplicationController
 
 			if(observation[:parent_concept_name])
 				concept_id = Concept.find_by_name(observation[:parent_concept_name]).id rescue nil
-				observation[:obs_group_id] = Observation.find(:last, :conditions=> ['concept_id = ? AND encounter_id = ?', concept_id, encounter.id], :order => "obs_id ASC, date_created ASC").id rescue ""
+				observation[:obs_group_id] = Observation.where(['concept_id = ? AND encounter_id = ?', concept_id, encounter.id]).order("obs_id ASC, date_created ASC").last.id rescue ""
 				observation.delete(:parent_concept_name)
 			end
 
 			concept_id = Concept.find_by_name(observation[:concept_name]).id rescue nil
-			obs_id = Observation.find(:first, :conditions=> ['concept_id = ? AND encounter_id = ?',concept_id, encounter.id]).id rescue nil
+			obs_id = Observation.where(['concept_id = ? AND encounter_id = ?', concept_id, encounter.id]).first.id rescue nil
 
 			extracted_value_numerics = observation[:value_numeric]
 			if (extracted_value_numerics.class == Array)
@@ -1032,7 +1032,7 @@ class GenericEncountersController < ApplicationController
 
 			if(!observation[:parent_concept_name].blank?)
 				concept_id = Concept.find_by_name(observation[:parent_concept_name]).id rescue nil
-				observation[:obs_group_id] = Observation.find(:last, :conditions=> ['concept_id = ? AND encounter_id = ?', concept_id, encounter.id], :order => "obs_id ASC, date_created ASC").id rescue ""
+				observation[:obs_group_id] = Observation.where(['concept_id = ? AND encounter_id = ?', concept_id, encounter.id]).order("obs_id ASC, date_created ASC").last.id rescue ""
 				observation.delete(:parent_concept_name)
 			else
 				observation.delete(:parent_concept_name)
