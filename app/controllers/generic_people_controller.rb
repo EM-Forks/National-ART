@@ -1646,7 +1646,7 @@ EOF
   def get_current_address
     patient_id = params[:patient_id]
     begin
-      address = PersonAddress.find_last_by_person_id(patient_id)
+      address = PersonAddress.where(person_id: patient_id).first
       phaddress = address.city_village
       landmark = address.address1
     rescue

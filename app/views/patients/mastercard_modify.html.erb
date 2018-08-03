@@ -8,12 +8,13 @@
 <%end%>
 </script>
 <form action = "mastercard_modify" method = "post">
-  <% if @edit_page == "arv_number" %>
-    <%= render(:partial => "/patients/arv_number" ) %>
-  <% end %>
 
   <% if @edit_page == "name" %>
     <%= render(:partial => "/patients/mastercard_modify_name" ) %>
+  <% end %>
+
+  <% if @edit_page == "arv_number" %>
+      <%= render(:partial => "/patients/arv_number" ) %>
   <% end %>
 
   <% if @edit_page == "age" %>

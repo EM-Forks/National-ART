@@ -718,30 +718,31 @@ EOF
 
   def next_available_arv_number
     next_available_arv_number = PatientIdentifier.next_available_arv_number
-    render :text => next_available_arv_number.gsub(PatientIdentifier.site_prefix,'').strip rescue nil
+    render plain: next_available_arv_number.gsub(PatientIdentifier.site_prefix,'').strip rescue nil
   end
 
   def assigned_arv_number
     assigned_arv_number = PatientIdentifier.where(["voided = 0 AND identifier_type = ?",
         PatientIdentifierType.find_by_name("ARV Number").id]
     ).collect{|i| i.identifier.gsub("#{PatientIdentifier.site_prefix}-ARV-",'').strip.to_i} rescue nil
-    render :text => assigned_arv_number.sort.to_json rescue nil
+    render plain: assigned_arv_number.sort.to_json rescue nil
   end
 
   def next_available_hcc_number
     next_available_hcc_number = PatientIdentifier.next_available_hcc_number
-    render :text => next_available_hcc_number.gsub(PatientIdentifier.site_prefix,'').strip rescue nil
+    render plain: next_available_hcc_number.gsub(PatientIdentifier.site_prefix,'').strip rescue nil
   end
 
   def assigned_hcc_number
     assigned_hcc_number = PatientIdentifier.where(["voided = 0 AND identifier_type = ?",
         PatientIdentifierType.find_by_name("HCC Number").id]
     ).collect{|i| i.identifier.gsub("#{PatientIdentifier.site_prefix}-HCC-",'').strip.to_i} rescue nil
-    render :text => assigned_hcc_number.sort.to_json rescue nil
+    render plain: assigned_hcc_number.sort.to_json rescue nil
   end
   
   def mastercard_modify
-    if request.method == :get
+
+    if request.method.eql?("GET")
       @patient_id = params[:id]
       @patient = Patient.find(params[:id])
       @edit_page = edit_mastercard_attribute(params[:field].to_s)
@@ -2886,7 +2887,7 @@ EOF
     patient = Patient.find(params[:patient_id])
     case params[:field]
     when 'arv_number'
-      type = params['identifiers'][0][:identifier_type]
+      type =  PatientIdentifierType.find_by_name("ARV Number").id
       #patient = Patient.find(params[:patient_id])
       patient_identifiers = PatientIdentifier.where(["voided = 0 AND identifier_type = ? AND patient_id = ?",type.to_i,patient.id])
 
@@ -2898,11 +2899,12 @@ EOF
         identifier.save
       }
 
-      identifier = params['identifiers'][0][:identifier].strip
+      identifier = params['identifiers'][0][:identifier].strip rescue nil
       if identifier.match(/(.*)[A-Z]/i).blank?
         params['identifiers'][0][:identifier] = "#{PatientIdentifier.site_prefix}-ARV-#{identifier}"
       end
-      patient.patient_identifiers.create(params[:identifiers])
+      permited_params = params.permit!
+      patient.patient_identifiers.create!(permited_params[:identifiers])
     when "name"
       names_params =  {"given_name" => params[:given_name].to_s,"family_name" => params[:family_name].to_s}
       patient.person.names.first.update_attributes(names_params) if names_params
@@ -2921,16 +2923,18 @@ EOF
     when "sex"
       gender ={"gender" => params[:gender].to_s}
       patient.person.update_attributes(gender) if !gender.empty?
-    when "location"
-      location = params[:person][:addresses]
+      when "location"
+      permited_params = params.permit!
+      location = permited_params[:person][:addresses]
         
       addresses = patient.person.addresses.first
 
       if addresses.blank?
-        PersonAddress.create(:person_id => patient.id,
+        PersonAddress.create!(:person_id => patient.id,
           :city_village => location)
       else
-        addresses.update_attributes(location)
+
+        addresses.update_attributes!(location)
       end
 
     when "occupation"
@@ -2973,8 +2977,9 @@ EOF
         addresses.update_attributes(county_district)
       end
 
-    when "home_district"
-      home_district = params[:person][:addresses]
+      when "home_district"
+        permited_params = params.permit!
+      home_district = permited_params[:person][:addresses]
       addresses = patient.person.addresses.first
 
       if addresses.blank?
