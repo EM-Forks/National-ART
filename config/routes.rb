@@ -15,7 +15,6 @@ Rails.application.routes.draw do
   post '/encounters/new/:encounter_type/:id', controller: 'encounters', action: 'new'
   get '/:controller/:action/:id'
   get '/:controller/:action'
-  match ':controller/:action/:id',via: [:get,:post]
   post '/:controller/:action'
   get '/logout', controller: 'sessions', action: 'destroy'
   get '/render_date_enrolled_in_art', controller: 'patients', action: 'render_date_enrolled_in_art'

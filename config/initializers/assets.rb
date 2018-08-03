@@ -14,3 +14,13 @@ Rails.application.config.assets.paths << Rails.root.join('node_modules')
 # folder are already added.
 # Rails.application.config.assets.precompile += %w( admin.js admin.css )
 Rails.application.config.assets.precompile += %w( barcode.js )
+Rails.application.config.assets.precompile += %w( touch-fancy.css )
+Rails.application.config.assets.precompile += %w( dashboard.css )
+Rails.application.config.assets.precompile += %w( prototype.js )
+Rails.application.config.assets.precompile += %w( touch-fancy.css )
+Rails.application.config.assets.precompile += %w( jquery.js )
+Rails.application.config.assets.precompile += %w( extra_buttons.css )
+Rails.application.config.assets.precompile += %w( jquery_data_table.js )
+Rails.application.config.assets.precompile += %w( jquery.dataTables.css )
+Rails.application.config.assets.precompile += %w( jquery.table2CSV.min.js )
+
