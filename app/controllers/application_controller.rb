@@ -263,7 +263,7 @@ class ApplicationController < GenericApplicationController
         via_referral_concept_id = Concept.find_by_name("VIA REFERRAL").concept_id
 
         todays_cervical_cancer_encounter = Encounter.where(["patient_id =? AND encounter_type =? AND DATE(encounter_datetime) =?", patient.id,
-            cervical_cancer_screening_encounter_type_id, Date.today]).last
+            cervical_cancer_screening_encounter_type_id, session_date.to_date]).last
 
         terminal_referral_outcomes = ["PRE/CANCER TREATED", "CANCER UNTREATABLE"]
 
