@@ -85,8 +85,8 @@ class GenericLabController < ApplicationController
     params[:results].split(';').map do | result |
 
       date = result.split(',')[0].to_date rescue '1900-01-01'
-      modifier = result.split(',')[1].split(" ")[0].sub('more_than','>').sub('less_than','<')
-      value = result.split(',')[1].sub('more_than','').sub('less_than','').sub('=','') rescue nil
+      modifier = result.split(',')[1].split(" ")[0].sub('more_than','>').sub('less_than','<').sub('&gt', '>')
+      value = result.split(',')[1].sub('more_than','').sub('less_than','').sub('=','').sub('&gt','') rescue nil
       next if value.blank?
       value = value.to_f
 
@@ -126,6 +126,7 @@ class GenericLabController < ApplicationController
   end
 
   def create_viral_load_result
+    #raise params.inspect
     person = Person.find(params[:patient_id])
     patient_bean = PatientService.get_patient(person)
 
@@ -137,9 +138,8 @@ class GenericLabController < ApplicationController
     date = test_date
 
     test_type = LabTestType.where(["TestName = ?",params[:lab_result].to_s]).first
-
     test_modifier = params[:test_value].to_s.match(/=|>|</)[0]
-    test_value = params[:test_value].to_s.gsub('>','').gsub('<','').gsub('=','')
+    test_value = params[:test_value].first.to_s.gsub('>','').gsub('<','').gsub('=','')
     available_test_type = LabTestType.where(["TestType IN (?)", test_type.TestType]).collect{|n|n.Panel_ID}
     lab_test_table = LabTestTable.new()
     lab_test_table.TestOrdered = LabPanel.test_name(available_test_type)[0]
@@ -441,7 +441,7 @@ class GenericLabController < ApplicationController
     test_type = LabTestType.where(["TestName = ?",params[:lab_result].to_s]).first
 
     test_modifier = params[:test_value].to_s.match(/=|>|</)[0]
-    test_value = params[:test_value].to_s.gsub('>','').gsub('<','').gsub('=','')
+    test_value = params[:test_value].first.to_s.gsub('>','').gsub('<','').gsub('=','')
     available_test_type = LabTestType.where(["TestType IN (?)", test_type.TestType]).collect{|n|n.Panel_ID}
 
     lab_test_table = LabTestTable.new()
@@ -658,7 +658,7 @@ class GenericLabController < ApplicationController
       lab_sample_id = params[:lab_sample_id]
       test_type = params[:test_type]
       test_modifier = params[:test_value].to_s.match(/=|>|</)[0]
-      test_value = params[:test_value].to_s.gsub('>','').gsub('<','').gsub('=','')
+      test_value = params[:test_value].first.to_s.gsub('>','').gsub('<','').gsub('=','')
       test_date = params[:test_date].to_date
 
       ActiveRecord::Base.transaction do
