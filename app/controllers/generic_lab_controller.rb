@@ -19,7 +19,6 @@ class GenericLabController < ApplicationController
     @test = params[:test]
     patient_ids = id_identifiers(@patient)
     @results = Lab.results_by_type(@patient, @test, patient_ids)
-
     @all = {}
     (@results || []).map do |key,values|
       date = key.split("::")[0].to_date rescue "1900-01-01".to_date
@@ -142,7 +141,6 @@ class GenericLabController < ApplicationController
     test_modifier = params[:test_value].to_s.match(/=|>|</)[0]
     test_value = params[:test_value].to_s.gsub('>','').gsub('<','').gsub('=','')
     available_test_type = LabTestType.where(["TestType IN (?)", test_type.TestType]).collect{|n|n.Panel_ID}
-
     lab_test_table = LabTestTable.new()
     lab_test_table.TestOrdered = LabPanel.test_name(available_test_type)[0]
     lab_test_table.Pat_ID = patient_bean.national_id
@@ -179,8 +177,8 @@ class GenericLabController < ApplicationController
 
     #create an order
 
-    settings = YAML.load_file("#{Rails.root.to_s}/config/lims.yml")[Rails.env]
-    create_url = "#{settings['national-repo-node']}/create_hl7_order"
+    settings = YAML.load_file("#{Rails.root.to_s}/config/lims.yml")[Rails.env] rescue nil
+    create_url = "#{settings['national-repo-node']}/create_hl7_order" rescue nil
     
     if national_lims_activated
       json = { :return_path => "http://#{request.host}:#{request.port}",

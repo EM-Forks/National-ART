@@ -1,38 +1,49 @@
 <style type="text/css">
-.graph {
-  border-top:1px solid black;
-}
+  .graph {
+    border-top:1px solid black;
+  }
 
-#header{
-  display: block;
-  font-size: 1.8em;
-  color: black;
-  padding-left: 10px;
-}
+  #header{
+    display: block;
+    font-size: 1.8em;
+    color: black;
+    padding-left: 10px;
+  }
 </style>
 <script language="javascript" type="text/javascript" src="/javascripts/jquery.js"></script>
 <script language="javascript" type="text/javascript" src="/javascripts/jquery.flot.js"></script>
-<script language="javascript">
+<script type="text/javascript">
   jQuery.noConflict();
+
+  jQuery.browser = {};
+  (function () {
+    jQuery.browser.msie = false;
+    jQuery.browser.version = 0;
+    if (navigator.userAgent.match(/MSIE ([0-9]+)\./)) {
+      jQuery.browser.msie = true;
+      jQuery.browser.version = RegExp.$1;
+    }
+  })();
+
   jQuery(document).ready(function() { drawGraph(); })
 
   var plot = null;
-  var data = [<% @results.each do |result| -%><%= "[#{result[0].to_time.to_f},#{result[1]},'#{result[0].to_date.strftime("%d-%b-%Y")}', '#{result[2]}']" -%>, <% end %>];
-  <% @results.each{|result| @graph_max = result[1].to_f if result[1].to_f > (@graph_max || 0)} %>
+  var data = [<% @results.each do |result| -%><%= "[#{result[0].to_time.to_f},#{result[1]},'#{result[0].to_date.strftime("%d-%b-%Y")}', '#{result[2]}']".html_safe -%>, <% end %>];
+<% @results.each{|result| @graph_max = result[1].to_f if result[1].to_f > (@graph_max || 0)} %>
 
   function drawGraph() {
-    <% @min = @results.first[0].to_time %>
-    <% @max = Time.new %>
-    <% @min = @max - 2.year if @min > @max - 2.year %>
+<% @min = @results.first[0].to_time %>
+<% @max = Time.new %>
+<% @min = @max - 2.year if @min > @max - 2.year %>
 
     var ticks = [
-      <% @first = Time.mktime(@min.year, @min.month, 1) # move to the start of the month
-         @last = Time.mktime(@max.year + (@max.month == 12 ? 1 : 0), @max.month + (@max.month < 12 ? 1 : -11), 1)
-         while (@first <= @last) do
-       %>
+<% @first = Time.mktime(@min.year, @min.month, 1) # move to the start of the month
+@last = Time.mktime(@max.year + (@max.month == 12 ? 1 : 0), @max.month + (@max.month < 12 ? 1 : -11), 1)
+while (@first <= @last) do
+%>
         [<%= @first.to_f -%>, "<div class='graph_label'><%= @first.strftime("%b") -%><br/><b><%= @first.strftime("%Y") if @first.month == 1 -%></b></div>"],
-       <%  @first = Time.mktime(@first.year + (@first.month == 12 ? 1 : 0), @first.month + (@first.month < 12 ? 1 : -11), 1)  %>
-       <% end %>
+  <%  @first = Time.mktime(@first.year + (@first.month == 12 ? 1 : 0), @first.month + (@first.month < 12 ? 1 : -11), 1)  %>
+<% end %>
     ];
 
     var range = <%= 2.year.to_f -%>;
@@ -42,12 +53,12 @@
 
     function get_data(x1, x2) {
       return [{
-        color: "green",
-        data: data,
-        points: { show: true, selectedColor: "#ff0000", radius: 8 },
-        lines: { show: true, fill: true, fillColor: "rgba(0, 255, 80, 0.2)"  },
-        bars: { show: true }
-      }]
+          color: "green",
+          data: data,
+          points: { show: true, selectedColor: "#ff0000", radius: 8 },
+          lines: { show: true, fill: true, fillColor: "rgba(0, 255, 80, 0.2)"  },
+          bars: { show: true }
+        }]
     }
 
     var plot_options = {

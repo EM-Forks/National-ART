@@ -1,4 +1,4 @@
-class TableLabResult < ActiveRecord::Base
+class TableLabResult < HealthdataConnection
   self.table_name = "tblLabResults"
 
   def self.lab_results

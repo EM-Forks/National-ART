@@ -18,7 +18,7 @@ latest_result = results[1]["TestValue"] rescue nil
 
 
 %>
-<script>
+<script type="text/javascript">
 <% if params[:go_to_patient_dashboard] %>
     tt_cancel_destination = "/patients/show/<%= params[:patient_id]%>";
 <%  else %>
@@ -118,7 +118,7 @@ latest_result = results[1]["TestValue"] rescue nil
   }
 </script>
 
-<% form_tag 'result_given_to_patient', :method => :post do %>
+<%= form_tag 'result_given_to_patient', :method => :post do %>
   <%
   optionsString = "<option>" "" "</option>"
   1.upto(12){ |number|
@@ -147,7 +147,7 @@ latest_result = results[1]["TestValue"] rescue nil
     :tt_onUnLoad => "$('nextButton').style.display = 'inline';"
   } %>
 
-  <%=  select_tag(:set_month, optionsString,
+  <%=  select_tag(:set_month, optionsString.html_safe,
     { :field_type => 'alpha',
       :id => 'set_month',
       :helpText => "Month result given to patient",

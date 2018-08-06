@@ -1,4 +1,4 @@
-	class LabParameter < ActiveRecord::Base
+	class LabParameter < HealthdataConnection
 	  self.table_name = "Lab_Parameter"
     self.primary_key = "ID"
 

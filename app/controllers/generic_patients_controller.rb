@@ -4165,7 +4165,7 @@ EOF
 
       @results = Lab.latest_result_by_test_type(patient, 'HIV_viral_load', patient_identifiers) rescue nil
       @latest_date = @results[0].split('::')[0].to_date rescue nil
-      @latest_result = @results[1]["TestValue"] rescue nil
+      @latest_result = @results[1]["TestValue"].to_s rescue nil
       @modifier = @results[1]["Range"] rescue nil
 
       @vl_result_hash = Patient.vl_result_hash(patient)

@@ -13,7 +13,7 @@
 .tt_controls_test_date #Unknown { display: none; }
 </style>
 
-<script>
+<script type="text/javascript">
    tt_cancel_destination = "/lab/results/<%=@patient.id%>";
 
 function updateResultKeyPad() {                                             
@@ -68,7 +68,7 @@ function resetPad() {
 
 </script>
 
-<% form_tag 'create', :method => :post do %>
+<%= form_tag 'create', :method => :post do %>
    <%= select_tag("lab_result", options_for_select(@lab_test),
        :id => 'value',
        :helpText  => "Available tests") %>

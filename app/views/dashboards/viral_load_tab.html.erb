@@ -373,7 +373,7 @@ div, table{
               <td style="border-left: 1px solid black;">
                   <span><center>  <%= result["date_of_sample"].strftime("%d-%b-%Y") %></center></span>
               </td>
-              <td><span><center><%= value_modifier.to_s + " " +  result["result"] %></center></span></td>
+              <td><span><center><%= value_modifier.to_s + " " +  result["result"].to_s %></center></span></td>
               <td><span><center><%= result["result_given"].capitalize %></center></span></td>
               <td><span><center><%= result["date_result_given"].strftime("%d-%b-%Y") rescue "------" %></center></span></td>
               <td><span><center><%= result["second_line_switch"].capitalize %></center></span></td>

@@ -1,4 +1,4 @@
-	class LabTestType < ActiveRecord::Base
+	class LabTestType < HealthdataConnection
 	  self.table_name = "codes_TestType"
     
     def self.test_name(test_type)

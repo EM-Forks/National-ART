@@ -13,7 +13,7 @@
   .tt_controls_test_date #Unknown { display: none; }
 </style>
 
-<script>
+<script type="text/javascript">
   var tt_cancel_destination = '/lab/edit_lab_results/?patient_id=<%= @patient.id %>'
 
   function updateResultKeyPad() {
@@ -70,7 +70,7 @@
 
 </script>
 
-<% form_tag 'update_specific_result', :method => :post do %>
+<%= form_tag 'update_specific_result', :method => :post do %>
   <%= text_field_tag 'test_date', @test_date,
     {:id => 'test_date_id',
     :field_type => 'date',

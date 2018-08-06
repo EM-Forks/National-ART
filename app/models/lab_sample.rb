@@ -1,4 +1,4 @@
-	class LabSample < ActiveRecord::Base
+	class LabSample < HealthdataConnection
 	  self.table_name = "Lab_Sample"
     self.primary_key = "Sample_ID"
 

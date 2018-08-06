@@ -310,7 +310,8 @@ EOF
       vl_lab_sample_obs = Observation.where(["
                         person_id =? AND encounter_type =? AND concept_id =? AND accession_number =?
                         AND value_text LIKE (?)",
-          patient.id, encounter_type, viral_load, accession_number.to_i, '%Result given to patient%']).joins(:encounter) rescue nil
+          patient.id, encounter_type, viral_load, accession_number.to_i, '%Result given to patient%']
+      ).joins(:encounter).last rescue nil
 
 
       unless vl_lab_sample_obs.blank?

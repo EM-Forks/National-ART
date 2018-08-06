@@ -1,4 +1,4 @@
-class TableLabResultList < ActiveRecord::Base
+class TableLabResultList < HealthdataConnection
   self.table_name = "tblLabTestList"
 
   def self.test_type(test_id)

@@ -185,7 +185,7 @@
   }
 </script>
 
-<% form_tag 'create_viral_load_result', :method => :post do %>
+<%= form_tag 'create_viral_load_result', :method => :post do %>
   <%
   optionsString = "<option>" "" "</option>"
   1.upto(12){ |number|
@@ -221,7 +221,7 @@
     :tt_onLoad => "changeValues();"
   } %>
 
-  <%=  select_tag(:test_month, optionsString,
+  <%=  select_tag(:test_month, optionsString.html_safe,
     {
       :field_type => 'alpha',
       :condition => "tested_today == false",
