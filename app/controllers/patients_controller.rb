@@ -445,19 +445,19 @@ EOF
     @latest_result = @results[1]["TestValue"] rescue nil
     @modifier = @results[1]["Range"] rescue nil
     @reason_for_art = PatientService.reason_for_art_eligibility(patient)
-    @vl_request = Observation.where(["person_id = ? AND concept_id = ? AND value_coded IS NOT NULL",
+    @vl_request = Observation.joins(:encounter).where(["person_id = ? AND concept_id = ? AND value_coded IS NOT NULL",
         patient.patient_id, Concept.find_by_name("Viral load").concept_id]
     ).last.answer_string.squish.upcase rescue nil
 
-    @repeat_vl_request = Observation.where(["person_id = ? AND concept_id = ?
+    @repeat_vl_request = Observation.joins(:encounter).where(["person_id = ? AND concept_id = ?
                 AND value_text =?", patient.patient_id, Concept.find_by_name("Viral load").concept_id,
         "Repeat"]).last.answer_string.squish.upcase rescue nil
 
-    @repeat_vl_obs_date = Observation.find(:last, :conditions => ["person_id = ? AND concept_id = ?
+    @repeat_vl_obs_date = Observation.joins(:encounter).where(["person_id = ? AND concept_id = ?
               AND value_text =?", patient.patient_id, Concept.find_by_name("Viral load").concept_id,
-        "Repeat"]).obs_datetime.to_date rescue nil
+        "Repeat"]).last.obs_datetime.to_date rescue nil
 
-    @date_vl_result_given = Observation.where(["person_id =? AND concept_id =? AND value_text REGEXP ?", @person.id,
+    @date_vl_result_given = Observation.joins(:encounter).where(["person_id =? AND concept_id =? AND value_text REGEXP ?", @person.id,
         Concept.find_by_name("Viral load").concept_id, 'Result given to patient']).last.value_datetime rescue nil
     @enter_lab_results = GlobalProperty.find_by_property('enter.lab.results').property_value == 'true' rescue false
 
@@ -469,7 +469,7 @@ EOF
     patient = Patient.find(params[:patient_id])
     session[:hiv_viral_load_today_patient] = params[:patient_id]
     next_url = (next_task(patient))
-    render :text => next_url and return
+    render plain: next_url and return
   end
 
   def set_cervical_cancer_session_variable

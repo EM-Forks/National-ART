@@ -4014,7 +4014,7 @@ EOF
 
     obs.save()
 
-    render :text => next_url and return
+    render plain: next_url and return
 
   end
 

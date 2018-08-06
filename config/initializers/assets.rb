@@ -23,4 +23,4 @@ Rails.application.config.assets.precompile += %w( extra_buttons.css )
 Rails.application.config.assets.precompile += %w( jquery_data_table.js )
 Rails.application.config.assets.precompile += %w( jquery.dataTables.css )
 Rails.application.config.assets.precompile += %w( jquery.table2CSV.min.js )
-
+Rails.application.config.assets.precompile += %w( Highcharts/js/jquery.min.js )
