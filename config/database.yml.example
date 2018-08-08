@@ -1,0 +1,38 @@
+production:
+  adapter: mysql2
+  username: root
+  database: database
+  password: password
+  host: localhost
+  pool: 5000
+  checkout_timeout: 24400
+  connect_timeout: 24400
+
+development:
+  adapter: mysql2
+  username: root
+  database: database
+  password: password
+  host: localhost
+  pool: 5000
+  checkout_timeout: 24400
+  connect_timeout: 24400
+  read_timeout: 24400
+
+healthdata:
+  adapter: mysql2
+  username: root
+  database: healthdata
+  password: password
+  host: localhost
+  pool: 500
+
+test: &TEST
+  adapter: mysql2
+  database: root
+  username: bart2_db
+  password: your_password
+  host: localhost
+
+cucumber:
+  <<: *TEST
