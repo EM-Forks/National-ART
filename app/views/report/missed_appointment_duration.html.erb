@@ -17,6 +17,11 @@
     .tt_controls_end_day #Unknown { display:none; }
 
 </style>
+<script>
+
+    var tt_cancel_destination = "/clinic"
+</script>
+
 <% if params[:type] == "missed" %>
 <form action="/report/missed_appointment_report" method='post' >
   <% elsif params[:type] == 'disaggregated' %>
@@ -28,6 +33,8 @@
   <% month_names = month_name_options.gsub('<option value="Unknown">Unknown</option>', '').html_safe %>
 
 <% if params[:type] == "missed" or params[:type] == 'disaggregated'%>
+
+
   <%= text_field_tag "start_year", nil,
                      {:helpText => 'Start Year',
                       :field_type => 'number',
@@ -49,6 +56,21 @@
                      :validationJS => "validateDOB()",
                      :validationMessage => 'Please enter a valid date'%>
 <% end %>
+
+<%= (select_tag "default_volume",options_for_select(["","All","Date Range"]),
+                {:helpText=>"Defualters As:",
+                 :validationMessage => 'You must select value from list'
+                })if params[:type] == "defaulter"
+%>
+<%= text_field_tag "start_year",nil,
+                   {:helpText=>"Start Year",
+                   :field_type=>"number",
+                   :absoluteMin=>"1890",
+                   :min=>"1999",
+                    :absoluteMax => Date.today.year,
+                    :tt_pageStyleClass => "Numeric NumbersOnly",
+                    :condition => '$("default_volume").value == "Date Range"'
+                   }%>
 
   <%= text_field_tag "end_year", nil,
                      {:helpText => 'End Year',

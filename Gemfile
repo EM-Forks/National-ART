@@ -70,3 +70,5 @@ gem 'fastercsv'
 gem 'passenger'
 gem 'pdfkit'
 gem 'mechanize'
+gem 'nokogiri'
+

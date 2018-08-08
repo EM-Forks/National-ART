@@ -104,8 +104,8 @@ class CohortTool < ActiveRecord::Base
       conditions = "AND DATE(date_enrolled) >= '#{start_date}'"
     end
     concept_id = ConceptName.find_all_by_name("Pre-art (continue)").first.concept_id
-    state = ProgramWorkflowState.find( :first,
-      :conditions => ["concept_id = '#{concept_id}'"]).program_workflow_state_id
+    state = ProgramWorkflowState.where(
+      :conditions => ["concept_id = '#{concept_id}'"]).first.program_workflow_state_id
 
     PatientProgram.find_by_sql(
       "SELECT e.patient_id, current_state_for_program(e.patient_id, 1, '#{end_date}') AS state
@@ -147,7 +147,7 @@ EOF
     hiv_encounter_types = ['HIV RECEPTION','HIV STAGING','VITALS','PART_FOLLOWUP','HIV CLINIC REGISTRATION',
     'DISPENSING','HIV CLINIC CONSULTATION','TREATMENT','ART ADHERENCE','APPOINTMENT']
 
-    hiv_encounter_type_ids = EncounterType.find(:all, :conditions =>["name IN(?)", 
+    hiv_encounter_type_ids = EncounterType.where(["name IN(?)",
     hiv_encounter_types]).map(&:id)
 
     (data || []).each do |d|
@@ -155,21 +155,21 @@ EOF
 
       next if defaulted_date.to_date > end_date.to_date 
       
-      last_visit_date = Encounter.find(:first, :select => ("MAX(encounter_datetime) AS ldate"),
-        :conditions =>["encounter_datetime <= ? AND patient_id = ? AND encounter_type IN(?)", 
+      last_visit_date = Encounter.select("MAX(encounter_datetime) AS ldate").where(
+        ["encounter_datetime <= ? AND patient_id = ? AND encounter_type IN(?)",
         end_date.to_date.strftime('%Y-%m-%d 23:59:59'), 
-        d['patient_id'].to_i, hiv_encounter_type_ids])['ldate'].to_date rescue nil
+        d['patient_id'].to_i, hiv_encounter_type_ids]).first['ldate'].to_date rescue nil
 
       #next if last_visit_date > end_date.to_date
       #next if defaulted_date.to_date < last_visit_date
 
-      names = PersonName.find(:first, :conditions =>["person_id = ?", 
-        d['patient_id'].to_i], :order => "date_created DESC, person_name_id DESC")
+      names = PersonName.where(["person_id = ?",
+        d['patient_id'].to_i]).order("date_created DESC, person_name_id DESC").first
       first_name = names.given_name rescue nil
       last_name = names.family_name rescue nil
 
-      person_address = PersonAddress.find(:first, :conditions =>["person_id = ?", 
-        d['patient_id'].to_i], :order => "date_created DESC, person_address_id DESC")
+      person_address = PersonAddress.where(["person_id = ?",
+        d['patient_id'].to_i]).order("date_created DESC, person_address_id DESC").first
       district = person_address.state_province rescue 'Unknown'
       village = person_address.city_village rescue 'Unknown'
       landmark = person_address.address1 rescue 'Unknown'
@@ -212,11 +212,10 @@ EOF
   def self.outcomes_total(outcome, end_date=Date.today, regimen_ids = [], start_date = nil)
 
     concept_name = ConceptName.find_all_by_name(outcome)
-    state = ProgramWorkflowState.find(
-      :first,
-      :conditions => ["concept_id IN (?)",
+    state = ProgramWorkflowState.where(
+      ["concept_id IN (?)",
 				concept_name.map{|c|c.concept_id}]
-    ).program_workflow_state_id
+    ).first.program_workflow_state_id
 		patients = []
     earliest_start_date = {}
     if ! regimen_ids.blank?
@@ -243,7 +242,7 @@ EOF
       conditions = "AND DATE(e.date_enrolled) >= '#{start_date}'"
     end
     concept_name = ConceptName.find_all_by_name("Exposed Child (Continue)")
-    state = ProgramWorkflowState.find( :first, :conditions => ["concept_id IN (?)", concept_name.map{|c|c.concept_id}]).program_workflow_state_id
+    state = ProgramWorkflowState.where(["concept_id IN (?)", concept_name.map{|c|c.concept_id}]).first.program_workflow_state_id
 
     PatientProgram.find_by_sql(
       "SELECT e.patient_id, current_state_for_program(e.patient_id, 1, '#{end_date}') AS state
@@ -264,8 +263,8 @@ EOF
     patients = []
     return if regimen_id.blank?
     concept_name = ConceptName.find_all_by_name("Pre-art (continue)")
-    state = ProgramWorkflowState.find( :first, :conditions => ["concept_id IN (?)",
-        concept_name.map{|c|c.concept_id}]).program_workflow_state_id
+    state = ProgramWorkflowState.where(["concept_id IN (?)",
+        concept_name.map{|c|c.concept_id}]).first.program_workflow_state_id
 
     PatientProgram.find_by_sql(
       "SELECT p.patient_id FROM patient_program p
