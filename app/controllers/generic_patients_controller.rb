@@ -438,7 +438,7 @@ EOF
       sorted_weight_trail << [m, weight.to_f]
     end
 
-    render :text => sorted_weight_trail.to_json and return
+    render plain: sorted_weight_trail.to_json and return
   end
 
   def render_graph_data
@@ -821,7 +821,7 @@ EOF
   def export_to_csv
     ( Patient.limit(10) || [] ).each do | patient |
       patient_bean = PatientService.get_patient(patient.person)
-      csv_string = FasterCSV.generate do |csv|
+      csv_string = CSV.generate do |csv|
         # header row
         csv << ["ARV number", "National ID"]
         csv << [PatientService.get_patient_identifier(patient, 'ARV Number'), PatientService.get_national_id(patient)]
@@ -952,6 +952,7 @@ EOF
   def visit_history
     session[:mastercard_ids] = []
     session_date = session[:datetime].to_date rescue Date.today
+
     start_date = session_date.strftime('%Y-%m-%d 00:00:00')
     end_date = session_date.strftime('%Y-%m-%d 23:59:59')
     @encounters = Encounter.where([" patient_id = ? AND encounter_datetime >= ? AND encounter_datetime <= ?",
@@ -3558,7 +3559,7 @@ EOF
         end
       end
     end
-    render :text => ""
+    render plain: ""
   end
 
   def complications
@@ -3912,7 +3913,7 @@ EOF
 
     end
 
-    render :text => string
+    render plain: string
 
   end
 
@@ -3981,7 +3982,7 @@ EOF
     ( slaves || [] ).each do | patient_id  |
       Patient.merge(master,patient_id)
     end
-    render :text => "true" and return
+    render plain: "true" and return
   end
 
   def viral_load_request()
@@ -4019,12 +4020,20 @@ EOF
   end
 
   def repeat_viral_load_request
+    datetime = session[:datetime].present? ? session[:datetime].to_date : Time.now
     patient_id = params[:patient_id]
     encounter_type = EncounterType.find_by_name("REQUEST").id
     patient = Patient.find(patient_id)
-    enc = patient.encounters.current.find_by_encounter_type(encounter_type)
-    enc ||= patient.encounters.create(:encounter_type => encounter_type)
+    #enc = patient.encounters.current.find_by_encounter_type(encounter_type)
 
+    #enc ||= patient.encounters.create(:encounter_type => encounter_type,:encounter_datetime=>datetime)
+    #creating encounter for viral load request
+    enc = Encounter.new
+    enc.patient_id = patient.id
+    enc.encounter_type = encounter_type
+    enc.encounter_datetime = datetime
+    enc.save
+    #creating obaservation here
     obs = Observation.new
     obs.person_id = patient_id
     obs.creator = current_user.id
@@ -4032,10 +4041,10 @@ EOF
     obs.value_text = "Repeat"
     obs.concept_id = Concept.find_by_name("Hiv viral load").concept_id
     obs.encounter_id = enc.id
-    obs.obs_datetime = Time.now
+    obs.obs_datetime = datetime
     obs.save
 
-    render :text => "true" and return
+    render plain: "true" and return
 
   end
 
@@ -4061,7 +4070,7 @@ EOF
 
     obs.save()
 
-    render :text => "true" and return
+    render plain: "true" and return
   end
 
   def vl_not_done_due_to_adherence
@@ -4086,10 +4095,11 @@ EOF
 
     obs.save()
 
-    render :text => "true" and return
+    render plain: "true" and return
   end
 
   def viral_load_page
+    session_date = session[:datetime].present? ? session[:datetime].to_date : Date.today
 
     patient = Patient.find(params[:patient_id])
     @patient = patient
@@ -4176,8 +4186,8 @@ EOF
     end
 
     @reason_for_art = PatientService.reason_for_art_eligibility(patient)
-    @vl_request = Observation.where(["person_id = ? AND concept_id = ? AND value_coded IS NOT NULL",
-        patient.patient_id, Concept.find_by_name("Viral load").concept_id]
+    @vl_request = Observation.where(["person_id = ? AND concept_id = ? AND value_coded IS NOT NULL AND DATE(obs_datetime) <= ?",
+        patient.patient_id, Concept.find_by_name("Viral load").concept_id,session_date]
     ).last.answer_string.squish.upcase rescue nil
 
     @high_vl = true
@@ -4193,8 +4203,8 @@ EOF
     end
 
     @repeat_vl_request = Observation.where(["person_id = ? AND concept_id = ?
-        AND value_text =?", patient.patient_id, Concept.find_by_name("Viral load").concept_id,
-        "Repeat"]).last.answer_string.squish.upcase rescue nil
+        AND value_text =? AND DATE(obs_datetime) <= ? ", patient.patient_id, Concept.find_by_name("Viral load").concept_id,
+        "Repeat", session_date]).last.answer_string.squish.upcase rescue nil
 
     @repeat_vl_obs_date = Observation.where(["person_id = ? AND concept_id = ?
       AND value_text =?", patient.patient_id, Concept.find_by_name("Viral load").concept_id,
@@ -4313,7 +4323,7 @@ EOF
     end
 
     @html+="</table></body></html>"
-    render :text => @html ; return
+    render plain: @html ; return
 
   end
 
@@ -4383,7 +4393,7 @@ EOF
     end
 
     @html+="</table></body></html>"
-    render :text => @html ; return
+    render plain: @html ; return
   end
 
 
@@ -4519,7 +4529,7 @@ EOF
           Patient.merge(master,patient_id.to_i)
         end
       end
-      #render :text => "showMessage('Successfully merged patients')" and return
+      #render plain: "showMessage('Successfully merged patients')" and return
     end
     redirect_to :action => "merge_menu" and return
   end
@@ -4552,7 +4562,7 @@ EOF
     obs.obs_datetime = Time.now
     obs.save
 
-    render :text => true and return
+    render plain: true and return
   end
 
   def stop_fast_track

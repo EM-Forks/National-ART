@@ -200,7 +200,7 @@ div, table{
             <% end %>
           </tr>
           <tr>
-            <td style="font-weight: bold; font-size: 1em; padding: 2px; ">Date Sample Drawn</td>
+            <td style="font-weight: bold; font-size: 1em; padding: 2px; ">Date of test</td>
             <% unless  @latest_date.blank?%>
             <td style=""><%= @latest_date.strftime("%d-%b-%Y") rescue nil %></td>
             <% else %>
@@ -227,7 +227,7 @@ div, table{
           <td><span style="margin-left: 1%; font-weight: bold; color: red">(Switched to 2<sup>nd</sup>Line)</span></td>
         </tr>
         <tr>
-          <td style="font-weight: bold; font-size: 1em; padding: 2px; ">Date Sample Drawn</td>
+          <td style="font-weight: bold; font-size: 1em; padding: 2px; ">Date of test</td>
           <td id="" style="">---------------------------------</td>
         </tr>
         <tr>
@@ -361,7 +361,7 @@ div, table{
           <div style="position: relative; overflow:auto; height: 80%;">
           <table cellspacing='0' style="position:absolute; width:94%; top:10%; left: 3%;">
             <tr class="vl_table_header" style="background-color: #A2CD5A; line-height: 2em; font-size: 18px;">
-              <td style="min-width: 130px;"><span><center>Date Sample Drawn</center></span></td>
+              <td style="min-width: 130px;"><span><center>Date of test</center></span></td>
               <td style="min-width: 120px;"><span><center>Result</center></span></td>
               <td><span><center>Result given?</center></span></td>
               <td><span><center>Date result given</center></span></td>
@@ -371,7 +371,7 @@ div, table{
             <% value_modifier = result["range"] %>
             <tr style="line-height: 3em;" class="vl_tbody">
               <td style="border-left: 1px solid black;">
-                  <span><center>  <%= result["date_of_sample"].strftime("%d-%b-%Y") %></center></span>
+                <span><center>  <%= result["date_of_test"].strftime("%d-%b-%Y") rescue "" %></center></span>
               </td>
               <td><span><center><%= value_modifier.to_s + " " +  result["result"].to_s %></center></span></td>
               <td><span><center><%= result["result_given"].capitalize %></center></span></td>

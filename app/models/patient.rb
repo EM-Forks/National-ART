@@ -289,23 +289,25 @@ EOF
         result.Sample_ID,
         result.Range,
         result.TESTVALUE,
-        result.TESTDATE
+        result.TESTDATE,
+        result.AccessionNum
       ]
     end
+    #raise results.inspect
 
     results.each do |result|
 
       accession_number = result[0]
       range = result[1]
       vl_result = result[2]
-      date_of_sample = result[3].to_date rescue 'Unknown'
+      date_of_test = result[3].to_date rescue 'Unknown'
 
       vl_hash[accession_number] = {} if vl_hash[accession_number].blank?
       vl_hash[accession_number]["result"] = {} if vl_hash[accession_number]["result"].blank?
       vl_hash[accession_number]["result"] = vl_result
       vl_hash[accession_number]["range"] = range
-      vl_hash[accession_number]["date_of_sample"] = {} if vl_hash[accession_number]["date_of_sample"].blank?
-      vl_hash[accession_number]["date_of_sample"] = date_of_sample
+      vl_hash[accession_number]["date_of_test"] = {} if vl_hash[accession_number]["date_of_sample"].blank?
+      vl_hash[accession_number]["date_of_test"] = date_of_test
 
       vl_lab_sample_obs = Observation.where(["
                         person_id =? AND encounter_type =? AND concept_id =? AND accession_number =?

@@ -371,8 +371,14 @@ class GenericEncountersController < ApplicationController
       (@encounter.observations || []).each do |o|
         o.void('Voided from app')
       end
-    end
+		end
 
+    if @encounter.name.upcase.match(/REQUEST/)
+
+			(@encounter.observations || []).each do |o|
+				o.void('Voided from app')
+			end
+		end
 		@encounter.void
 		head :ok
 	end

@@ -185,7 +185,7 @@ class PatientsController < GenericPatientsController
       label.font_horizontal_multiplier = 1
       label.font_vertical_multiplier = 1
       label.left_margin = 50
-      encs = patient.encounters.find(:all,:conditions =>["DATE(encounter_datetime) = ?",date])
+      encs = patient.encounters.where(["DATE(encounter_datetime) = ?",date])
       return nil if encs.blank?
 
       label.draw_multi_text("Visit: #{encs.first.encounter_datetime.strftime("%d/%b/%Y %H:%M")}", :font_reverse => true)
@@ -585,6 +585,7 @@ EOF
   end
 
   def change_reason_for_starting_art
+
     if request.post?
       encounter_type = EncounterType.find_by_name('HIV STAGING')
       encounter = Encounter.where(["patient_id = ? AND encounter_type = ?",
@@ -625,9 +626,8 @@ EOF
         'Lymphocyte count below threshold with who stage 1',
         'CD4 count less than or equal to 500']
 
-      concepts = ConceptName.find(:all, 
-        :conditions => ["name IN(?)", reasons_for_starting_art],
-        :group => "name")
+      concepts = ConceptName.where(
+        ["name IN(?)", reasons_for_starting_art]).group(:name)
 
       (concepts).each do |c|
         @reasons_for_starting_art << [c.name.gsub('<=',' less than or equal to '), c.concept_id]
