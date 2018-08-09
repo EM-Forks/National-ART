@@ -1,7 +1,6 @@
 <!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
         "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
 <html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en" lang="en">
-<head>
     <meta http-equiv="content-type" content="text/html;charset=UTF-8" />
     <title><%= @title = "#{controller.controller_name.humanize} #{controller.action_name.humanize}" rescue ""  %></title>
 
@@ -259,15 +258,6 @@
         #char{ display:none; }
 
     </style>
-
-
-
-
-
-
-
-
-
     <style>
         div {
             -moz-user-select: none;
@@ -351,10 +341,6 @@
 
     </style>
 
-</head>
-<body id="mateme">
-<div id="container">
-    <div id="content" style = "position : relative; width : 96%; margin-left : -48%">
         <%= image_tag(@logo, :class => "logo")%>
         <br /><b style="margin-left:175px; margin-top: 0px"><%= @current_location_name %></b><br />
         <b style="position:relative; top:0px; margin-left:175px">
@@ -381,7 +367,8 @@
             <tbody>
             <% (@data || []).each do |patient_id, data| 
               date_defaulted = data[:latest_defaulted_date].to_date
-              next unless date_defaulted >= @start_date && date_defaulted <= @end_date
+
+              #next unless date_defaulted >= @start_date && date_defaulted <= @end_date
 
               address = ''
               address += "District: #{data[:district] rescue ''}"
@@ -397,7 +384,7 @@
                     <td style="text-align: center;"><%= data[:last_name] %></td>
                     <td style="text-align: center;"><%= data[:last_visit_date] %></td>
                     <td style="padding-left: 10px;"><%= date_defaulted.strftime('%d/%b/%Y') %></td>
-                    <td style="text-align: left;"><%= address %></td>
+                    <td style="text-align: left;"><%= address.html_safe %></td>
                     <td style="padding-left: 10px;"><%= data[:phone_number] %></td>
                     <td align='center' class="create_button">
                         <%= link_to_onmousedown "View",{
@@ -429,9 +416,6 @@
                 <button id="find" class="blue" style="width:200px;" style="right:-0px; float:right;"><span>Back</span></button>
             </div>
         </div>
-    </div>
-</div>
-</body>
 
 </html>
 

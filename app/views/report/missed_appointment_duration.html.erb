@@ -57,7 +57,7 @@
                      :validationMessage => 'Please enter a valid date'%>
 <% end %>
 
-<%= (select_tag "default_volume",options_for_select(["","All","Date Range"]),
+<%= (select_tag "default_type",options_for_select(["","All","Date Range"]),
                 {:helpText=>"Defualters As:",
                  :validationMessage => 'You must select value from list'
                 })if params[:type] == "defaulter"
@@ -69,14 +69,29 @@
                    :min=>"1999",
                     :absoluteMax => Date.today.year,
                     :tt_pageStyleClass => "Numeric NumbersOnly",
-                    :condition => '$("default_volume").value == "Date Range"'
+                    :condition => '$("default_type").value == "Date Range"'
                    }%>
+
+<%= select_tag "start_month", month_names,
+               {:helpText => 'Start Month',
+                :validationJS => "validateDOB();",
+                :validationMessage => 'Please enter a valid date',
+                :condition => '$("default_type").value == "Date Range"',
+                :tt_onLoad => "__$('keyboard').style.display = 'none'"}%>
+
+<%= text_field_tag "start_day",  nil,
+                   :field_type => 'number',
+                   :helpText => "Start Day" ,
+                   :validationJS => "validateDOB()",
+                   :condition => '$("default_type").value == "Date Range"',
+                   :validationMessage => 'Please enter a valid date'%>
 
   <%= text_field_tag "end_year", nil,
                      {:helpText => 'End Year',
                       :field_type => 'number',
                       :absoluteMin => "1890",
                       :min => "1940",
+                      :condition => '$("default_type").value == "Date Range"',
                       :absoluteMax => Date.today.year,
                       :tt_pageStyleClass => "Numeric NumbersOnly",
                       :validationJS => "setDOB();" }  %>
@@ -84,6 +99,7 @@
   <%= select_tag "end_month", month_names,
                  {:helpText => 'End Month',
                   :validationJS => "validateDOB();",
+                  :condition => '$("default_type").value == "Date Range"',
                   :validationMessage => 'Please enter a valid date',
                   :tt_onLoad => "__$('keyboard').style.display = 'none'"}%>
 
@@ -91,6 +107,7 @@
                      :field_type => 'number',
                      :helpText => "End Day" ,
                      :validationJS => "validateDOB()",
+                     :condition => '$("default_type").value == "Date Range"',
                      :validationMessage => 'Please enter a valid date'%>
 
 </form>

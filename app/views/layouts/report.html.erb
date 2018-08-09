@@ -110,8 +110,15 @@
 
         <div id="footer" class="dark">
           <div id="buttons" class="buttons">
+
             <button id="logout" class="blue left" style="position :relative; float:right;"
               onmousedown="document.location='/'"><span>Finish</span></button>
+
+            <% if @report == "Defaulters"%>
+                <button id="print" class="blue" style="position :relative; float:right;"
+                        onClick="$('#table_id').table2CSV({header:['ID','ARV number','First name','Last name','Last visit date', 'Defaulted date','Address','Phone number']})">
+                  <span>Export</span></button>
+            <% end%>
             <% if (@user['name'].upcase rescue nil) == "SUPER USER" %>
             <!--button id="staging" class="yellow"><span>Staging</span></button-->
             <% end %>

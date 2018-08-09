@@ -206,11 +206,19 @@ AND '#{@end_date.strftime('%Y-%m-%d 23:59:59')}' GROUP BY t.person_id, DATE(t.ob
   def defaulted_patients_report
     @logo = CoreService.get_global_property_value('logo').to_s
     @current_location = Location.current_health_center.name
-    @start_date = (params[:start_month].to_s + "/" + params[:start_day].to_s + "/" + params[:start_year].to_s).to_date
-    @end_date = (params[:end_month].to_s + "/" + params[:end_day].to_s + "/" + params[:end_year].to_s).to_date
-    @report_name  = "Defaulters #{@start_date.strftime('%d/%b/%Y')} - #{@end_date.strftime('%d/%b/%Y')}"
-    
-    @data = CohortTool.defaulted_patients(@end_date)
+    @type = params[:default_type]
+    if @type =="All"
+      @end_date = Date.today
+      @start_date = (params[:start_year].to_s+"-"+params[:start_month].to_s + "-"+params[:start_day].to_s).to_date rescue " "
+    else
+      @start_date = (params[:start_year].to_s+"-"+params[:start_month].to_s + "-"+params[:start_day].to_s).to_date
+      @end_date = (params[:end_year].to_s+"-"+params[:end_month].to_s + "-"+params[:end_day].to_s).to_date
+    end
+
+    @report_name  = "defaulted #{@start_date.strftime('%d/%b/%Y') rescue ""} - #{@end_date.strftime('%d/%b/%Y')}" if @start_date.present? and @end_date.present?
+    @report_name = "defaulted as of : #{@end_date.strftime('%d/%b/%Y')}" if @type == "All"
+    @report = "Defaulters"
+    @data = CohortTool.defaulted_patients(@type,@start_date, @end_date)
    
   end
   

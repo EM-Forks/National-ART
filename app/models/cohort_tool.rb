@@ -119,7 +119,7 @@ class CohortTool < ActiveRecord::Base
 
   end
   
-  def self.defaulted_patients(end_date, regimen_ids=[])
+  def self.defaulted_patients(type,start_date,end_date,regimen_ids=[])
     #PB 2015-09-24 : added e.voided = 0 to exclude voided patients
     #PB 2015-12-30 : added check for HIV program  and also those that are not Transfered Outs, dead or treatment_stopped
     CohortRevise.create_temp_earliest_start_date_table(end_date.to_date)
@@ -129,7 +129,33 @@ class CohortTool < ActiveRecord::Base
     unless regimen_ids.blank?
        conditions = "AND e.patient_id IN (#{regimen_ids})"
     end
-		
+
+    data_with_defaulted_dates = {}
+
+    if type != "All"
+
+      #getting ids of patients with encounters in the specified date range
+      month_range = []
+      if start_date.to_date.year != end_date.to_date.year
+      #create an array of all months in the case of different years
+      month_range = (1..12).to_a
+      else
+      month_range = (start_date.to_date.month..end_date.month).to_a
+      end
+      year_range = (start_date.to_date.year..end_date.to_date.year).to_a
+
+      data = ActiveRecord::Base.connection.select_all("SELECT e.patient_id,p.identifier AS arv_number, current_defaulter_date(e.patient_id,'#{end_date}') AS date_defaulted
+                                                      FROM temp_earliest_start_date e LEFT JOIN patient_identifier p ON p.patient_id = e.patient_id
+                                                      WHERE p.identifier_type = #{PatientIdentifierType.find_by_name('ARV number').id} AND
+                                                      p.voided = 0")
+
+      data_with_defaulted_dates = data.collect{|datum| datum if datum["date_defaulted"] != nil and month_range.include?(
+                                  datum["date_defaulted"].to_date.month) and year_range.include?(
+                                  datum["date_defaulted"].to_date.year)}.compact
+     end
+
+
+
     data = ActiveRecord::Base.connection.select_all <<EOF
     SELECT
     (SELECT identifier FROM patient_identifier i WHERE i.patient_id = e.patient_id
@@ -141,60 +167,75 @@ class CohortTool < ActiveRecord::Base
     AND cum_outcome = 'Defaulted' #{conditions};
 EOF
 
+    if type == "All"
+      return self.get_patient_data(data,end_date)
+    else
+
+      return self.get_patient_data(data_with_defaulted_dates,end_date)
+    end
+
+  end
+
+  def self.get_patient_data(data,end_date)
     patient_data = {}
 
-    #HIV encounter types: 
+    #HIV encounter types:
     hiv_encounter_types = ['HIV RECEPTION','HIV STAGING','VITALS','PART_FOLLOWUP','HIV CLINIC REGISTRATION',
-    'DISPENSING','HIV CLINIC CONSULTATION','TREATMENT','ART ADHERENCE','APPOINTMENT']
+                           'DISPENSING','HIV CLINIC CONSULTATION','TREATMENT','ART ADHERENCE','APPOINTMENT']
 
     hiv_encounter_type_ids = EncounterType.where(["name IN(?)",
-    hiv_encounter_types]).map(&:id)
+                                                  hiv_encounter_types]).map(&:id)
 
     (data || []).each do |d|
-      defaulted_date = PatientDefaultedDate.get_latest_defaulted_date(d['patient_id'].to_i, end_date.to_date)
+      if d["date_defaulted"].present?
+        defaulted_date = d["date_defaulted"]
+      else
+        defaulted_date = PatientDefaultedDate.get_latest_defaulted_date(
+            d['patient_id'].to_i, end_date.to_date)
+      end
 
-      next if defaulted_date.to_date > end_date.to_date 
-      
+      next if defaulted_date.to_date > end_date.to_date
+
       last_visit_date = Encounter.select("MAX(encounter_datetime) AS ldate").where(
-        ["encounter_datetime <= ? AND patient_id = ? AND encounter_type IN(?)",
-        end_date.to_date.strftime('%Y-%m-%d 23:59:59'), 
-        d['patient_id'].to_i, hiv_encounter_type_ids]).first['ldate'].to_date rescue nil
+          ["encounter_datetime <= ? AND patient_id = ? AND encounter_type IN(?)",
+           end_date.to_date.strftime('%Y-%m-%d 23:59:59'),
+           d['patient_id'].to_i, hiv_encounter_type_ids]).first['ldate'].to_date rescue nil
 
       #next if last_visit_date > end_date.to_date
       #next if defaulted_date.to_date < last_visit_date
 
       names = PersonName.where(["person_id = ?",
-        d['patient_id'].to_i]).order("date_created DESC, person_name_id DESC").first
+                                d['patient_id'].to_i]).order("date_created DESC, person_name_id DESC").first
       first_name = names.given_name rescue nil
       last_name = names.family_name rescue nil
 
       person_address = PersonAddress.where(["person_id = ?",
-        d['patient_id'].to_i]).order("date_created DESC, person_address_id DESC").first
+                                            d['patient_id'].to_i]).order("date_created DESC, person_address_id DESC").first
       district = person_address.state_province rescue 'Unknown'
       village = person_address.city_village rescue 'Unknown'
       landmark = person_address.address1 rescue 'Unknown'
 
       patient_data[d['patient_id'].to_i] = {
-        :arv_number => d['arv_number'],
-        :earliest_start_date => (d['earliest_start_date'].to_date rescue nil),
-        :date_enrolled => (d['date_enrolled'].to_date rescue nil),
-        :birthdate => (d['birthdate'].to_date rescue nil),
-        :gender => (d['gender']),
-        :phone_number => self.get_phone(d['patient_id'].to_i),
-        :death_date => (d['death_date'].to_date rescue nil),
-        :outcome => d['cum_outcome'],
-        :last_name => last_name, 
-        :first_name => first_name,
-        :district => district,
-        :village => village,
-        :landmark => landmark,
-        :latest_defaulted_date => defaulted_date,
-        :last_visit_date => (last_visit_date.strftime('%d/%b/%Y') rescue nil)
+          :arv_number => d['arv_number'],
+          :earliest_start_date => (d['earliest_start_date'].to_date rescue nil),
+          :date_enrolled => (d['date_enrolled'].to_date rescue nil),
+          :birthdate => (d['birthdate'].to_date rescue nil),
+          :gender => (d['gender']),
+          :phone_number => self.get_phone(d['patient_id'].to_i),
+          :death_date => (d['death_date'].to_date rescue nil),
+          :outcome => d['cum_outcome'],
+          :last_name => last_name,
+          :first_name => first_name,
+          :district => district,
+          :village => village,
+          :landmark => landmark,
+          :latest_defaulted_date => defaulted_date,
+          :last_visit_date => (last_visit_date.strftime('%d/%b/%Y') rescue nil)
       }
     end
 
     return patient_data
-	end
+  end
 
   def self.get_phone(patient_id)
     patient = Patient.find(patient_id)
