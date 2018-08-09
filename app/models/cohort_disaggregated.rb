@@ -287,7 +287,7 @@ EOF
     end
 
     amount_dispensed = ConceptName.find_by_name('Amount dispensed').concept_id
-    ipt_drug_ids = Drug.find_all_by_concept_id(ConceptName.find_by_name('Isoniazid').concept_id).map(&:drug_id)
+    ipt_drug_ids = Drug.where(concept_id: ConceptName.find_by_name('Isoniazid').concept_id).map(&:drug_id)
 
     data = ActiveRecord::Base.connection.select_all <<EOF
     SELECT obs.person_id patient_id FROM obs

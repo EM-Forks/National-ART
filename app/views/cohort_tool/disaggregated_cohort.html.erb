@@ -1,4 +1,4 @@
-<style>
+f<style>
 #disaggregated_cohort {
   width: 90%;
   border-collapse: collapse;
@@ -249,7 +249,7 @@ table tr:hover td {
 </div>
 
   <%
-  FasterCSV.open( file, 'w' ) do |csv|
+  CSV.open( file, 'w' ) do |csv|
     csv << ["#{@quarter.split(' ')[0]}:_#{@quarter.split(' ')[1]}", "#{Location.current_health_center.name.gsub(' ', '_')}"]
     csv << ["", "Age group", "Gender", "TX_new_(New_on_ART)", "TX_curr_(Receiving_ART)", "TX_curr_received_IPT", "TX_curr_screened_for_TB"]
     rows.each_with_index do |r, i|
