@@ -1,4 +1,4 @@
-class AgeGroupFunction < ActiveRecord::Migration
+class AgeGroupFunction < ActiveRecord::Migration[5.2]
   def self.up
     ActiveRecord::Base.connection.execute <<EOF
 DROP FUNCTION IF EXISTS age_group;

@@ -1,4 +1,4 @@
-class CreateNationalIds < ActiveRecord::Migration
+class CreateNationalIds < ActiveRecord::Migration[5.2]
   def self.up
     create_table :national_ids, :id => false do |t|
       t.integer :id, :null => false

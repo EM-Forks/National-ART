@@ -1,4 +1,4 @@
-class Heartbeat < ActiveRecord::Migration
+class Heartbeat < ActiveRecord::Migration[5.2]
   def self.up
     create_table :heart_beat, :id => false do |t|
       t.integer :id, :null => false

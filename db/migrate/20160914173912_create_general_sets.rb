@@ -1,4 +1,4 @@
-class CreateGeneralSets < ActiveRecord::Migration
+class CreateGeneralSets < ActiveRecord::Migration[5.2]
   def self.up
     create_table :general_sets, :id => false do |t|
       t.integer :id, :null => false
