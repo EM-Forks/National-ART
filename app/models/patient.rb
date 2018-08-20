@@ -17,9 +17,9 @@ class Patient < ActiveRecord::Base
     def find_by_date(encounter_date)
       encounter_date = Date.today unless encounter_date
       where("encounter_datetime BETWEEN ? AND ?",
-          encounter_date.to_date.strftime('%Y-%m-%d 00:00:00'),
-          encounter_date.to_date.strftime('%Y-%m-%d 23:59:59')
-       ) # Use the SQL DATE function to compare just the date part
+        encounter_date.to_date.strftime('%Y-%m-%d 00:00:00'),
+        encounter_date.to_date.strftime('%Y-%m-%d 23:59:59')
+      ) # Use the SQL DATE function to compare just the date part
     end
   end
 
@@ -34,12 +34,12 @@ class Patient < ActiveRecord::Base
 
   def current_bp(date = Date.today)
     encounter_id = self.encounters.where("encounter_type = ? AND DATE(encounter_datetime) = ?",
-                                          EncounterType.find_by_name("VITALS").id, date.to_date).last.id rescue nil
+      EncounterType.find_by_name("VITALS").id, date.to_date).last.id rescue nil
 
     ans = [(Observation.where("encounter_id = ? AND concept_id = ?", encounter_id,
-            ConceptName.find_by_name("SYSTOLIC BLOOD PRESSURE").concept_id).last.answer_string.to_i rescue nil),
+          ConceptName.find_by_name("SYSTOLIC BLOOD PRESSURE").concept_id).last.answer_string.to_i rescue nil),
       (Observation.where("encounter_id = ? AND concept_id = ?", encounter_id,
-            ConceptName.find_by_name("DIASTOLIC BLOOD PRESSURE").concept_id).last.answer_string.to_i rescue nil)
+          ConceptName.find_by_name("DIASTOLIC BLOOD PRESSURE").concept_id).last.answer_string.to_i rescue nil)
     ]
     ans = ans.reject(&:blank?)
   end
@@ -331,7 +331,7 @@ EOF
       switched_to_second_line_obs = Observation.where(["
         person_id =? AND encounter_type =? AND concept_id =? AND accession_number =?
         AND value_text LIKE (?)",patient.id, encounter_type, viral_load, accession_number.to_i,
-                                                       '%Patient switched to second line%']).joins(:encounter).last rescue nil
+          '%Patient switched to second line%']).joins(:encounter).last rescue nil
 
       unless second_line_regimens.blank?
         date_switched = second_line_regimens.first[1]
@@ -356,33 +356,33 @@ EOF
   def self.allergic_to_sulpher(patient, date = Date.today)
     return  Observation.find(Observation.where(["person_id = ? AND concept_id = ?
       AND DATE(obs_datetime) <= ?", patient.id, ConceptName.find_by_name("Allergic to sulphur"
-    ).concept_id, date]).order("obs_datetime DESC,date_created DESC").first.id).answer_string.strip.squish rescue ''
+          ).concept_id, date]).order("obs_datetime DESC,date_created DESC").first.id).answer_string.strip.squish rescue ''
   end
 
   def self.obs_available_in(patient, encounter_array, date = Date.today)
     return Encounter.where(["patient_id = ? AND encounter_type IN (?) AND DATE(encounter_datetime) = ?",
-                            patient.id, EncounterType.where(["name IN (?)",encounter_array]
-                          ).map(&:encounter_type_id),date.to_date]).order(
-                          "encounter_datetime DESC,date_created DESC").first.observations rescue []
+        patient.id, EncounterType.where(["name IN (?)",encounter_array]
+        ).map(&:encounter_type_id),date.to_date]).order(
+      "encounter_datetime DESC,date_created DESC").first.observations rescue []
   end
 
   def self.tb_encounter(patient)
     return Encounter.where(["patient_id = ? AND encounter_type = ?",
-                            patient.id,
-                            EncounterType.find_by_name("TB visit").id]
-                            ).order("encounter_datetime DESC,date_created DESC").last rescue nil
+        patient.id,
+        EncounterType.find_by_name("TB visit").id]
+    ).order("encounter_datetime DESC,date_created DESC").last rescue nil
   end
 
   def self.current_hiv_program_state(patient)
     return PatientProgram.where(["patient_id = ? AND program_id = ? AND location.location_id = ? AND date_completed IS NULL",
-                                 patient.id, Program.find_by_concept_id(Concept.find_by_name('HIV PROGRAM').id).id,
-                                 Location.current_health_center.id]).joins(:location).first.patient_states.current.first.program_workflow_state.concept.fullname rescue ''
+        patient.id, Program.find_by_concept_id(Concept.find_by_name('HIV PROGRAM').id).id,
+        Location.current_health_center.id]).joins(:location).first.patient_states.current.first.program_workflow_state.concept.fullname rescue ''
   end
 
   def self.hiv_encounter(patient, encounter, date = Date.today)
     return Encounter.includes(:observations).where(["DATE(encounter_datetime) = ? AND patient_id = ? AND encounter_type = ?",
-                                                    date.to_date, patient.id, EncounterType.find_by_name(encounter).id]
-                                    ).order("encounter_datetime DESC,date_created DESC")
+        date.to_date, patient.id, EncounterType.find_by_name(encounter).id]
+    ).order("encounter_datetime DESC,date_created DESC")
   end
 
   def self.concept_set(concept)
@@ -420,7 +420,7 @@ EOF
   def self.date_of_hiv_clinic_registration(patient, session_date = Date.today)
     encounter_type_id = EncounterType.find_by_name("HIV CLINIC REGISTRATION").encounter_type_id
     hiv_clinic_reg_enc = patient.encounters.where(["encounter_type =? AND DATE(encounter_datetime) < ?",
-                                                              encounter_type_id, session_date]).last
+        encounter_type_id, session_date]).last
 
     unless hiv_clinic_reg_enc.blank?
       reg_date = (hiv_clinic_reg_enc.encounter_datetime.to_date rescue hiv_clinic_reg_enc.encounter_datetime)
@@ -432,10 +432,10 @@ EOF
 
   def self.cpt_prescribed_in_the_last_prescription?(patient, session_date = Date.today)
     last_order_date = patient.orders.where(["DATE(encounter_datetime) < ?", session_date]
-                            ).joins(:encounter).last.encounter.encounter_datetime.to_date rescue nil
+    ).joins(:encounter).last.encounter.encounter_datetime.to_date rescue nil
     return false if last_order_date.blank?
     last_orders = patient.orders.where(["DATE(encounter_datetime) =?",
-                                        last_order_date]).joins(:encounter)
+        last_order_date]).joins(:encounter)
 
     last_orders.each do |order|
       drug_name = order.drug_order.drug.name rescue nil
@@ -451,10 +451,10 @@ EOF
 
   def self.ipt_prescribed_in_the_last_prescription?(patient, session_date = Date.today)
     last_order_date = patient.orders.where(["DATE(encounter_datetime) < ?", session_date]
-                                 ).joins(:encounter).last.encounter.encounter_datetime.to_date rescue nil
+    ).joins(:encounter).last.encounter.encounter_datetime.to_date rescue nil
     return false if last_order_date.blank?
     last_orders = patient.orders.where(["DATE(encounter_datetime) =?",
-                                        last_order_date]).joins(:encounter)
+        last_order_date]).joins(:encounter)
 
     last_orders.each do |order|
       drug_name = order.drug_order.drug.name rescue nil
@@ -475,7 +475,7 @@ EOF
     
     hiv_clinic_consultation_encounters = patient.encounters.where(["encounter_type =? AND
                                          DATE(encounter_datetime) <= ?", encounter_type_id,
-                                                                   session_date.to_date])
+        session_date.to_date])
 
     hiv_clinic_consultation_encounters.each do |enc|
       encounter_datetime = enc.encounter_datetime.to_date.strftime("%d/%b/%Y")
@@ -652,8 +652,8 @@ side_effects_concept_id = Concept.find_by_name("MALAWI ART SIDE EFFECTS").concep
   def tb_status(encounter_datetime)
     tb_status_concept_id = ConceptName.find_by_name('TB STATUS').concept_id
     tb_obs = Observation.where(["concept_id =? AND DATE(encounter_datetime) =? AND patient_id =?",
-                                tb_status_concept_id, encounter_datetime.to_date,
-                                self.patient_id]).joins(:encounter).last
+        tb_status_concept_id, encounter_datetime.to_date,
+        self.patient_id]).joins(:encounter).last
 
     answer_string = tb_obs.answer_string.squish rescue ""
     return answer_string
@@ -726,5 +726,413 @@ side_effects_concept_id = Concept.find_by_name("MALAWI ART SIDE EFFECTS").concep
     return "" if bp.blank?
     return bp[0].to_s + "/" + bp[1].to_s
   end
-  
+
+  #################################################################
+
+  def gender
+    self.person.gender rescue nil
+  end
+    
+  def age(today = Date.today)
+    return nil if self.person.birthdate.nil?
+
+    # This code which better accounts for leap years
+    patient_age = (today.year - self.person.birthdate.year) + ((today.month -
+          self.person.birthdate.month) + ((today.day - self.person.birthdate.day) < 0 ? -1 : 0) < 0 ? -1 : 0)
+
+    # If the birthdate was estimated this year, we round up the age, that way if
+    # it is March and the patient says they are 25, they stay 25 (not become 24)
+    birth_date=self.person.birthdate
+    estimate=self.person.birthdate_estimated==1
+    patient_age += (estimate && birth_date.month == 7 && birth_date.day == 1 &&
+        today.month < birth_date.month && self.person.date_created.year == today.year) ? 1 : 0
+  end
+    
+  def eligible_for_htn_screening(date = Date.today)
+    threshold = CoreService.get_global_property_value("htn.screening.age.threshold").to_i
+    sbp_threshold = CoreService.get_global_property_value("htn_systolic_threshold").to_i
+    dbp_threshold = CoreService.get_global_property_value("htn_diastolic_threshold").to_i
+
+    if (self.age(date) >= threshold || self.programs.map{|x| x.name}.include?("HYPERTENSION PROGRAM"))
+
+      htn_program = Program.find_by_name("HYPERTENSION PROGRAM")
+
+      patient_program = enrolled_on_program(htn_program.id,date,false)
+
+      if patient_program.blank?
+        #When patient has no HTN program
+        last_check = last_bp_readings(date)
+
+        if last_check.blank?
+          return true #patient has never had their BP checked
+        elsif ((last_check[:sbp].to_i >= sbp_threshold || last_check[:dbp].to_i >= dbp_threshold))
+          return true #patient had high BP readings at last visit
+        elsif((date.to_date - last_check[:max_date].to_date).to_i >= 365 )
+          return true # 1 Year has passed since last check
+        else
+          return false
+        end
+      else
+        #Get plan
+
+        plan_concept = Concept.find_by_name('Plan').id
+        plan = Observation.where(["person_id = ? AND concept_id = ? AND obs_datetime <= ?",self.id, plan_concept,
+            date.to_date.strftime('%Y-%m-%d 23:59:59')]).order("obs_datetime DESC").first
+        if plan.blank?
+          return true
+        else
+          if plan.value_text.match(/ANNUAL/i)
+            if ((date.to_date - plan.obs_datetime.to_date).to_i >= 365 )
+              return true #patient on annual screening and time has elapsed
+            else
+              return false #patient was screen but a year has not passed
+            end
+          else
+            return true #patient requires active screening
+          end
+        end
+
+      end
+    else
+      return false
+    end
+
+  end
+
+  def bp_normal()
+    sbp_threshold = CoreService.get_global_property_value("htn_systolic_threshold").to_i
+    dbp_threshold = CoreService.get_global_property_value("htn_diastolic_threshold").to_i
+
+    diastolic = Observation.where(["person_id = ? AND concept_id = ? AND obs_datetime = ?",
+        self.id,Concept.find_by_name("diastolic blood pressure").concept_id,
+        Date.today]).last
+    systolic = Observation.where(["person_id = ? AND concept_id = ? AND obs_datetime = ?",
+        self.id,Concept.find_by_name("systolic blood pressure").concept_id,
+        Date.today]).last
+    if (diastolic.blank? || systolic.blank?)
+      raise "Patient has no BP measurements".to_s
+    else
+      if (diastolic.value_text.to_i >= dbp_threshold || systolic.value_text.to_i >= sbp_threshold)
+        false
+      else
+        true
+      end
+    end
+  end
+
+  def on_hypertensive_medicine()
+
+  end
+
+  def patient_blood_presure(date = Date.today)
+    sbp_concept = Concept.find_by_name('Systolic blood pressure').id
+    dbp_concept = Concept.find_by_name('Diastolic blood pressure').id
+    plan_concept = Concept.find_by_name('Plan').id
+
+    sbp_data = {}
+    dbp_data = {}
+    plan_data = {}
+    visits = []
+
+    sbp_obs = Observation.find_by_sql("
+        SELECT * FROM obs WHERE concept_id = #{sbp_concept} AND person_id = #{self.id} AND voided = 0
+        AND obs_datetime <= '#{date.to_date.strftime('%Y-%m-%d 23:59:59')}'
+      ")
+
+    dbp_obs = Observation.find_by_sql("
+        SELECT * FROM obs WHERE concept_id = #{dbp_concept} AND person_id = #{self.id} AND voided = 0
+        AND obs_datetime <= '#{date.to_date.strftime('%Y-%m-%d 23:59:59')}'
+      ")
+
+    plan_obs = Observation.find_by_sql("
+        SELECT * FROM obs WHERE concept_id = #{plan_concept} AND person_id = #{self.id} AND voided = 0
+        AND obs_datetime <= '#{date.to_date.strftime('%Y-%m-%d 23:59:59')}'
+      ")
+
+    sbp_obs.each do |obs|
+      date = obs.obs_datetime.strftime('%d-%b-%Y')
+      next if obs.value_numeric.blank?
+      sbp_data[date] = obs.value_numeric.to_i
+    end
+
+    dbp_obs.each do |obs|
+      date = obs.obs_datetime.strftime('%d-%b-%Y')
+      next if obs.value_numeric.blank?
+      dbp_data[date] = obs.value_numeric.to_i
+    end
+
+    plan_obs.each do |obs|
+      date = obs.obs_datetime.strftime('%d-%b-%Y')
+      plan_data[date] = obs.value_text
+    end
+
+    sbp_data.each do |date, sbp|
+      dbp = dbp_data[date]
+      plan = plan_data[date]
+      plan = "" if plan.blank?
+      next if dbp.blank?
+      visits << {"date" => date, "systolic" => sbp, "diastolic" => dbp, "grade" => bp_grade(sbp, dbp), "plan" => plan,  "drugs" => "None"}
+    end
+    #visits << {"date" => record.obs_datetime.strftime('%d-%b-%Y'), "systolic" => record["SBP"],"grade" => bp_grade(record["SBP"],record["DBP"]),
+    #"diastolic" => record["DBP"], "plan" => (record["plan"].blank? ? "" : record["plan"]), "drugs" => "None"}
+
+    return visits
+  end
+
+
+  def bp_management_trail(date = Date.today)
+=begin
+      visits = []
+
+      sbp_concept = Concept.find_by_name('Systolic blood pressure').id
+      dbp_concept = Concept.find_by_name('Diastolic blood pressure').id
+      plan_concept = Concept.find_by_name('Plan').id
+
+      records = Observation.find_by_sql("SELECT  DISTINCT o.encounter_id,o.person_id,DATE(o.obs_datetime) as obs_datetime,
+                                       (SELECT value_numeric FROM obs WHERE encounter_id = o.encounter_id
+                                       AND concept_id = #{sbp_concept} AND person_id = o.person_id AND voided = 0 LIMIT 1) AS SBP,
+                                       (SELECT value_numeric FROM obs WHERE encounter_id = o.encounter_id
+                                       AND concept_id = #{dbp_concept} AND person_id = o.person_id AND voided = 0 LIMIT 1) AS DBP,
+                                       (SELECT value_text FROM obs WHERE concept_id = #{plan_concept} AND person_id = o.person_id
+                                       AND obs_datetime BETWEEN DATE_FORMAT(o.obs_datetime, '%Y-%m-%d 00:00:00') AND
+                                       DATE_FORMAT(o.obs_datetime, '%Y-%m-%d 23:59:59') AND voided = 0 LIMIT 1) AS plan
+                                       FROM obs as o WHERE o.person_id = #{self.id} AND o.voided = 0 AND obs_datetime <=
+                                       '#{date.to_date.strftime('%Y-%m-%d 23:59:59')}' HAVING SBP IS NOT NULL
+                                       AND DBP IS NOT NULL ORDER BY o.obs_datetime DESC, o.encounter_id DESC").each do |record|
+        #visits[record.obs_datetime.strftime('%d-%b-%Y')] = [] if visits[record.obs_datetime.strftime('%d-%b-%Y')].blank?
+        visits << {"date" => record.obs_datetime.strftime('%d-%b-%Y'), "systolic" => record["SBP"],"grade" => bp_grade(record["SBP"],record["DBP"]),
+          "diastolic" => record["DBP"], "plan" => (record["plan"].blank? ? "" : record["plan"]), "drugs" => "None"}
+      end
+return visits
+=end
+    patient_blood_presure(date)
+  end
+
+  def current_bp_drugs(date = Date.today)
+    medication_concept = ConceptName.find_by_name("HYPERTENSION DRUGS").concept_id
+    dispensing_concept = ConceptName.find_by_name("AMOUNT DISPENSED").concept_id
+    drug_concept_ids = ConceptSet.where(['concept_set = ?', medication_concept]).map(&:concept_id)
+    drugs = Drug.where(["concept_id IN (?)", drug_concept_ids])
+
+    prev_date = Encounter.joins("INNER JOIN obs ON encounter.encounter_id = obs.encounter_id").where(
+      ["encounter.patient_id = ? AND encounter.voided = 0 AND value_drug IN (?) AND DATE(encounter.encounter_datetime) <=?
+        AND encounter.encounter_type = ? AND obs.value_drug  IN (?)", self.id, drugs.map(&:drug_id), date,
+        EncounterType.find_by_name("DISPENSING").id, drugs.map(&:drug_id)]
+    ).select(["encounter_datetime"]).last.encounter_datetime.to_date rescue nil
+
+    return [] if prev_date.blank?
+    result = Encounter.find_by_sql(["SELECT obs.value_drug FROM encounter INNER JOIN obs ON obs.encounter_id = encounter.encounter_id
+      			WHERE encounter.voided = 0 AND encounter.patient_id = ? AND obs.value_drug IN (?) AND obs.concept_id = ? AND encounter.encounter_type = ? AND DATE(encounter.encounter_datetime) = ?
+        ", self.id, drugs.map(&:drug_id), dispensing_concept, EncounterType.find_by_name("DISPENSING").id, prev_date]).map(&:value_drug).uniq  rescue []
+
+
+=begin
+      result = DrugOrder.all(:select => ["drug_inventory_id"], :joins => "
+                INNER JOIN orders ON orders.order_id = drug_order.order_id AND orders.patient_id = #{self.id}
+                INNER JOIN encounter ON orders.encounter_id = encounter.encounter_id
+                INNER JOIN obs ON obs.encounter_id = encounter.encounter.encounter_id
+                ",
+                     :conditions => ["obs.concept_id = ? drug_inventory_id IN (?) AND DATE(encounter.encounter_datetime) = ?",
+                                     drugs.map(&:drug_id), prev_date]).map(&:drug_inventory_id).uniq
+=end
+    result = result.collect{|drug_id| Drug.find(drug_id).name}
+  end
+
+  def enrolled_on_program( program_id, date = DateTime.now, create = false)
+    #patient_id
+    program = PatientProgram.where(["patient_id = ? AND program_id = ? AND date_enrolled <= ?",
+        self.id, program_id, date.strftime("%Y-%m-%d 23:59:59")]).last
+#raise self.id.inspect
+ 
+    if program.blank? and create
+      ActiveRecord::Base.transaction do
+        program = PatientProgram.create({:program_id => program_id, :date_enrolled => date,
+            :patient_id => self.id})
+        alive_state = ProgramWorkflowState.where(["program_workflow_id = ? AND concept_id = ?",
+            ProgramWorkflow.where(["program_id = ?", program_id]).first.id, Concept.find_by_name("Alive").id]).first.id
+        PatientState.create(:patient_program_id => program.id, :start_date => date,:state => alive_state )
+      end
+    end
+
+    program
+  end
+
+  def last_bp_readings(date)
+    sbp_concept = Concept.find_by_name('Systolic blood pressure').id
+    dbp_concept = Concept.find_by_name('Diastolic blood pressure').id
+    patient_id = self.id
+
+    latest_date = Observation.find_by_sql("
+      SELECT MAX(obs_datetime) AS date FROM obs
+      WHERE person_id = #{patient_id}
+        AND voided = 0
+        AND concept_id IN (#{sbp_concept}, #{dbp_concept})
+        AND obs_datetime <= '#{date.to_date.strftime('%Y-%m-%d 23:59:59')}'
+      ").last.date.to_date rescue nil
+
+    return nil if latest_date.blank?
+
+    sbp = Observation.find_by_sql("
+        SELECT * FROM obs
+        WHERE person_id = #{patient_id}
+          AND voided = 0
+          AND concept_id = #{sbp_concept}
+          AND obs_datetime BETWEEN '#{latest_date.to_date.strftime('%Y-%m-%d 00:00:00')}' AND '#{latest_date.to_date.strftime('%Y-%m-%d 23:59:59')}'
+      ").last.value_numeric rescue nil
+
+    dbp = Observation.find_by_sql("
+        SELECT * FROM obs
+        WHERE person_id = #{patient_id}
+          AND voided = 0
+          AND concept_id = #{dbp_concept}
+          AND obs_datetime BETWEEN '#{latest_date.to_date.strftime('%Y-%m-%d 00:00:00')}' AND '#{latest_date.to_date.strftime('%Y-%m-%d 23:59:59')}'
+      ").last.value_numeric rescue nil
+
+    return {:patient_id => patient_id, :max_date => latest_date, :sbp => sbp, :dbp => dbp}
+  end
+
+  def drug_notes(date = Date.today)
+    notes_concept = sbp_concept = Concept.find_by_name('Notes').id
+    drug_ids = ["HCZ (25mg tablet)", "Amlodipine (5mg tablet)", "Amlodipine (10mg tablet)",
+      "Enalapril (5mg tablet)", "Enalapril (10mg tablet)",
+      "Atenolol (50mg tablet)", "Atenolol (100mg tablet)"].collect{|name| Drug.find_by_name(name).id}
+    data = Observation.find_by_sql(["SELECT value_text, value_drug, obs_datetime FROM encounter INNER JOIN obs ON obs.encounter_id = encounter.encounter_id
+				WHERE encounter.encounter_type = (SELECT encounter_type_id FROM encounter_type WHERE name = 'HYPERTENSION MANAGEMENT' LIMIT 1)
+				AND encounter.patient_id = ?
+				AND DATE(encounter.encounter_datetime) <= ?
+				AND obs.concept_id = ?
+				AND obs.value_drug IN (?)
+				AND encounter.voided = 0
+        ", self.id, date.to_date, notes_concept, drug_ids])
+    result = {}
+    map = {
+      "HCZ (25mg tablet)" => "HCZ",
+      "Amlodipine (5mg tablet)" => "Amlodipine",
+      "Amlodipine (10mg tablet)" => "Amlodipine",
+      "Enalapril (5mg tablet)" => "Enalapril",
+      "Enalapril (10mg tablet)" => "Enalapril",
+      "Atenolol (50mg tablet)" => "Atenolol",
+      "Atenolol (100mg tablet)" => "Atenolol"
+    }
+    data.each do |obj|
+      drug_name = Drug.find(obj.value_drug).name rescue nil
+      name = map[drug_name]
+      next if drug_name.blank? || name.blank?
+
+      notes = obj.value_text
+      date = obj.obs_datetime.to_date
+
+      result[name] = {} if result[name].blank?
+      result[name][date] = [] if result[name][date].blank?
+      result[name][date] << notes
+    end
+    return result
+  end
+
+  def pregnancy_status(date = Date.today)
+    pregnant = (Observation.where(["person_id = ? AND voided = 0 AND concept_id = ? AND DATE(obs_datetime) = ?",self.id,
+          ConceptName.find_by_name("IS PATIENT PREGNANT?").concept_id, (date.to_date)]
+      ).last.answer_string.downcase.strip rescue nil) == "yes"
+
+    if pregnant
+      return "Patient is pregnant"
+    end
+
+    answer = (Observation.where(["person_id = ? AND voided = 0 AND concept_id = ? AND DATE(obs_datetime) = ?",self.id,
+          ConceptName.find_by_name("Why does the woman not use birth control").concept_id,
+          (date.to_date)]).last.answer_string.upcase.strip rescue nil)
+
+    if answer == "PATIENT WANTS TO GET PREGNANT"
+      return "Patient wants to get pregnant"
+    elsif answer == "AT RISK OF UNPLANNED PREGNANCY"
+      return "At Risk of Unplanned Pregnancy"
+    end
+  end
+
+  def current_risk_factors(date = Date.today)
+    encounter_type = EncounterType.find_by_name("MEDICAL HISTORY").id
+    concept_id = ConceptName.find_by_name("HYPERTENSION RISK FACTORS").concept_id
+    yes_concept_id = ConceptName.find_by_name("YES").concept_id
+    concept_ids = ConceptSet.where(["concept_set =?", concept_id]).collect{|set| set.concept.id}
+    current_risk_factors = []
+    encounter_id = Encounter.find_by_sql(["SELECT encounter_id FROM encounter
+ 					WHERE encounter.voided = 0 AND encounter.patient_id = ? AND encounter_datetime <= ?
+	 					AND	encounter.encounter_type = ? ORDER BY encounter_datetime DESC,encounter_id DESC  LIMIT 1",
+        self.id,date.strftime("%Y-%m-%d 23:59:59"), encounter_type]).first.id rescue nil
+
+    if encounter_id.present?
+      current_risk_factors = Observation.where(["encounter_id = ? AND concept_id IN (?)
+	 							AND (value_coded = ? OR value_text = 'YES')",
+          encounter_id, concept_ids, yes_concept_id]).collect{|o| o.concept.concept_names.first.name.strip}
+    end
+    current_risk_factors
+  end
+
+  def were_htn_risk_factors_captured?(date)
+    encounters = Encounter.where(["patient_id = ? AND encounter_datetime <= ? AND encounter_type = ?",
+        self.id,date.strftime("%Y-%m%d 23:59:59"),EncounterType.find_by_name("MEDICAL HISTORY").id]).collect{|x|x.id}
+
+    return false if encounters.blank?
+
+    risk_factors = ConceptSet.where(["concept_set =?", ConceptName.find_by_name("HYPERTENSION RISK FACTORS").concept_id]).collect{|set| set.concept.id}
+
+    encounter = Observation.find_by_sql(["SELECT DISTINCT encounter_id FROM obs
+										WHERE encounter_id in (?) AND concept_id in (?) AND
+										person_id = ? AND voided = 0 LIMIT 1",encounters, risk_factors, self.id])
+
+    if encounter.blank?
+      return false
+    else
+      return true
+    end
+  end
+
+  def bp_grade(sbp, dbp)
+
+    if (sbp.to_i < 140 ) && (dbp.to_i < 90)
+      return "normal"
+    elsif ((sbp.to_i >= 140 && sbp.to_i < 160) || (dbp.to_i >= 100 && dbp.to_i < 110))
+      return "grade 1"
+    elsif (sbp.to_i >= 180 && dbp.to_i > 110) || sbp.to_i >= 180
+      return "grade 3"
+    elsif ((sbp.to_i >= 160 && sbp.to_i < 180) || (dbp.to_i >= 110 ))
+      return "grade 2"
+    end
+  end
+
+  def normatensive(trail)
+
+    dates_checked = 0
+    normal_bp = 0
+    dates = []
+    (0..2).each do |day|
+      return false if trail[day].blank?
+
+      if trail[day]["diastolic"].to_i < 90 && trail[day]["systolic"].to_i < 140 && !dates.include?(trail[day]["date"])
+        normal_bp += 1
+      end
+      dates_checked +=1 if !dates.include?(trail[day]["date"])
+      dates << trail[day]["date"] if !dates.include?(trail[day]["date"])
+
+      break if dates_checked == 2 && normal_bp == 2
+    end
+
+    if dates_checked == 2 && normal_bp == 2
+      return true
+    else
+      return false
+    end
+  end
+
+  def drug_use_history(date = Date.today)
+    past_drugs = ""
+    bp_drug_use_history = Observation.where(["person_id =? AND concept_id =? AND DATE(obs_datetime) =?", self.id,
+        Concept.find_by_name('DRUG USE HISTORY').id, date]).last
+
+    unless bp_drug_use_history.blank?
+      past_drugs = bp_drug_use_history.value_text
+    end
+
+    return past_drugs
+  end
 end
