@@ -942,14 +942,13 @@ return visits
     #patient_id
     program = PatientProgram.where(["patient_id = ? AND program_id = ? AND date_enrolled <= ?",
         self.id, program_id, date.strftime("%Y-%m-%d 23:59:59")]).last
-#raise self.id.inspect
- 
+    alive_concept_id = ConceptName.where(["name =?", "Alive"]).first.concept_id
     if program.blank? and create
       ActiveRecord::Base.transaction do
         program = PatientProgram.create({:program_id => program_id, :date_enrolled => date,
             :patient_id => self.id})
         alive_state = ProgramWorkflowState.where(["program_workflow_id = ? AND concept_id = ?",
-            ProgramWorkflow.where(["program_id = ?", program_id]).first.id, Concept.find_by_name("Alive").id]).first.id
+            ProgramWorkflow.where(["program_id = ?", program_id]).first.id, alive_concept_id]).first.id
         PatientState.create(:patient_program_id => program.id, :start_date => date,:state => alive_state )
       end
     end
