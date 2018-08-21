@@ -203,7 +203,7 @@ class HtnEncounterController < ApplicationController
     end
 
     if !params[:return].blank?
-      render :text => true and return
+      render plain: true and return
     else
       redirect_to next_task(Patient.find(params['encounter']['patient_id']))
     end
