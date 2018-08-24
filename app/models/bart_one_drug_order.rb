@@ -56,44 +56,44 @@ class BartOneDrugOrder < ActiveRecord::Base
   end
   
   def daily_consumption
-#   Need daily consumption
-#   Number of units given
-#   Days since drugs given
+    #   Need daily consumption
+    #   Number of units given
+    #   Days since drugs given
     daily_consumption = 0
     default_consumption = 2
 
     daily_consumptions = {}
-    DrugOrderCombinationRegimen.find(:all).each do |regimen|
+    DrugOrderCombinationRegimen.all.each do |regimen|
       case regimen.name
-        when "Stavudine Lamivudine Nevirapine (Triomune Baby)"
-          daily_consumptions[regimen.drug_order_combination_regimen_id] = [Drug.find_by_name("Stavudine 6 Lamivudine 30 Nevirapine 50").id]
-        when "Stavudine Lamivudine + Stavudine Lamivudine Nevirapine (Triomune Baby)"
-          daily_consumptions[regimen.drug_order_combination_regimen_id] = [Drug.find_by_name("Stavudine 6 Lamivudine 30 Nevirapine 50").id,Drug.find_by_name("Stavudine 6 Lamivudine 30").id].sort
-        when "Stavudine Lamivudine Nevirapine"
-          daily_consumptions[regimen.drug_order_combination_regimen_id] = [Drug.find_by_name("Stavudine 30 Lamivudine 150 Nevirapine 200").id]
-        when "Stavudine Lamivudine + Stavudine Lamivudine Nevirapine"
-          daily_consumptions[regimen.drug_order_combination_regimen_id] = [Drug.find_by_name("Stavudine 30 Lamivudine 150 Nevirapine 200").id,Drug.find_by_name("Stavudine 30 Lamivudine 150").id].sort
-        when "Stavudine Lamivudine + Efavirenz"
-          daily_consumptions[regimen.drug_order_combination_regimen_id] = [Drug.find_by_name("Stavudine Lamivudine Efavirenz").id]
-        when "Zidovudine Lamivudine + Nevirapine"
-          daily_consumptions[regimen.drug_order_combination_regimen_id] = [Drug.find_by_name("Zidovudine 300 Lamivudine 150").id,Drug.find_by_name("Lamivudine 150").id].sort
-        when "Zidovudine Lamivudine Nevirapine (fixed)"
-          daily_consumptions[regimen.drug_order_combination_regimen_id] = [Drug.find_by_name("Zidovudine Lamivudine Nevirapine").id]
-        when "Didanosine Abacavir Lopinavir/Ritonavir"
-          daily_consumptions[regimen.drug_order_combination_regimen_id] = [Drug.find_by_name("Didanosine Abacavir Lopinavir/Ritonavir").id]
-        when "Zidovudine Lamivudine Tenofovir Lopinavir/ Ritonavir"
-          daily_consumptions[regimen.drug_order_combination_regimen_id] = [Drug.find_by_name("Zidovudine Lamivudine Tenofovir Lopinavir/ Ritonav").id]
-        when "Zidovudine Lamivudine + Efavirenz"
-          daily_consumptions[regimen.drug_order_combination_regimen_id] = [Drug.find_by_name("Zidovudine 300 Lamivudine 150").id,Drug.find_by_name("Efavirenz 200").id].sort
-        when "Zidovudine Lamivudine Lopinavir/ Ritonavir"
-          daily_consumptions[regimen.drug_order_combination_regimen_id] = [Drug.find_by_name("Zidovudine Lamivudine Tenofovir Lopinavir/ Ritonav").id]
-        when "Lopinavir Ritonavir (Aluvia)"
-          daily_consumptions[regimen.drug_order_combination_regimen_id] = [Drug.find_by_name("Lopinavir 100 Ritonavir 25").id]
+      when "Stavudine Lamivudine Nevirapine (Triomune Baby)"
+        daily_consumptions[regimen.drug_order_combination_regimen_id] = [Drug.find_by_name("Stavudine 6 Lamivudine 30 Nevirapine 50").id]
+      when "Stavudine Lamivudine + Stavudine Lamivudine Nevirapine (Triomune Baby)"
+        daily_consumptions[regimen.drug_order_combination_regimen_id] = [Drug.find_by_name("Stavudine 6 Lamivudine 30 Nevirapine 50").id,Drug.find_by_name("Stavudine 6 Lamivudine 30").id].sort
+      when "Stavudine Lamivudine Nevirapine"
+        daily_consumptions[regimen.drug_order_combination_regimen_id] = [Drug.find_by_name("Stavudine 30 Lamivudine 150 Nevirapine 200").id]
+      when "Stavudine Lamivudine + Stavudine Lamivudine Nevirapine"
+        daily_consumptions[regimen.drug_order_combination_regimen_id] = [Drug.find_by_name("Stavudine 30 Lamivudine 150 Nevirapine 200").id,Drug.find_by_name("Stavudine 30 Lamivudine 150").id].sort
+      when "Stavudine Lamivudine + Efavirenz"
+        daily_consumptions[regimen.drug_order_combination_regimen_id] = [Drug.find_by_name("Stavudine Lamivudine Efavirenz").id]
+      when "Zidovudine Lamivudine + Nevirapine"
+        daily_consumptions[regimen.drug_order_combination_regimen_id] = [Drug.find_by_name("Zidovudine 300 Lamivudine 150").id,Drug.find_by_name("Lamivudine 150").id].sort
+      when "Zidovudine Lamivudine Nevirapine (fixed)"
+        daily_consumptions[regimen.drug_order_combination_regimen_id] = [Drug.find_by_name("Zidovudine Lamivudine Nevirapine").id]
+      when "Didanosine Abacavir Lopinavir/Ritonavir"
+        daily_consumptions[regimen.drug_order_combination_regimen_id] = [Drug.find_by_name("Didanosine Abacavir Lopinavir/Ritonavir").id]
+      when "Zidovudine Lamivudine Tenofovir Lopinavir/ Ritonavir"
+        daily_consumptions[regimen.drug_order_combination_regimen_id] = [Drug.find_by_name("Zidovudine Lamivudine Tenofovir Lopinavir/ Ritonav").id]
+      when "Zidovudine Lamivudine + Efavirenz"
+        daily_consumptions[regimen.drug_order_combination_regimen_id] = [Drug.find_by_name("Zidovudine 300 Lamivudine 150").id,Drug.find_by_name("Efavirenz 200").id].sort
+      when "Zidovudine Lamivudine Lopinavir/ Ritonavir"
+        daily_consumptions[regimen.drug_order_combination_regimen_id] = [Drug.find_by_name("Zidovudine Lamivudine Tenofovir Lopinavir/ Ritonav").id]
+      when "Lopinavir Ritonavir (Aluvia)"
+        daily_consumptions[regimen.drug_order_combination_regimen_id] = [Drug.find_by_name("Lopinavir 100 Ritonavir 25").id]
       end
     end
 
 
-# check if drugs dispensed are a possible combination
+    # check if drugs dispensed are a possible combination
     patient = self.order.encounter.patient
     related_patient_orders = patient.previous_art_drug_orders(self.order.encounter.encounter_datetime)
     default_consumption = 1 if related_patient_orders.length > 1
@@ -109,12 +109,11 @@ class BartOneDrugOrder < ActiveRecord::Base
       drug_order_combination_regimen_id = key if drug_ids == ordered_drug_ids.sort 
     end
 
-#    return drug_order_combination_regimen_id
+    #    return drug_order_combination_regimen_id
     
     if drug_order_combination_regimen_id #if the drugs are a possible combination
-      prescriptions = DrugOrderCombination.find(:all,
-                                                :conditions =>["drug_order_combination_regimen_id = ? AND drug_id = ?",
-                                                drug_order_combination_regimen_id,self.drug.id])
+      prescriptions = DrugOrderCombination.where(["drug_order_combination_regimen_id = ? AND drug_id = ?",
+          drug_order_combination_regimen_id,self.drug.id])
       
       assumed_prescriptions = []
       weight = patient.current_weight
