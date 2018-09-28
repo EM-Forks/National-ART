@@ -160,8 +160,7 @@
                         <% @prescriptions.each do |order| %>
                             <!--div class="void"><img src="/images/cancel_flat_small.png"/></div-->
                             <%
-                               amounts_dispensed = Observation.all(:conditions => ['concept_id = ? AND order_id = ?',
-                                                                                   ConceptName.find_by_name("AMOUNT DISPENSED").concept_id , order.id])
+                               amounts_dispensed = Observation.where(['concept_id = ? AND order_id = ?', ConceptName.find_by_name("AMOUNT DISPENSED").concept_id , order.id])
                                total_dispensed = amounts_dispensed.sum{|amount| amount.value_numeric}
                             %>
                             <script>
@@ -212,8 +211,7 @@
                         <% @prescriptions.each do |order| %>
                             <!--div class="void"><img src="/images/cancel_flat_small.png"/></div-->
                             <%
-                               amounts_dispensed = Observation.where(['concept_id = ? AND order_id = ?',
-                                                                                   ConceptName.find_by_name("AMOUNT DISPENSED").concept_id , order.id])
+                               amounts_dispensed = Observation.where(['concept_id = ? AND order_id = ?', ConceptName.find_by_name("AMOUNT DISPENSED").concept_id , order.id])
                                total_dispensed = amounts_dispensed.sum{|amount| amount.value_numeric.to_i}
                             %>
                             <script>
