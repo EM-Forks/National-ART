@@ -3423,7 +3423,7 @@ EOF
 
     @patient      = Patient.find(params[:patient_id] || session[:patient_id]) rescue nil
     #@encounters   = @patient.encounters.current.active.find(:all)
-    @encounters   = @patient.encounters.find(:all, :conditions => ['DATE(encounter_datetime) = ?',session_date.to_date])
+    @encounters   = @patient.encounters.where(['DATE(encounter_datetime) = ?',session_date.to_date])
     excluded_encounters = ["Registration", "Diabetes history","Complications", #"Diabetes test",
       "General health", "Diabetes treatments", "Diabetes admissions","Hospital admissions",
       "Hypertension management", "Past diabetes medical history"]
@@ -3902,13 +3902,13 @@ EOF
 
     if !params[:search_string].blank?
 
-      @names = PersonName.find(:all, :conditions =>["(given_name like (?) or family_name like (?)) and person_id not in (?)", "%#{params[:search_string]}%", "%#{params[:search_string]}%", ["#{params[:sec_id]}, #{params[:pri_id]}"]])
+      @names = PersonName.where(["(given_name like (?) or family_name like (?)) and person_id not in (?)", "%#{params[:search_string]}%", "%#{params[:search_string]}%", ["#{params[:sec_id]}, #{params[:pri_id]}"]])
 
       string = @names.map{|name| "<li value='#{name.person_id}'>#{name.given_name} #{name.family_name} </li>" }
 
     else
 
-      @names = Patient.find(:all, :conditions => ["patient_id not in (?)", ["#{params[:sec_id]}, #{params[:pri_id]}"]], :limit => 200)
+      @names = Patient.where(["patient_id not in (?)", ["#{params[:sec_id]}, #{params[:pri_id]}"]], :limit => 200)
       string = @names.map{|pat| "<li value='#{pat.patient_id}'>#{pat.person.names.last.given_name} #{pat.person.names.last.family_name} </li>" }
 
     end
