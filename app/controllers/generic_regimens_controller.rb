@@ -1498,7 +1498,7 @@ class GenericRegimensController < ApplicationController
   def drug_stock(patient, concept_id)
 		stock = {}
 		if (CoreService.get_global_property_value('activate.drug.management').to_s == "true" rescue false)
-      regimens = Regimen.criteria(PatientService.get_patient_attribute_value(patient, "current_weight")).all(:conditions => {:concept_id => concept_id}, :include => :regimen_drug_orders)
+      regimens = Regimen.criteria(PatientService.get_patient_attribute_value(patient, "current_weight")).includes(:regimen_drug_orders).where({:concept_id => concept_id})
       regimens.each do | r |
         r.regimen_drug_orders.each do | order |
           drug = order.drug
