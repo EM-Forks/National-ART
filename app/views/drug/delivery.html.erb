@@ -641,7 +641,7 @@ disposal_reasons = ["", "Expired", "Damaged", "Missing"]
         :helpText => "Previous drug deliveries for barcode",
         :tt_pageStyleClass => "NoKeyboard NoInput small"} %>
 
-      <%= select_tag "drug_name", options,
+      <%= select_tag "drug_name", options.html_safe,
         {
         :id => "select_drugs",
         :field_type => 'alpha',
@@ -653,9 +653,10 @@ disposal_reasons = ["", "Expired", "Damaged", "Missing"]
         :tt_onLoad => "returning = true; hidePreviousDrugs();",
         :tt_pageStyleClass => "longSelectList"} %>
 
-      <%= touch_date_tag "delivery_date", 'delivery_date', nil,
+      <%= text_field_tag "delivery_date", nil,
         {
         :id => "delivery_date",
+        :field_type => "date",
         :helpText => "Delivery Date",
         :maxDate => (Date.today + 30.year)} %>
 
@@ -665,7 +666,7 @@ disposal_reasons = ["", "Expired", "Damaged", "Missing"]
       <form id="create_stoke" method='post' action="verified_stock">
 
         <% unless params[:id] == 'verification' %>
-          <%= select_tag "drug_name", options,
+          <%= select_tag "drug_name", options.html_safe,
             {
             :id => "select_drugs",
             :field_type => 'alpha',
@@ -681,15 +682,17 @@ disposal_reasons = ["", "Expired", "Damaged", "Missing"]
 
         <% unless params[:id] == 'verification' %>
 
-          <%= touch_date_tag "delivery_date", 'delivery_date', nil,
+          <%= text_field_tag "delivery_date", nil,
             {:id => "delivery_date",
+            :field_type => "date",
             :helpText => "Delivery date",
             :absoluteMax => Date.today} %>
 
         <% else %>
 
-          <%= touch_date_tag "delivery_date", 'delivery_date', nil,
+          <%= text_field_tag "delivery_date", nil,
             {:id => "delivery_date",
+            :field_type => "date",
             :helpText => "Verification date",
             :maxDate => (Date.today + 30.year)} %>
 
@@ -702,7 +705,7 @@ disposal_reasons = ["", "Expired", "Damaged", "Missing"]
             <option value='Supervision'>Supervision</option>
           </select>
 
-          <%= select_tag "drug_name", options,
+          <%= select_tag "drug_name", options.html_safe,
             {
             :id => "select_drugs",
             :field_type => 'alpha',

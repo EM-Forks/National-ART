@@ -106,7 +106,7 @@ class GenericDrugController < ApplicationController
 
   def set_receipts
 
-    @delivery_date = params[:observations].first["value_datetime"]
+    @delivery_date = params[:delivery_date] #params[:observations].first["value_datetime"]
     @drugs = params[:drug_name]
     @formatted = preformat_regimen
     @drug_short_names = {} #regimen_name_map
@@ -135,7 +135,10 @@ class GenericDrugController < ApplicationController
 
     data = {}
 
-    Pharmacy.active.where(["value_text =?", params[:barcode]]).each { |entry|
+    records = Pharmacy.joins("INNER JOIN drug_cms d
+     ON d.drug_inventory_id = pharmacy_obs.drug_id").where(value_text: params[:barcode]).select("d.*")
+
+    (records || []).each { |entry|
 
       drug = Drug.find(entry.drug_id).name
       qty_size = entry.pack_size.blank? ? 60 : entry.pack_size.to_i
@@ -147,7 +150,7 @@ class GenericDrugController < ApplicationController
       data[drug][qty_size]["id"] = entry.id
     }
 
-    render :text => data.to_json
+    render json: data
   end
 
   def void
@@ -871,9 +874,9 @@ class GenericDrugController < ApplicationController
     @stocks = {}
     ((start_date..end_date).to_a).each do |date|
       stock_level = (Pharmacy.drug_stock_on(drug_id, date)/packsize).round rescue 0
-      @stocks[date]= {"stock_count" => stock_level,"pack_size" => packsize}
+      @stocks[date]= {stock_count: stock_level, pack_size: packsize}
     end
-    
+   
     render :layout => "report"
   end
   

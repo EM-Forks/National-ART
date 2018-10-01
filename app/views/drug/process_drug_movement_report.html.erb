@@ -13,8 +13,15 @@
     <%=javascript_include_tag "/javascripts/Charts/Highcharts/exporting"%>
 
     <script type="text/javascript">
-      var results = JSON.parse('<%= @stocks.to_json %>');
+      var results = {};
+      <% (@stocks || []).each do |sdate, data| %>
+        results["<%= sdate %>"] = {
+          stock_count: <%= data['stock_count'] ||= 0%>,
+          pack_size: <%= data['pack_size'] ||= 0 %>
+        }
+      <%end%>
       var drug = '<%= @drug_name %>';
+
 
       function plotGraph(drug) {
 
