@@ -89,7 +89,7 @@ class SessionsController < ApplicationController
     @current_heath_center_name = Location.current_health_center.name rescue '?'
     @list = {}
     paeds_drug_ids = [733, 968, 732, 736, 30, 74, 979, 963, 24]
-    paediatric_drugs = DrugCms.find(:all, :conditions => ["drug_inventory_id IN (?)", paeds_drug_ids])
+    paediatric_drugs = DrugCms.where(["drug_inventory_id IN (?)", paeds_drug_ids])
     paediatric_drugs.each do |drug_cms|
 
       drug = Drug.find(drug_cms.drug_inventory_id)
@@ -145,7 +145,7 @@ class SessionsController < ApplicationController
     @list = {}
 
     adult_drug_ids = [976, 977, 978, 954, 22,969, 731, 39, 11, 735, 734, 932, 73, 576, 297, 931]
-    adult_drugs = DrugCms.find(:all, :conditions => ["drug_inventory_id IN (?)", adult_drug_ids])
+    adult_drugs = DrugCms.where(["drug_inventory_id IN (?)", adult_drug_ids])
 
     adult_drugs.each do |drug_cms|
       drug = Drug.find(drug_cms.drug_inventory_id)

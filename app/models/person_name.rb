@@ -13,6 +13,14 @@ class PersonName < ActiveRecord::Base
     self.changed_by = User.first if self.has_attribute?("changed_by") and User.current.nil?
 
     self.date_changed = Time.now if self.has_attribute?("date_changed")
+
+    self.build_person_name_code(
+      :person_name_id => self.person_name_id,
+      :given_name_code => (self.given_name || '').soundex,
+      :middle_name_code => (self.middle_name || '').soundex,
+      :family_name_code => (self.family_name || '').soundex,
+      :family_name2_code => (self.family_name2 || '').soundex,
+      :family_name_suffix_code => (self.family_name_suffix || '').soundex)
   end
 
   def before_create

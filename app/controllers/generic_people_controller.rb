@@ -212,7 +212,7 @@ class GenericPeopleController < ApplicationController
 			end
 
       if local_results.length > 1
-        redirect_to :action => 'duplicates' ,:search_params => params
+        redirect_to :action => 'duplicates' ,:search_params => params.permit!
         return
       elsif local_results.length == 1
         ####################################################hack to handle duplicates ########################################################

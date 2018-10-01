@@ -34,7 +34,7 @@ class PersonNameCode < ActiveRecord::Base
   
   def self.rebuild_person_name_codes
     PersonNameCode.delete_all
-    names = PersonName.find(:all)
+    names = PersonName.all
     names.each {|name|
       PersonNameCode.create(
         :person_name_id => name.person_name_id,

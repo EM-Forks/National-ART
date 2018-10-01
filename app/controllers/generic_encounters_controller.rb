@@ -1009,7 +1009,7 @@ class GenericEncountersController < ApplicationController
 				observation["value_#{value_name}"] unless observation["value_#{value_name}"].blank? rescue nil
 			}.compact
 
-      values = values.flatten.reject { |v| v.empty? }
+      values = values.flatten.reject { |v| v.to_s.empty? }
 			next if values.length == 0
 
 			observation[:value_text] = observation[:value_text].join(", ") if observation[:value_text].present? && observation[:value_text].is_a?(Array)
