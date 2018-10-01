@@ -72,4 +72,3 @@ gem 'pdfkit'
 gem 'mechanize'
 gem 'nokogiri'
 gem 'spreadsheet'
-
