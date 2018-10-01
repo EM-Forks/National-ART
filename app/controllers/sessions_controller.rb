@@ -199,17 +199,22 @@ class SessionsController < ApplicationController
     # First try by id, then by name
     location = Location.find(params[:location]) rescue nil
     location ||= Location.find_by_name(params[:location]) rescue nil
+    
+    if location.blank?  
+      flash[:error] = "Invalid workstation location"
+      redirect_to '/location' and return
+    end
 
     valid_location = (generic_locations.include?(location.name)) rescue false
-
     unless location and valid_location
       flash[:error] = "Invalid workstation location"
-
+      
       @login_wards = (CoreService.get_global_property_value('facility.login_wards')).split(',') rescue []
       if (CoreService.get_global_property_value('select_login_location').to_s == "true" rescue false)
         render :template => 'sessions/select_location'
       else
-        render controller: :sessions, :action => 'location'
+        #render controller: :sessions, :action => 'location'
+        redirect_to '/location' and return
       end
       return
     end
