@@ -39,7 +39,8 @@
   border-width: 1px 2.25px 1px 1px; 
   border-image: none 100% / 1 / 0 stretch; 
   box-shadow: lightblue 0px 0px 30px inset, black 0px 0px 8px; 
-  width: 351.78px;
+  /*width: 351.78px;*/
+  width: 380.78px;
 }
 
 #details-container {
@@ -50,9 +51,9 @@
   /*border-style: solid; 
   border-width: 1px 2.25px 1px 1px; */
   float: right;
-  right: 10px;
+  right: 35px;
   /*width: 614.016px;*/
-  width: 554.016px;
+  width: 55% !important;
 }
 
 .input-container {
@@ -100,6 +101,7 @@
   overflow: auto;
   height: 250px;
   padding-top: 15px;
+  display: block !important;
 }
 
 .input-elements {
@@ -207,13 +209,55 @@
 .date-inputs {
   font-size: 24px; 
   text-align: center; 
-  width: 60%;
-  min-width: 120px;
+  max-width: 130px;
+  height: 45px;
 }
 
 </style>
 
 <script>
+
+function getMonthIndex(month_name) {  
+  var monthShortNames  = new Array();
+  monthShortNames[0]   = "Jan";
+  monthShortNames[1]   = "Feb";
+  monthShortNames[2]   = "Mar";
+  monthShortNames[3]   = "Apr";
+  monthShortNames[4]   = "May";
+  monthShortNames[5]   = "Jun";
+  monthShortNames[6]   = "Jul";
+  monthShortNames[7]   = "Aug";
+  monthShortNames[8]   = "Sep";
+  monthShortNames[9]   = "Oct";
+  monthShortNames[10]  = "Nov";
+  monthShortNames[11]  = "Dec";
+
+  for(var i =  0 ; i < monthShortNames.length; i++) {
+    if(monthShortNames[i] == month_name)
+      return i;
+
+  }
+
+
+}
+ 
+function getShortMonthName(index) {  
+  var monthShortNames  = new Array();
+  monthShortNames[0]   = "Jan";
+  monthShortNames[1]   = "Feb";
+  monthShortNames[2]   = "Mar";
+  monthShortNames[3]   = "Apr";
+  monthShortNames[4]   = "May";
+  monthShortNames[5]   = "Jun";
+  monthShortNames[6]   = "Jul";
+  monthShortNames[7]   = "Aug";
+  monthShortNames[8]   = "Sep";
+  monthShortNames[9]   = "Oct";
+  monthShortNames[10]  = "Nov";
+  monthShortNames[11]  = "Dec";
+
+  return monthShortNames[index];
+}
 
 function buildEnteryScreen() {
   var iFrame = document.getElementById("inputFrame" + tstCurrentPage);
@@ -324,6 +368,9 @@ function buildInputs() {
 
 }
 
+
+var setMedication = {};
+
 function buildMedList() {
   var cell  = document.getElementById("med-list");
   var ul    = document.createElement("ul");
@@ -331,16 +378,28 @@ function buildMedList() {
 
   <%(params[:drug_name] || []).each do |drug_name|%>
     var li = document.createElement("li");
-    li.innerHTML = "<%= drug_name %>";
-    li.setAttribute("onmousedown","selectMed('<%= drug_name %>');");
+
+    var divContainer = document.createElement("div");
+    divContainer.innerHTML = "<%= drug_name %>";
+    divContainer.setAttribute("onmousedown",'selectMed(this, "<%= drug_name %>");');
+    divContainer.setAttribute("class","div-list");
+    li.appendChild(divContainer);
+
+    //li.innerHTML = "<%= drug_name %>";
+    //li.setAttribute("onmousedown",'selectMed(this, "<%= drug_name %>");');
     ul.appendChild(li);
+    setMedication["<%= drug_name %>"] = {};
   <%end%>
 
 }
 
-var setMedication = {};
+var rowSelected = null;
 
-function selectMed(drug_name) {
+function setSelectedRow(e) {
+  rowSelected = e.id;
+}
+
+function selectMed(e, drug_name) {
   var table = document.getElementById("details-table");
   var selected_med = document.getElementById("selected-med");
   selected_med.innerHTML = drug_name;
@@ -349,6 +408,8 @@ function selectMed(drug_name) {
   tbody.innerHTML = null;
 
   var tr = document.createElement("tr");
+  tr.setAttribute("id", "0");
+  tr.setAttribute("onclick", "setSelectedRow(this);");
   tbody.appendChild(tr);
 
   var tds = ["text","date"];
@@ -364,12 +425,34 @@ function selectMed(drug_name) {
 
     input.setAttribute("class", "input-elements");
     input.setAttribute("onfocus", "highlightText(this);");
-    input.setAttribute("id", tds[i] + "_" + drug_name);
     td.appendChild(input);
     tr.appendChild(td);
   }
-  
 
+
+  var divs = document.getElementsByClassName("div-list");
+  for(var i = 0 ; i < divs.length; i++){
+    divs[i].setAttribute("style","background-color: none;");
+  }
+
+  e.setAttribute("style", "background-color: lightblue;");
+  loadSetMedications(drug_name);
+}
+
+function loadSetMedications(drug_name){
+  var rows = setMedication[drug_name];
+  var count = 0;
+
+  for(var num in rows) {
+    if(count > 0)
+      addRow();
+
+    var tr = document.getElementById(num);
+    tds = tr.getElementsByTagName("td");
+    tds[0].getElementsByTagName("input")[0].value = rows[num].total_tins
+    tds[1].getElementsByTagName("input")[0].value = rows[num].expiry_date
+    count++;
+  }
 }
 
 function highlightText(e) {
@@ -425,12 +508,22 @@ function enterKeypadValue(e){
     if(e.innerHTML.match(/←/i)){
       inputBox.value = inputBox.value.substring(0, inputBox.value.length - 1);
     }else if(e.innerHTML.match(/Row/i)){
+      addRow();
     }else{
       inputBox.value += e.innerHTML;
     }
 
   }catch(x) { }
 
+  var selected_med = document.getElementById("selected-med");
+  var total_tins = parseInt(inputBox.value);
+  if(isNaN(total_tins))
+    total_tins = null;
+
+  if(isHashEmpty(setMedication[selected_med.innerHTML][rowSelected]))
+    setMedication[selected_med.innerHTML][rowSelected] = { total_tins: null, expiry_date: null };
+
+  setMedication[selected_med.innerHTML][rowSelected].total_tins = total_tins;
 }
 
 function buildExpiryDate(e) {
@@ -446,6 +539,7 @@ function buildExpiryDate(e) {
   var span = document.createElement("span");
   span.setAttribute("class","date-buttons");
   span.setAttribute("id","plus-year");
+  span.setAttribute("onmousedown","addYearInput(this);");
   span.innerHTML = "+"
   td.appendChild(span);
   tr.appendChild(td);
@@ -457,6 +551,7 @@ function buildExpiryDate(e) {
   var span = document.createElement("span");
   span.setAttribute("class","date-buttons");
   span.setAttribute("id","plus-month");
+  span.setAttribute("onmousedown","addMonthInput(this);");
   span.innerHTML = "+"
   td.appendChild(span);
   tr.appendChild(td);
@@ -494,6 +589,7 @@ function buildExpiryDate(e) {
   var span = document.createElement("span");
   span.setAttribute("class","date-buttons");
   span.setAttribute("id","minus-year");
+  span.setAttribute("onmousedown","minusYearInput(this);")
   span.innerHTML = "-"
   td.appendChild(span);
   tr.appendChild(td);
@@ -504,14 +600,208 @@ function buildExpiryDate(e) {
   var span = document.createElement("span");
   span.setAttribute("class","date-buttons");
   span.setAttribute("id","minus-month");
+  span.setAttribute("onmousedown","minusMonthInput(this);")
   span.innerHTML = "-"
   td.appendChild(span);
   tr.appendChild(td);
   /* .............................. */
 
+  
+
+  var inputYear = document.getElementById("input-year");
+  inputYear.value = new Date().getFullYear();
+  inputMonth = document.getElementById("input-month");
+  inputMonth.value = getShortMonthName(new Date().getMonth());
+
+
+  if(e.value.length > 0) {
+    inputYear.value   = e.value.split("/")[0];
+    inputMonth.value  = e.value.split("/")[1];
+  }
+  //var selected_med = document.getElementById("selected-med");
+  //setMedication[selected_med.innerHTML].expiry_date = e.value;
+
+}
+
+
+function addYearInput(e) {
+
+  var yearCtrl = document.getElementById("input-year")
+  var inputs = document.getElementsByClassName("input-elements");
+  var target 
+
+  for(var i = 0 ; i < inputs.length ; i++){
+    if(inputs[i].getAttribute("class").match(/selected/i))
+      target = inputs[i];
+
+  }
+
+  if(target.value.length < 1) {
+    target.value = document.getElementById("input-year").value + "/";
+    target.value += document.getElementById("input-month").value;
+  }
+
+  var setYear = (parseInt(yearCtrl.value.split("/")[0]) + 1);
+  yearCtrl.value = setYear;
+
+  target.value = setYear + "/" + (target.value.split("/")[1]);
+  
+  var selected_med = document.getElementById("selected-med");
+  if(isHashEmpty(setMedication[selected_med.innerHTML][rowSelected]))
+    setMedication[selected_med.innerHTML][rowSelected] = { total_tins: null, expiry_date: null };
+
+  setMedication[selected_med.innerHTML][rowSelected].expiry_date = target.value;
+}
+
+function minusYearInput(e) {
+
+  var yearCtrl = document.getElementById("input-year")
+  var inputs = document.getElementsByClassName("input-elements");
+  var target 
+
+  for(var i = 0 ; i < inputs.length ; i++){
+    if(inputs[i].getAttribute("class").match(/selected/i))
+      target = inputs[i];
+
+  }
+
+  if(target.value.length < 1) {
+    target.value = document.getElementById("input-year").value + "/";
+    target.value += document.getElementById("input-month").value;
+  }
+
+
+  var setYear = (parseInt(yearCtrl.value.split("/")[0]) - 1);
+  yearCtrl.value = setYear;
+
+  target.value = setYear + "/" + (target.value.split("/")[1]);
+  
+  var selected_med = document.getElementById("selected-med");
+  if(isHashEmpty(setMedication[selected_med.innerHTML][rowSelected]))
+    setMedication[selected_med.innerHTML][rowSelected] = { total_tins: null, expiry_date: null };
+
+  setMedication[selected_med.innerHTML][rowSelected].expiry_date = target.value;
+}
+
+function addMonthInput(e) {
+  
+  var monthCtrl = document.getElementById("input-month")
+  var inputs = document.getElementsByClassName("input-elements");
+  var target 
+
+  for(var i = 0 ; i < inputs.length ; i++){
+    if(inputs[i].getAttribute("class").match(/selected/i))
+      target = inputs[i];
+
+  }
+
+  if(target.value.length < 1) {
+    target.value = document.getElementById("input-year").value + "/";
+    target.value += document.getElementById("input-month").value;
+  }
+
+  
+  var month = (getShortMonthName(getMonthIndex(monthCtrl.value) + 1)) 
+  
+  if(typeof(month) === "undefined"){
+    month = -1;
+    target.value = (parseInt(target.value.split("/")[0]) + 1) + "/" + monthCtrl.value;
+  }else{
+    month = getMonthIndex(monthCtrl.value);
+  }
+
+  monthCtrl.value = getShortMonthName(month + 1);
+
+  target.value = (target.value.split("/")[0]) + "/" + monthCtrl.value;
+  document.getElementById("input-year").value = target.value.split("/")[0];
+  
+  var selected_med = document.getElementById("selected-med");
+  if(isHashEmpty(setMedication[selected_med.innerHTML][rowSelected]))
+    setMedication[selected_med.innerHTML][rowSelected] = { total_tins: null, expiry_date: null };
+
+  setMedication[selected_med.innerHTML][rowSelected].expiry_date = target.value;
+
+}
+
+function minusMonthInput(e) {
+  
+  var monthCtrl = document.getElementById("input-month")
+  var inputs = document.getElementsByClassName("input-elements");
+  var target 
+
+  for(var i = 0 ; i < inputs.length ; i++){
+    if(inputs[i].getAttribute("class").match(/selected/i))
+      target = inputs[i];
+
+  }
+
+  if(target.value.length < 1) {
+    target.value = document.getElementById("input-year").value + "/";
+    target.value += document.getElementById("input-month").value;
+  }
+
+  var month = (getShortMonthName(getMonthIndex(monthCtrl.value) - 1)) 
+  
+  if(typeof(month) === "undefined"){
+    month = 12;
+    target.value = (parseInt(target.value.split("/")[0]) - 1) + "/" + monthCtrl.value;
+  }else{
+    month = getMonthIndex(monthCtrl.value);
+  }
+
+  monthCtrl.value = getShortMonthName(month - 1);
+
+  target.value = (target.value.split("/")[0]) + "/" + monthCtrl.value;
+  document.getElementById("input-year").value = target.value.split("/")[0];
+  
+  var selected_med = document.getElementById("selected-med");
+  if(isHashEmpty(setMedication[selected_med.innerHTML][rowSelected]))
+    setMedication[selected_med.innerHTML][rowSelected] = { total_tins: null, expiry_date: null };
+
+  setMedication[selected_med.innerHTML][rowSelected].expiry_date = target.value;
+
 
 
 }
+
+function addRow() {
+  var tbody = document.getElementById("details-inputs");
+
+  var tr = document.createElement("tr");
+  var tr_id = tbody.getElementsByTagName("tr").length; 
+  tr.setAttribute("id", tr_id);
+  tr.setAttribute("onclick", "setSelectedRow(this);");
+  tbody.appendChild(tr);
+
+  var tds = ["text","date"];
+
+  for(var i = 0 ; i < tds.length ; i++){
+    var td = document.createElement("td");
+    var input = document.createElement("input");
+    if(tds[i] == "text"){
+      input.setAttribute("type", tds[i]);
+    }else{
+      input.setAttribute("field_type", "date");
+    }
+
+    input.setAttribute("class", "input-elements");
+    input.setAttribute("onfocus", "highlightText(this);");
+    td.appendChild(input);
+    tr.appendChild(td);
+  }
+  
+
+}
+
+function isHashEmpty(obj) {
+  for(var key in obj) {
+    if(obj.hasOwnProperty(key))
+      return false;
+
+  }
+  return true;
+}
+
 </script>
 
 
