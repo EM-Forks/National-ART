@@ -54,6 +54,24 @@ module Openmrs
       self.voided_by = voided_by
       self.save
       self.after_void(reason)
+
+      if self.has_attribute?(:encounter_type) && self.has_attribute?(:encounter_id)
+        ActiveRecord::Base.connection.execute <<EOF
+        UPDATE obs SET voided = 0, 
+        date_voided = "#{Time.now().strftime('%Y-%m-%d %H:%M:%S')}",
+        voided_by = #{User.current.id} 
+        WHERE encounter_id = #{self.encounter_id};
+EOF
+
+        ActiveRecord::Base.connection.execute <<EOF
+        UPDATE orders SET voided = 0, 
+        date_voided = "#{Time.now().strftime('%Y-%m-%d %H:%M:%S')}",
+        voided_by = #{User.current.id} 
+        WHERE encounter_id = #{self.encounter_id};
+EOF
+
+      end
+
     end    
   end
 
