@@ -21,7 +21,7 @@
 %>
 <body>
 <form action = '/drug/print_barcode' method ='post'>
-  <%=select_tag(:drug_id, optionsString,  {:field_type => 'alpha', :helpText => 'Select drug' })%>
+  <%=select_tag(:drug_id, optionsString.html_safe,  {:field_type => 'alpha', :helpText => 'Select drug' })%>
 
   <%= text_field :pill_count, nil, :helpText => 'Quantity', :field_type => 'number' ,:tt_onLoad => "changeAttribute();"%>
 </form>

@@ -691,6 +691,10 @@ class GenericDrugController < ApplicationController
 
   def print_barcode
     if request.post?
+      if params[:pill_count].kind_of?(Array)
+        params[:pill_count] = params[:pill_count][0]
+      end
+
       print_and_redirect("/drug/print?drug_id=#{params[:drug_id]}&quantity=#{params[:pill_count]}", "/drug/print_barcode")
     else
       @drugs = Drug.where(["name IS NOT NULL"])
@@ -698,13 +702,12 @@ class GenericDrugController < ApplicationController
   end
 
   def print
-    pill_count = params[:quantity]
+    drug_quantity = params[:quantity]
     drug = Drug.find(params[:drug_id])
     drug_name = drug.name
     drug_name1=""
     drug_name2=""
-    drug_quantity = pill_count
-    drug_barcode = "#{drug.id}-#{drug_quantity}"
+    drug_barcode = "#{drug.id} #{drug_quantity}"
     drug_string_length =drug_name.length
 
     if drug_name.length > 27
