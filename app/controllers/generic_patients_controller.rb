@@ -2733,7 +2733,7 @@ EOF
 
     return if visit.blank?
     visit_data = mastercard_visit_data(visit)
-    arv_number = patient_bean.arv_number || patient_bean.national_id
+    arv_number = patient_bean.arv_number || format_npid_for_printing(patient_bean.national_id)
     pill_count = visit.pills.collect{|c|c.join(",")}.join(' ') rescue nil
 
     label = ZebraPrinter::StandardLabel.new
@@ -4655,5 +4655,15 @@ EOF
     
     redirect_to("/people/inconsistency_outcomes?patient_id=#{patient_id}")
   end
-  
+
+  def format_npid_for_printing(npid)
+    if npid.length == 6
+      return "#{npid[0..2]}-#{npid[3..-1]}"
+    elsif npid.length == 13
+      return "#{npid[0..3]}-#{npid[4..6]}-#{npid[7..9]}-#{npid[10..12]}"
+    else
+      return npid
+    end
+  end
+    
 end
