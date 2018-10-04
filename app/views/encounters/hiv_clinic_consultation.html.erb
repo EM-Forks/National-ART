@@ -1449,14 +1449,14 @@ tb_symptoms_array = tb_symptoms_set.map{|item|
       :optional => true,
       :tt_onLoad => "showCategory2('Clinic consultation');",
       :multiple => true,
-      :helpText => "ART related symptoms (select all that apply)" }).html_safe %>
+      :helpText => "ART related symptoms" }).html_safe %>
 
     <%= (touch_select_tag "SYMPTOM PRESENT", @patient, concept_set_options('ADDITIONAL MALAWI ART SYMPTOM SET'),
       {:id => 'additional_symptoms',
       :optional => true,
       :tt_onLoad => "showCategory2('Clinic consultation');",
       :multiple => true,
-      :helpText => "More ART related symptoms (select all that apply)" }).html_safe %>
+      :helpText => "More ART related symptoms" }).html_safe %>
 
     <% if @art_first_visit == false %>
       <%= (touch_select_tag "DRUG INDUCED", @patient, options_for_select([['', '']]),
@@ -1465,7 +1465,7 @@ tb_symptoms_array = tb_symptoms_set.map{|item|
         :tt_onLoad => "showCategory2('Clinic consultation');",
         :multiple => true,
         :condition => 'getNumberOfSymptoms() > 0',
-        :helpText => "Select which of these symptoms are likely drug induced<br />(select all that apply)",
+        :helpText => "Select which of these symptoms are likely drug induced",
         :tt_onLoad => "getSelectedSymptoms()" }).html_safe %>
     <% end %>
   <% end %>
