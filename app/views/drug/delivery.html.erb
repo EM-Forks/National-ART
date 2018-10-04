@@ -541,6 +541,7 @@
   next if @cms_drugs[drug].blank?
   options += "<option value = '#{drug}'>#{@cms_drugs[drug]}</option>"
 }
+options = options.html_safe
 relocations_or_disposal = ["", "Relocations", "Disposal"]
 disposal_reasons = ["", "Expired", "Damaged", "Missing"]
 
@@ -641,7 +642,7 @@ disposal_reasons = ["", "Expired", "Damaged", "Missing"]
         :helpText => "Previous drug deliveries for barcode",
         :tt_pageStyleClass => "NoKeyboard NoInput small"} %>
 
-      <%= select_tag "drug_name", options.html_safe,
+      <%= select_tag "drug_name", options,
         {
         :id => "select_drugs",
         :field_type => 'alpha',
@@ -666,7 +667,7 @@ disposal_reasons = ["", "Expired", "Damaged", "Missing"]
       <form id="create_stoke" method='post' action="verified_stock">
 
         <% unless params[:id] == 'verification' %>
-          <%= select_tag "drug_name", options.html_safe,
+          <%= select_tag "drug_name", options,
             {
             :id => "select_drugs",
             :field_type => 'alpha',
@@ -705,7 +706,7 @@ disposal_reasons = ["", "Expired", "Damaged", "Missing"]
             <option value='Supervision'>Supervision</option>
           </select>
 
-          <%= select_tag "drug_name", options.html_safe,
+          <%= select_tag "drug_name", options,
             {
             :id => "select_drugs",
             :field_type => 'alpha',

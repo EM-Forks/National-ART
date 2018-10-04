@@ -20,6 +20,9 @@ Rails.application.routes.draw do
   get '/render_date_enrolled_in_art', controller: 'patients', action: 'render_date_enrolled_in_art'
   post '/:controller/:action/:id'
 
+
+  post '/new_deliveries' => 'stock_management#new_deliveries'
+
   resources :dispensations, collection: {quantities: :get}
   resources :barcodes, collection: {label: :get}
   resources :relationships, collection: {search: :get}

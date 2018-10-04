@@ -68,7 +68,8 @@ class SessionsController < ApplicationController
       stocked_out = (disp_rate.to_i != 0 && month_of_stock.to_f.round(3) == 0.00)
 
       active = (disp_rate.to_i == 0 && stock_level.to_i != 0)? false : true
-      drug_cms_name = drug_cms.name
+     # drug_cms_name = drug_cms.name
+      drug_cms_name = "#{drug_cms.short_name} (#{drug_cms.strength})"
 
       @list[drug_cms_name] = {
         "month_of_stock" => month_of_stock,
@@ -106,7 +107,7 @@ class SessionsController < ApplicationController
       stocked_out = (disp_rate.to_i != 0 && month_of_stock.to_f.round(3) == 0.00)
 
       active = (disp_rate.to_i == 0 && stock_level.to_i != 0)? false : true
-      drug_cms_name = drug_cms.short_name
+      drug_cms_name = "#{drug_cms.short_name} (#{drug_cms.strength})"
 
       stock_expiry_date = Pharmacy.latest_expiry_date_for_drug(drug.id)
       date_diff_in_months = 0
@@ -162,7 +163,8 @@ class SessionsController < ApplicationController
       stocked_out = (disp_rate.to_i != 0 && month_of_stock.to_f.round(3) == 0.00)
 
       active = (disp_rate.to_i == 0 && stock_level.to_i != 0)? false : true
-      drug_cms_name = drug_cms.short_name
+      #drug_cms_name = drug_cms.short_name
+      drug_cms_name = "#{drug_cms.short_name} (#{drug_cms.strength})"
 
       stock_expiry_date = Pharmacy.latest_expiry_date_for_drug(drug.id)
       date_diff_in_months = 0

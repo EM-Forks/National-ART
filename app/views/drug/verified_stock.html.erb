@@ -9,14 +9,14 @@
 
     <script>
       var target;
-      var delivery_date = <%= @delivery_date.to_json %>;
-      var drugs = <%= @drugs.to_json %>;
-      var formatted_drugs = <%= @formatted.to_json %>;
-      var drug_short_names = <%= @drug_short_names.to_json %>;
-      var selected = <%= params[:drug_name].to_json %>;
-      var drug_cms_names = <%= @drug_cms_names.to_json %>;
-      var drug_cms_packsizes = <%= @drug_cms_packsizes.to_json %>;
-      var drug_weights = <%= @drug_weights.to_json %>;
+      var delivery_date = <%= @delivery_date.to_json.html_safe %>;
+      var drugs = <%= @drugs.to_json.html_safe %>;
+      var formatted_drugs = <%= @formatted.to_json.html_safe %>;
+      var drug_short_names = <%= @drug_short_names.to_json.html_safe %>;
+      var selected = <%= params[:drug_name].to_json.html_safe %>;
+      var drug_cms_names = <%= @drug_cms_names.to_json.html_safe %>;
+      var drug_cms_packsizes = <%= @drug_cms_packsizes.to_json.html_safe %>;
+      var drug_weights = <%= @drug_weights.to_json.html_safe %>;
       var unfinished_drugs = [];
       var sieved = [];
       var sievable = [];

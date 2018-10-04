@@ -8,15 +8,19 @@
     <%= javascript_include_tag '/javascripts/jquery' %>
 
     <script>
-      var target;
-      var relocation_date = <%= @relocation_date.to_json %>;
-      var drugs = <%= @drugs.to_json %>;
-      var formatted_drugs = <%= @formatted.to_json %>;
-      var drug_short_names = <%= @drug_short_names.to_json %>;
-      var drug_cms_names = <%= @drug_cms_names.to_json %>;
-      var drug_cms_packsizes = <%= @drug_cms_packsizes.to_json %>;
 
-      var selected = <%= params[:drug_name].to_json %>
+      
+      var tt_cancel_destination = "/clinic"
+
+      var target;
+      var relocation_date = <%= @relocation_date.to_json.html_safe %>;
+      var drugs = <%= @drugs.to_json.html_safe %>;
+      var formatted_drugs = <%= @formatted.to_json.html_safe %>;
+      var drug_short_names = <%= @drug_short_names.to_json.html_safe %>;
+      var drug_cms_names = <%= @drug_cms_names.to_json.html_safe %>;
+      var drug_cms_packsizes = <%= @drug_cms_packsizes.to_json.html_safe %>;
+
+      var selected = <%= params[:drug_name].to_json.html_safe %>
       var unfinished_drugs = [];
       var sieved = [];
       var sievable = [];
