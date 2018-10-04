@@ -1,5 +1,7 @@
 
 <script type="text/javascript">
+  var tt_cancel_destination = "/clinic"
+
   var drugsHash = JSON.parse('<%= @drugs_hash.to_json.html_safe %>')
   function updateDependentInputs(page){
     drugName = $("touchscreenInput" + tstCurrentPage).value;

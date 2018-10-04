@@ -8,6 +8,9 @@
     <%= javascript_include_tag 'jquery' %>
 
     <script>
+      
+      var tt_cancel_destination = "/clinic"
+
       var target;
       var delivery_date = <%= @delivery_date.to_json.html_safe %>;
       var drugs = <%= @drugs.to_json.html_safe %>;

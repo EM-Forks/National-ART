@@ -249,6 +249,10 @@ class Pharmacy < ActiveRecord::Base
     current_stock.value_numeric = quantity.to_f                                 
     current_stock.value_text = reason
     current_stock.void_reason = "auth_code:" + auth_code + (receiving_facility.blank? ? "" : ("|relocated_to:"+receiving_facility))
+
+    current_stock.creator = User.current.id
+    current_stock.date_created = Time.now()
+
     current_stock.save
     self.update_stock_record(drug.id, date)
     self.update_average_drug_consumption(drug.id)

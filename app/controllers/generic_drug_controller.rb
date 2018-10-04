@@ -291,7 +291,7 @@ class GenericDrugController < ApplicationController
   end
 
   def edit_stock
-    if request.method == :post
+    if request.post?
       disposal_date = params[:disposal_date].to_date
       params[:obs].each { |ob_variations|
         #drug_id = Drug.find_by_name(ob_variations[0]).id rescue (raise "Missing drug #{ob_variations[0]}".to_s)

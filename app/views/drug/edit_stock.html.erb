@@ -9,14 +9,14 @@
 
     <script>
       var target;
-      var disposal_date = <%= @disposal_date.to_json %>;
-      var drugs = <%= @drugs.to_json %>;
-      var formatted_drugs = <%= @formatted.to_json %>;
-      var drug_short_names = <%= @drug_short_names.to_json %>;
-      var drug_cms_names = <%= @drug_cms_names.to_json %>;
-      var drug_cms_packsizes = <%= @drug_cms_packsizes.to_json %>;
+      var disposal_date = <%= @disposal_date.to_json.html_safe %>;
+      var drugs = <%= @drugs.to_json.html_safe %>;
+      var formatted_drugs = <%= @formatted.to_json.html_safe %>;
+      var drug_short_names = <%= @drug_short_names.to_json.html_safe %>;
+      var drug_cms_names = <%= @drug_cms_names.to_json.html_safe %>;
+      var drug_cms_packsizes = <%= @drug_cms_packsizes.to_json.html_safe %>;
 
-      var selected = <%= params[:drug_name].to_json %>
+      var selected = <%= params[:drug_name].to_json.html_safe %>
       var unfinished_drugs = [];
       var sieved = [];
       var sievable = [];
@@ -1785,6 +1785,8 @@
         :helpText => "<span style='color: red;background: white;'>Verify values entered - You can edit a value by clicking its field</span>",
         :tt_pageStyleClass => "NoKeyboard"
       } %>
+
+      <input type="hidden" name="relocation_or_disposal" value="<%= params[:relocation_or_disposal]%>" />
     </form>
   </div>
 </html>
