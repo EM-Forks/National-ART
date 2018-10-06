@@ -65,7 +65,13 @@ class GenericDispensationsController < ApplicationController
       user_person_id = current_user.person_id
     end
 
-    @encounter = current_dispensation_encounter(@patient, session_date, user_person_id)
+    if session[:datetime].blank?
+      dispensation_datetime = Time.now().strftime("%Y-%m-%d %H:%M:%S")
+    else
+      dispensation_datetime = select_date.to_date.strftime("%Y-%m-%d %H:%M:%S")
+    end
+      
+    @encounter = current_dispensation_encounter(@patient, dispensation_datetime, user_person_id)
 
     @order = PatientService.current_treatment_encounter(@patient, session_date, 
       user_person_id).drug_orders.where(['drug_order.drug_inventory_id = ?', params[:drug_id]]).first.order rescue []

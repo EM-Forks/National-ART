@@ -1057,7 +1057,8 @@ module PatientService
         date.to_date.strftime('%Y-%m-%d 00:00:00'),
         date.to_date.strftime('%Y-%m-%d 23:59:59'),
         type.id]).first
-    encounter ||= patient.encounters.create(:encounter_type => type.id,:encounter_datetime => date, :provider_id => provider)
+
+    encounter ||= patient.encounters.create(encounter_type: type.id, encounter_datetime: date, provider_id: provider)
   end
 
   def self.count_by_type_for_date(date)

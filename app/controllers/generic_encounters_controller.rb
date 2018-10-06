@@ -1166,6 +1166,7 @@ class GenericEncountersController < ApplicationController
     encounter_type = EncounterType.find_by_name('HIV RECEPTION')
     patient_id = params[:encounter]["patient_id"].to_i
 		provider_id = params[:encounter][:provider_id]
+
     begin
       encounter_datetime = session[:datetime].to_date.strftime('%Y-%m-%d 00:00:01') 
       params[:encounter]['encounter_datetime'] = encounter_datetime
@@ -1177,9 +1178,10 @@ class GenericEncountersController < ApplicationController
       end
     end
 
-    encounter = Encounter.create!(:patient_id => patient_id,
-      :encounter_datetime => encounter_datetime, 
-      :encounter_type => encounter_type.id,:provider_id=>provider_id)
+    encounter = Encounter.create(patient_id: patient_id,
+      encounter_datetime: encounter_datetime, 
+      encounter_type: encounter_type.id, provider_id: provider_id)
+
     create_obs(encounter, params)
 
     #when the patient has been assigned ARV number
@@ -1555,9 +1557,9 @@ class GenericEncountersController < ApplicationController
     end
 
 
-    encounter = Encounter.create!(:patient_id => patient_id,
-      :encounter_datetime => encounter_datetime, 
-      :encounter_type => encounter_type.id,:provider_id=>params[:encounter][:provider_id])
+    encounter = Encounter.create(patient_id: patient_id,
+      encounter_datetime: encounter_datetime, 
+      encounter_type: encounter_type.id, provider_id: params[:encounter][:provider_id])
     
     create_obs(encounter, params) 
     return next_task(encounter.patient)
@@ -1609,9 +1611,9 @@ class GenericEncountersController < ApplicationController
       end
     end
 
-    encounter = Encounter.create!(:patient_id => patient_id,
-      :encounter_datetime => encounter_datetime, 
-      :encounter_type => encounter_type.id,:provider_id=>params[:encounter][:provider_id])
+    encounter = Encounter.create!(patient_id: patient_id,
+      encounter_datetime: encounter_datetime, 
+      encounter_type: encounter_type.id, provider_id: params[:encounter][:provider_id])
 
     create_obs(encounter ,  params)
     return next_task(encounter.patient)
@@ -1713,9 +1715,9 @@ class GenericEncountersController < ApplicationController
     encounter_datetime = params[:encounter]['encounter_datetime'].to_time.strftime('%Y-%m-%d %H:%M:%S')
 
     encounter = Encounter.create(
-      :encounter_type => encounter_type.id,
-      :patient_id => patient_id,
-      :encounter_datetime => encounter_datetime
+      encounter_type: encounter_type.id,
+      patient_id: patient_id,
+      encounter_datetime: encounter_datetime
     )
     create_obs(encounter ,  params)
     return next_task(encounter.patient)
