@@ -22,6 +22,7 @@ Rails.application.routes.draw do
 
 
   post '/new_deliveries' => 'stock_management#new_deliveries'
+  get '/validate_phone_number/:number', controller:  'people', action: 'validate_phone_number'
 
   resources :dispensations, collection: {quantities: :get}
   resources :barcodes, collection: {label: :get}
