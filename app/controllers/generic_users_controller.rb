@@ -138,7 +138,7 @@ class GenericUsersController < ApplicationController
 
   def create
     session[:user_edit] = nil
-    existing_user = User.whered(username: params[:user][:username]).first rescue nil
+    existing_user = User.where(username: params[:user][:username])
 
     if existing_user
       flash[:notice] = 'Username already in use'
@@ -547,6 +547,10 @@ class GenericUsersController < ApplicationController
 
   def feedback_alert
     render :layout => false
+  end
+
+  def username_exisits
+    render json: {username_exisits: User.where(username: params[:username]).blank? ? false : true}
   end
 
 end
