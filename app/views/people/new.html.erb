@@ -100,14 +100,26 @@
   function validateDate() {
     selectYear = parseInt(document.getElementsByName('person[birth_year]')[0].value);
     selectDay = parseInt(document.getElementsByName('person[birth_day]')[0].value);
-    date = new Date
+    <%unless session[:datetime].blank?%>
+      var date = new Date("<%= session[:datetime].to_date.strftime('%Y-%m-%d')%>");
+    <%else%>
+      var date = new Date
+    <%end%>
+
     currYear = date.getFullYear();
     currDay = date.getDate();
     availableMonths = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
 
     if (selectYear == currYear){
       currentMonth = [];
-      numOfloops = ((new Date).getMonth() + 1);
+      
+
+      <%unless session[:datetime].blank?%>
+        numOfloops = ((new Date("<%= session[:datetime].to_date.strftime('%Y-%m-%d')%>")).getMonth() + 1);
+      <%else%>
+        numOfloops = ((new Date).getMonth() + 1);
+      <%end%>
+
       for(var i = 0; i < numOfloops; i++){
         currentMonth.push(availableMonths[i]);
       }
@@ -122,7 +134,11 @@
     }
   }
   function validateDay(){
-    date = new Date
+    <%unless session[:datetime].blank?%>
+      var date = new Date("<%= session[:datetime].to_date.strftime('%Y-%m-%d')%>");
+    <%else%>
+      var date = new Date
+    <%end%>
     currYear = date.getFullYear();
     currDay = date.getDate();
     currMonth = date.getMonth() + 1;
@@ -137,7 +153,11 @@
 
   function validateDOB() {
     setDOB();
-    curr_date = new Date();
+    <%unless session[:datetime].blank?%>
+      var curr_date = new Date("<%= session[:datetime].to_date.strftime('%Y-%m-%d')%>");
+    <%else%>
+      var curr_date = new Date
+    <%end%>
 
     if (dateCreate(set_dob) == 'Invalid Date') {
       if (set_dob.split('-')[1] == 'Unknown')
