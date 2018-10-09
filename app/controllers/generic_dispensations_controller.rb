@@ -68,7 +68,7 @@ class GenericDispensationsController < ApplicationController
     if session[:datetime].blank?
       dispensation_datetime = Time.now().strftime("%Y-%m-%d %H:%M:%S")
     else
-      dispensation_datetime = select_date.to_date.strftime("%Y-%m-%d %H:%M:%S")
+      dispensation_datetime = session_date.to_date.strftime("%Y-%m-%d %H:%M:%S")
     end
       
     @encounter = current_dispensation_encounter(@patient, dispensation_datetime, user_person_id)
