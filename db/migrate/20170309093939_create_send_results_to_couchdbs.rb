@@ -1,4 +1,4 @@
-class CreateSendResultsToCouchdbs < ActiveRecord::Migration
+class CreateSendResultsToCouchdbs < ActiveRecord::Migration[5.2]
   def self.up
     create_table :send_results_to_couchdbs, :id => false do |t|
       t.integer :id, :null => false

@@ -1,3 +1,31 @@
+<script>
+function validateUserName() {
+  var nextButton = document.getElementById("nextButton");
+  nextButton.setAttribute("onmousedown","validateEnteredUserName()");
+}
+
+function validateEnteredUserName() {
+  var username = document.getElementById("username").value;
+
+  var xhttp = new XMLHttpRequest();
+  xhttp.onreadystatechange = function() {
+    if (this.readyState == 4 && (this.status == 201 || this.status == 200)) {
+      var obj = JSON.parse(this.responseText);
+      if(obj.username_exisits == true){
+        showMessage("A user with a username: <br />" + username + "<br />already exisits");
+      }else{
+        gotoNextPage();
+      }
+
+    }
+  };
+  xhttp.open("GET", "/username_exisits/" + username, true);
+  //xhttp.setRequestHeader('Content-type', "application/json");
+  xhttp.send();
+  
+}
+</script>
+
 <% #= error_messages_for 'user' %>
 <%case  controller.action_name when "search_user"%>
       <p><label for="user_username">Username</label><br/>
@@ -8,7 +36,11 @@
       <%= password_field 'user', 'plain_password', :xhelpText => 'Password' ,:textCase =>"lower", :validationRule => "\\w{4}\\w*", :validationMessage => "Password less than six characters", :value =>"", :minlength => 6 %></p>
 
       <p><label for="user_confirm_password">Re-enter Password</label><br/>
-      <%= password_field 'user_confirm', 'password', :xhelpText => 'Password',:textCase =>"lower",:validationRule =>"\\w{4}\\w*", :validationMessage =>"Password less than FOUR characters." %></p>
+      <%= password_field 'user_confirm', 'password', 
+        :xhelpText => 'Password',
+        :textCase =>"lower",
+        :validationRule =>"\\w{4}\\w*", 
+        :validationMessage =>"Password less than FOUR characters."%></p>
   <%when "edit"%>
      <p><label for="person_name_given_name">First name</label><br/>
       <%= text_field 'person_name', 'given_name', :ajaxURL => '/person_names/given_names?search_string=', :value => @user_first_name ,:allowFreeText => true%></p>
@@ -52,11 +84,23 @@
       <!--%= select(:user_role_admin, :role, %w{ Yes No},:include_blank =>"true", :value =>@user_admin_role) %></p-->
 
       <p><label for="user_username">Username</label><br/>
-      <%= text_field 'user', 'username', :xhelpText => 'Username',:textCase => "lower",:value => @user_name,:tt_onload =>"$('touchscreenInput5').value = ($('user_first_name').value.substring(0,3)+$('user_last_name').value.substring(0,3)).toLowerCase()" ,:validationRule =>"\\w{6}\\w*" ,:validationMessage => "Username must have at least SIX letters" ,:textCase => "lower"%></p>
+      <%= text_field 'user', 'username', 
+        :xhelpText => 'Username', 
+        :textCase => "lower", 
+        :id => "username",
+        :value => @user_name,:tt_onload =>"$('touchscreenInput5').value = ($('user_first_name').value.substring(0,3)+$('user_last_name').value.substring(0,3)).toLowerCase()" ,
+        :validationRule =>"\\w{6}\\w*" ,
+        :validationMessage => "Username must have at least SIX letters" ,
+        :textCase => "lower"%></p>
 
       <p><label for="user_plain_password">Password</label><br/>
       <%= password_field 'user', 'plain_password', :xhelpText => 'Password', :minlength => 6 ,:textCase =>"lower", :validationRule => "\\w{4}\\w*", :validationMessage => "Password less than six characters" %></p>
 
       <p><label for="user_confirm_password">Re-enter Password</label><br/>
-      <%= password_field 'user_confirm', 'password', :xhelpText => 'Password',:textCase =>"lower",:validationRule =>"\\w{4}\\w*", :validationMessage =>"Password less than FOUR characters." %></p>
+      <%= password_field 'user_confirm', 'password', 
+        :xhelpText => 'Password', 
+        :textCase =>"lower",
+        :validationRule =>"\\w{4}\\w*", 
+        :validationMessage =>"Password less than FOUR characters.",
+        :tt_onload => "validateUserName();" %></p>
 <%end%>

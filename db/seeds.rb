@@ -38,7 +38,7 @@ CSV.foreach('db/validation_rules.csv', :col_sep => ',', :headers => :first_row) 
  end
 end
 def load_cms_drugs
-  cms_drugs = Spreadsheet.open "#{Rails.root}/script/cms.xls"
+  cms_drugs = Spreadsheet.open "#{Rails.root}/bin/cms.xls"
   sheet1 = cms_drugs.worksheet 0
   ActiveRecord::Base.transaction do
     sheet1.each 1 do |row|

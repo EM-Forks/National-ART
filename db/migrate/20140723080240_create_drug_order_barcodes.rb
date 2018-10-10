@@ -1,4 +1,4 @@
-class CreateDrugOrderBarcodes < ActiveRecord::Migration
+class CreateDrugOrderBarcodes < ActiveRecord::Migration[5.2]
   def self.up
     create_table :drug_order_barcodes, :id => false  do |t|
       t.integer :drug_order_barcode_id, :null => false

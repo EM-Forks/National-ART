@@ -35,7 +35,11 @@
       if (aXMLHttpRequest.readyState == 4 && (aXMLHttpRequest.status == 200 ||
         aXMLHttpRequest.status == 304)) {
 
-        var result = JSON.parse(aXMLHttpRequest.responseText);
+        try {
+          var result = JSON.parse(aXMLHttpRequest.responseText);
+        }catch(e){
+          var result = aXMLHttpRequest.responseText;
+        }
 
         if (result && result.toString().trim() == "ok"){
           parent.window.location = parent.window.location

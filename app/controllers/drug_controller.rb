@@ -193,8 +193,13 @@ class DrugController < GenericDrugController
   def void_new_set
     if params[:drug_set_id]
       drug_set = DrugSet.find(params[:drug_set_id])
-      drug_set.void
+      drug_set.date_updated = Time.now()
+      drug_set.voided = 1
+      drug_set.voided_by = User.current.id
+      drug_set.save
     end
+
+    render json: 'ok'
   end
 
   def add_new_drug_set
@@ -267,14 +272,21 @@ class DrugController < GenericDrugController
   end
 
   def block_drug_set
-
     d = (session[:datetime].to_date rescue Date.today)
     t = Time.now
     session_date = DateTime.new(d.year, d.month, d.day, t.hour, t.min, t.sec)
 
     s = GeneralSet.find(params[:set_id])
     s.block(session_date) if !s.blank?
-    render :text => 'ok'.to_json
+
+    sets = DrugSet.where(set_id: params[:set_id])
+    (sets || []).each do |s|
+      s.voided = 1
+      s.voided_by = User.current.id
+      s.save
+    end
+
+    render json: 'ok'
   end
 
   private

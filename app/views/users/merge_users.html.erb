@@ -48,12 +48,11 @@
 		
 	function mergeConfirmed(){
 
-			var datastring = 'primary=<%=@user.user_id%>; secondary=' + document.getElementById("user_id").innerHTML;
+			var datastring = 'primary=<%=@user.user_id%>&secondary=' + document.getElementById("user_id").innerHTML;
 	
 			jQuery.ajax({
           type: "POST",
-          url: "/user/merge",
-          data: datastring,
+          url: "/user/merge?" + datastring,
           success: function() {
 
               showMessage("Users succesfully merged!");
@@ -184,7 +183,7 @@
 					<%@users.each do |user|%> 
 					<tr>
 					
-					<td class= "<%= cycle('one', 'two') %>" id =" <%= user.user_id%>" onmousedown = "select(<%= user.user_id%>, '<%= user.username%>','<%= user.person.names.last.given_name%>','<%= user.person.names.last.family_name%>')" ><%= user.username%></td>
+					<td class= "<%= cycle('one', 'two') %>" id =" <%= user.user_id%>" onmousedown = "select(<%= user.user_id%>, '<%= user.username%>','<%= (user.person.names.last.given_name rescue nil)%>','<%= (user.person.names.last.family_name rescue nil)%>')" ><%= user.username%></td>
 					
 					</tr>
 					<%end%>

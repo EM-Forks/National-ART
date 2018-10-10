@@ -1,4 +1,4 @@
-class CreateDrugIngredients < ActiveRecord::Migration
+class CreateDrugIngredients < ActiveRecord::Migration[5.2]
   def self.up
     create_table :drug_ingredients, :id => false do |t|
       t.integer :id, :null => false

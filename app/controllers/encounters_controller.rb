@@ -364,10 +364,10 @@ class EncountersController < GenericEncountersController
 		sputum_results_not_given(@patient.id).each{|order| @sputum_results_not_given[order.accession_number] = Concept.find(order.value_coded).fullname rescue order.value_text}
 
     if @art_first_visit
-      @hiv_clinic_consultation_side_efects_label = "Potential Contra-indications (select all that apply)"
+      @hiv_clinic_consultation_side_efects_label = "Potential Contra-indications"
       @hiv_clinic_consultation_side_efects_label_short = "Potential Contra-indications"
     else
-      @hiv_clinic_consultation_side_efects_label = "Potential Side effects (select all that apply)"
+      @hiv_clinic_consultation_side_efects_label = "Potential Side effects"
       @hiv_clinic_consultation_side_efects_label_short = "Potential Side effects"
     end
     

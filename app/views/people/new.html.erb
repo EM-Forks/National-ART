@@ -58,6 +58,19 @@
     display: block;
   }
 
+  .cellContainer {
+    display: table;
+    width: 100%;
+  }
+
+  .cellContainerRow {
+    display: table-row;
+  }
+
+  .cellContainerCell {
+    display: table-cell;
+  }
+
 </style>
 
 <script>
@@ -100,14 +113,26 @@
   function validateDate() {
     selectYear = parseInt(document.getElementsByName('person[birth_year]')[0].value);
     selectDay = parseInt(document.getElementsByName('person[birth_day]')[0].value);
-    date = new Date
+    <%unless session[:datetime].blank?%>
+      var date = new Date("<%= session[:datetime].to_date.strftime('%Y-%m-%d')%>");
+    <%else%>
+      var date = new Date
+    <%end%>
+
     currYear = date.getFullYear();
     currDay = date.getDate();
     availableMonths = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
 
     if (selectYear == currYear){
       currentMonth = [];
-      numOfloops = ((new Date).getMonth() + 1);
+      
+
+      <%unless session[:datetime].blank?%>
+        numOfloops = ((new Date("<%= session[:datetime].to_date.strftime('%Y-%m-%d')%>")).getMonth() + 1);
+      <%else%>
+        numOfloops = ((new Date).getMonth() + 1);
+      <%end%>
+
       for(var i = 0; i < numOfloops; i++){
         currentMonth.push(availableMonths[i]);
       }
@@ -122,7 +147,11 @@
     }
   }
   function validateDay(){
-    date = new Date
+    <%unless session[:datetime].blank?%>
+      var date = new Date("<%= session[:datetime].to_date.strftime('%Y-%m-%d')%>");
+    <%else%>
+      var date = new Date
+    <%end%>
     currYear = date.getFullYear();
     currDay = date.getDate();
     currMonth = date.getMonth() + 1;
@@ -137,7 +166,11 @@
 
   function validateDOB() {
     setDOB();
-    curr_date = new Date();
+    <%unless session[:datetime].blank?%>
+      var curr_date = new Date("<%= session[:datetime].to_date.strftime('%Y-%m-%d')%>");
+    <%else%>
+      var curr_date = new Date
+    <%end%>
 
     if (dateCreate(set_dob) == 'Invalid Date') {
       if (set_dob.split('-')[1] == 'Unknown')
@@ -188,6 +221,106 @@
   function set_ajaxURL_for_suggestions(url, filter_value) {
     $('touchscreenInput'+tstCurrentPage).setAttribute('ajaxURL', url + filter_value + "&search_string=");
     listSuggestions(tstCurrentPage);
+  }
+
+  function validatePhoneNumber() {
+    var inputBox = document.getElementById("touchscreenInput" + tstCurrentPage);
+    if(inputBox.value.match(/Unknown/i)){
+      var nextButton = document.getElementById("nextButton");
+      nextButton.setAttribute("onmousedown","gotoNextPage();")
+      gotoNextPage();
+      return;
+    }
+
+    var valid_number = document.getElementById("valid_number");
+    if(valid_number.getAttribute("valid_number") == "true"){
+      var nextButton = document.getElementById("nextButton");
+      nextButton.setAttribute("onmousedown","gotoNextPage();")
+      gotoNextPage();
+      return;
+    }
+   
+    showMessage("Not a valid Malawian number"); 
+  }
+
+  function buildPhoneNumValidationAddon() {
+    var inputFrame = document.getElementById("inputFrame" + tstCurrentPage);
+    var inputBox = document.getElementById("touchscreenInput" + tstCurrentPage);
+  
+    var nextButton = document.getElementById("nextButton");
+    nextButton.setAttribute("onmousedown","validatePhoneNumber();")
+   
+    var buttons = document.getElementsByClassName("keyboardButton");
+    for(var i = 0 ; i < buttons.length ; i++){
+      var curr_onmousedown = buttons[i].getAttribute("onmousedown");
+      buttons[i].setAttribute("onmousedown", curr_onmousedown + " checkIfNumberIsValid();");
+    }
+    
+    var cellContainer = document.createElement("div");
+    cellContainer.setAttribute("class","cellContainer");
+    cellContainer.setAttribute("id","cellContainer");
+    cellContainer.setAttribute("style","margin-top: 25px; padding-bottom: 65px; padding-left: 10px;");
+
+    var cells = ["Country code","Country ID", "Number is valid?"];
+    for(var j = 0 ; j < cells.length ; j++){
+      var cellContainerRow = document.createElement("div");
+      cellContainerRow.setAttribute("class","cellContainerRow");
+      cellContainer.appendChild(cellContainerRow);
+
+      var cellContainerCell = document.createElement("div");
+      cellContainerCell.setAttribute("class","cellContainerCell");
+      cellContainerCell.innerHTML = cells[j]
+      cellContainerRow.appendChild(cellContainerCell);
+
+      var cell_id = null;
+      if(cells[j] == "Country code")
+        cell_id = "country_code";
+
+      if(cells[j] == "Country ID")
+        cell_id = "country_id";
+
+      if(cells[j] == "Number is valid?")
+        cell_id = "valid_number";
+
+      var cellContainerCell = document.createElement("div");
+      cellContainerCell.setAttribute("class","cellContainerCell");
+      cellContainerCell.setAttribute("id", cell_id);
+      cellContainerRow.appendChild(cellContainerCell);
+    }
+
+
+    inputFrame.appendChild(cellContainer);
+    
+  }
+
+  function checkIfNumberIsValid() {
+    var inputBox = document.getElementById("touchscreenInput" + tstCurrentPage);
+    if (inputBox.value.length < 1)
+      return;
+
+    var xhttp = new XMLHttpRequest();
+    xhttp.onreadystatechange = function() {
+      if (this.readyState == 4 && (this.status == 201 || this.status == 200)) {
+        var obj = JSON.parse(this.responseText);
+        var country_code  = document.getElementById("country_code");
+        var country_id    = document.getElementById("country_id");
+        var valid_number  = document.getElementById("valid_number");
+
+        country_code.innerHTML  = obj.country_code;
+        country_id.innerHTML    = obj.country_id;
+        valid_number.innerHTML  = obj.original_number; //valid_number;
+        if(obj.valid_number) {
+          valid_number.innerHTML  = '<b style="color: green;">' + obj.original_number + "</b>";
+          valid_number.setAttribute("valid_number", true);
+        }else{
+          valid_number.innerHTML  = '<b style="color: red;">' + obj.original_number + "</b>";
+          valid_number.setAttribute("valid_number", false);
+        }
+      }
+    };
+    xhttp.open("GET", "/validate_phone_number/" + inputBox.value, true);
+    xhttp.send();
+
   }
 
 </script>
@@ -295,7 +428,8 @@
     :helpText => 'Cell Phone Number',
     :validationRule => "^0\\d{7}$|Unknown|Not Available|N\/A|^0\\d{9}$",
     :validationMessage => "Not a valid phone number",
-    :tt_pageStyleClass => "nota",
+    :tt_pageStyleCilass => "nota",
+    :tt_onLoad => "buildPhoneNumValidationAddon(); checkIfNumberIsValid();",
     :id => 'cellphone'
   }
 %>

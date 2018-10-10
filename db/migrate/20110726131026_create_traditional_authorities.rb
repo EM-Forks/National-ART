@@ -1,4 +1,4 @@
-class CreateTraditionalAuthorities < ActiveRecord::Migration
+class CreateTraditionalAuthorities < ActiveRecord::Migration[5.2]
   def self.up
     create_table :traditional_authorities, :id => false do |t|
       t.integer   :id, :null => false

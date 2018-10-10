@@ -206,5 +206,18 @@ EOF
     render :text => (people.blank? ? "<span id='no_results'>No results found!</span>" : @html)
   end
 
+  def validate_phone_number
+    number = params[:number]
+    phone_object = TelephoneNumber.parse(number, :mw)
+    valid_number = phone_object.valid?
+
+    render json: { 
+      country_code: phone_object.country.country_code, 
+      country_id:  phone_object.country.country_id, 
+      valid_number: valid_number, 
+      original_number: number 
+    }
+  end
+
 end
  

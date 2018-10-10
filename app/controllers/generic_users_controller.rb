@@ -66,8 +66,8 @@ class GenericUsersController < ApplicationController
       users = users.map{|u| "<li value='#{u.username}'>#{u.username}</li>" }
     else
       @users_with_provider_role = []
-      users.each do |user|
-        is_provider = UserRole.where(["user_id =?", user.user_id]).map(&:role).include?("Provider") rescue nil
+      (users || []).each do |user|
+        is_provider = UserRole.where(user_id: user.user_id).map(&:role).include?("Provider") rescue nil
         @users_with_provider_role << user if is_provider
       end
       users = @users_with_provider_role.map{| u | "<li value='#{u.username}'>#{u.username}</li>" }
@@ -138,7 +138,7 @@ class GenericUsersController < ApplicationController
 
   def create
     session[:user_edit] = nil
-    existing_user = User.whered(username: params[:user][:username]).first rescue nil
+    existing_user = User.where(username: params[:user][:username])
 
     if existing_user
       flash[:notice] = 'Username already in use'
@@ -522,24 +522,14 @@ class GenericUsersController < ApplicationController
     secondary = params[:secondary]
 
     ActiveRecord::Base.transaction do
-      person = Person.find(primary)
-      user= User.find(primary)
-      reason = "merged with user #{secondary}"
-      person.names.each{|row| row.void(reason) }
-      person.addresses.each{|row| row.void(reason) }
-      person.relationships.each{|row| row.void(reason) }
-      person.person_attributes.each{|row| row.void(reason) }
-      user.retired = 1
-      user.retire_reason = reason
-      user.retired_by = current_user.user_id
-      user.date_retired = Time.now()
-      person.voided = 1
-      person.voided_by = current_user.user_id
-      person.void_reason = reason
-      person.date_voided = Time.now
-      user.save
-      person.save
+      primary_user = User.find(primary)
+      secondary_user = User.find(secondary)
 
+      primary_person = Person.find(primary_user.person_id)
+      secondary_person = Person.find(secondary_user.person_id)
+
+      execute_merge(primary_person, secondary_person)
+      secondary_user.update_attributes(retired: 1)
     end
 
     redirect_to '/clinic' and return
@@ -547,6 +537,48 @@ class GenericUsersController < ApplicationController
 
   def feedback_alert
     render :layout => false
+  end
+
+  def username_exisits
+    render json: {username_exisits: User.where(username: params[:username]).blank? ? false : true}
+  end
+
+  private
+
+  def execute_merge(primary_person, secondary_person)
+    names = secondary_person.names rescue []
+    primary_person_names = primary_person.names rescue []
+
+    (names || []).each do |r|
+      if primary_person_names.map {|pn| "#{pn.given_name.upcase rescue ''} #{pn.family_name.upcase rescue ''}"}.include?("#{r.given_name.upcase rescue ''} #{r.family_name.upcase rescue ''}")
+          ActiveRecord::Base.connection.execute("UPDATE person_name SET voided = 1, 
+          date_voided=NOW(),voided_by=#{User.current.user_id},
+          void_reason = 'merged with patient #{patient_id}'
+          WHERE person_id = #{secondary_patient_id}
+          AND person_name_id = #{r.person_name_id}")
+      end
+    end
+
+      secondary_person_addresses = secondary_person.addresses rescue []
+      (secondary_person_addresses ||[]).each do |r|
+        primary_person_addresses = primary_person.addresses rescue []
+
+        if primary_person_addresses.map{|pa| "#{pa.city_village.upcase rescue ''}"}.include?("#{r.city_village.upcase rescue ''}")
+          ActiveRecord::Base.connection.execute("
+            UPDATE person_address SET voided = 1, date_voided=NOW(),voided_by=#{User.current.user_id},
+            void_reason = 'merged with patient #{primary_person.id}'
+            WHERE person_id = #{secondary_person.id}")
+        else
+          ActiveRecord::Base.connection.execute("UPDATE person_address SET person_id = #{primary_person.id}
+            WHERE person_id = #{secondary_person.id}
+            AND person_address_id = #{r.person_address_id}")
+
+        end
+      end
+
+
+      ActiveRecord::Base.connection.execute("UPDATE person_attribute SET person_id = #{primary_person.id} WHERE person_id = #{secondary_person.id}")
+      ActiveRecord::Base.connection.execute("UPDATE person_address SET person_id = #{primary_person.id} WHERE person_id = #{secondary_person.id}")
   end
 
 end

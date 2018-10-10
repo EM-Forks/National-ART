@@ -1,6 +1,8 @@
 
 <script type="text/javascript">
-  var drugsHash = JSON.parse('<%= @drugs_hash.to_json %>')
+  var tt_cancel_destination = "/clinic"
+
+  var drugsHash = JSON.parse('<%= @drugs_hash.to_json.html_safe %>')
   function updateDependentInputs(page){
     drugName = $("touchscreenInput" + tstCurrentPage).value;
     if (drugsHash[drugName]){
@@ -23,6 +25,7 @@
 @drugs.each do |drug|
   options += "<option value = '#{drug}'>#{drug}</option>"
 end
+options = options.html_safe
 %>
 <form id="create_stoke" action="/drug/create_cms_drug_packs" method="POST">
   <%= select_tag "drug_name", options,

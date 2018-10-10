@@ -544,8 +544,11 @@ class GenericRegimensController < ApplicationController
 	def create
     #raise params[:assess_fast_track].inspect
 		#raise prescribe_pyridoxine.to_yaml
+
 		@patient = Patient.find(params[:patient_id] || session[:patient_id]) rescue nil
 		session_date = (session[:datetime].to_date rescue Time.now())
+
+
     weight = @current_weight = PatientService.get_patient_attribute_value(@patient, "current_weight")
     unless params[:regimen_main].blank?
       params[:regimen] = params[:regimen_main] #This is a hack. Going back and forth when custom regimens have been selected things were crashing
@@ -604,7 +607,13 @@ class GenericRegimensController < ApplicationController
 
 		user_person_id = user_person_id rescue User.find_by_user_id(current_user.user_id).person_id
 
-		encounter = PatientService.current_treatment_encounter(@patient, session_date, user_person_id)
+    if session[:datetime]
+      treatment_datetime = session_date.strftime("%Y-%m-%d 00:00:01")
+    else
+      treatment_datetime = session_date.strftime("%Y-%m-%d %H:%M:%S")
+    end
+
+		encounter = PatientService.current_treatment_encounter(@patient, treatment_datetime, user_person_id)
 
     ############################################# set next appointment interval type #########################################
     set_appointment_interval_type = nil
@@ -630,22 +639,14 @@ class GenericRegimensController < ApplicationController
 		start_date = session[:datetime] || Time.now
 		arvs_buffer = 2
 
-    if session[:datetime].kind_of?(Date) || session[:datetime].kind_of?(Time)
-=begin
-		  auto_expire_date = (session[:datetime] + params[:duration].to_i.days + arvs_buffer.days) 
-      auto_cpt_ipt_expire_date = (session[:datetime] + params[:duration].to_i.days + arvs_buffer.days) 
-=end
-		  auto_expire_date = (session[:datetime] + (params[:duration].to_i - 1).days) 
-      auto_cpt_ipt_expire_date = (session[:datetime] + (params[:duration].to_i - 1).days) 
+    unless session[:datetime].blank?
+		  auto_expire_date = (session[:datetime].to_date + (params[:duration].to_i - 1).days) 
+      auto_cpt_ipt_expire_date = (session[:datetime].to_date + (params[:duration].to_i - 1).days) 
     else
-=begin
-      auto_expire_date = (Time.now + params[:duration].to_i.days + arvs_buffer.days) 
-      auto_cpt_ipt_expire_date = (Time.now + params[:duration].to_i.days + arvs_buffer.days) 
-=end
       auto_expire_date = (Time.now + (params[:duration].to_i - 1).days) 
       auto_cpt_ipt_expire_date = (Time.now + (params[:duration].to_i - 1).days) 
     end 
-		
+	
 		auto_tb_expire_date = session[:datetime] + params[:tb_duration].to_i.days rescue Time.now + params[:tb_duration].to_i.days
 		auto_tb_continuation_expire_date = session[:datetime] + params[:tb_continuation_duration].to_i.days rescue Time.now + params[:tb_continuation_duration].to_i.days
 

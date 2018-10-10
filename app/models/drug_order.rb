@@ -115,25 +115,27 @@ class DrugOrder < ActiveRecord::Base
         instructions += " (prn)" if prn == 1
       end
     end
+
     ActiveRecord::Base.transaction do
-      order = encounter.orders.create!(
-        :order_type_id => 1, 
-        :concept_id => drug.concept_id, 
-        :orderer => User.current.id,
-        :patient_id => patient.id,
-        :start_date => start_date,
-        :auto_expire_date => auto_expire_date,
-        :observation => obs,
-        :instructions => instructions)      
-      drug_order = DrugOrder.new(
-        :drug_inventory_id => drug.id,
-        :dose => dose,
-        :frequency => frequency,
-        :prn => prn,
-        :units => units,
-        :equivalent_daily_dose => equivalent_daily_dose)
-      drug_order.order_id = order.id                
-      drug_order.save!
+      order = Order.create(
+        encounter_id: encounter.id,
+        order_type_id: 1, 
+        concept_id: drug.concept_id, 
+        orderer: User.current.id,
+        patient_id: patient.id,
+        start_date: start_date,
+        auto_expire_date: auto_expire_date,
+        observation: obs,
+        instructions: instructions)   
+         
+      drug_order = DrugOrder.create(
+        drug_inventory_id: drug.id,
+        dose: dose,
+        frequency: frequency,
+        prn: prn,
+        units: units,
+        equivalent_daily_dose: equivalent_daily_dose,
+        order_id: order.id)               
     end             
     drug_order     
   end

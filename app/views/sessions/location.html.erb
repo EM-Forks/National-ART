@@ -1,4 +1,6 @@
-<%= javascript_include_tag "/javascripts/barcode" %>
+<%#= javascript_include_tag "/javascripts/barcode" %>
+<%= javascript_include_tag "/javascripts/scanBarcode" %>
+
 <script type="text/javascript">
 <% 
 if params[:from] == 'clinic'%>
@@ -30,8 +32,14 @@ if params[:from] == 'clinic'%>
     document.getElementById("stock_level_graph").style.display = 'none';
   }
 
-  function displayPaedsStock(){
-    document.getElementById("stock_level_graph_paeds").style.display = '';
+  function displayChart(src){
+    var iFrame  = document.getElementById("inputFrame" + tstCurrentPage);
+    iFrame.style = "height: 90%;";
+
+    var chart   = document.createElement("embed");
+    chart.setAttribute("src", src);
+    chart.setAttribute("style","margin-left: 10px; height: 99%; width: 98%;");
+    iFrame.appendChild(chart);   
   }
 
   function hidePaedsStock(){
@@ -45,7 +53,26 @@ if params[:from] == 'clinic'%>
   function hideAdultStock(){
     document.getElementById("stock_level_graph_adults").style.display = 'none';
   }
-  
+
+  function buildBarcodeInput() {
+    var iFrame = document.getElementById("inputFrame" + tstCurrentPage);
+
+    var barcodeDiv = document.createElement("div");
+    barcodeDiv.setAttribute("class","barcode");
+    barcodeDiv.setAttribute("functionName","scannedBarcode");
+    iFrame.appendChild(barcodeDiv);
+
+    iFrame.style = "width: 96%;";
+    insertBarcodeScan();
+
+  }
+   
+  function scannedBarcode(barcode) {
+    var input = document.getElementById("location");
+    input.setAttribute("value", barcode);
+    gotoNextPage();
+  }
+   
 </script>
 
 <style type="text/css">
@@ -88,42 +115,28 @@ if params[:from] == 'clinic'%>
 
 <form id='sessions' action="/sessions/update" method='post'>
   <label for="location">Location</label>
-  <%= text_field_tag(:location, nil, :helpText => "Workstation location",
-    :field_type => "number",
-    :tt_onLoad => "inform();__$('keyboard').style.display = 'none';") %>
+  
+    <%= text_field_tag :location_barcode, nil, { 
+        :helpText => "Workstation location",
+        :tt_onLoad => "buildBarcodeInput();__$('keyboard').style.display = 'none';", 
+        :optional => "true", :tt_pageStyleClass => "NoControls" } %>
+
+    <input type="hidden" name="location" id="location" />
+
   <% if @activate_drug_management %>
 
-    <%#= text_field_tag(:stock_level, nil, :helpText => "Current Stock Level",
-      :id => "current_stock_level",
-      :optional => "true",
-      :tt_onLoad => "__$('keyboard').style.display = 'none'; displayStocks();",
-      :tt_onUnload => "hideStock();") %>
+    <%= text_field_tag :stock_level_paeds, nil, { 
+        :helpText => "Stock levels for Paediatric medication",
+        :tt_onLoad => "displayChart('/sessions/stock_levels_graph_paeds');__$('keyboard').style.display = 'none';", 
+        :optional => "true", :tt_pageStyleClass => "NoControls" } %>
 
-    <%= text_field_tag(:stock_level_paeds, nil, :helpText => "Current Stock Level For Paediatric Drugs",
-      :id => "current_stock_level_paeds",
-      :optional => "true",
-      :tt_onLoad => "__$('keyboard').style.display = 'none'; displayPaedsStock();",
-      :tt_onUnload => "hidePaedsStock();") %>
+    <%= text_field_tag :stock_level_adults, nil, { 
+        :helpText => "Stock levels for Adult medication",
+        :tt_onLoad => "displayChart('/sessions/stock_levels_graph_adults');__$('keyboard').style.display = 'none';", 
+        :optional => "true", :tt_pageStyleClass => "NoControls" } %>
 
-    <%= text_field_tag(:stock_level_adults, nil, :helpText => "Current Stock Level For Adults Drugs",
-      :id => "current_stock_level_adults",
-      :optional => "true",
-      :tt_onLoad => "__$('keyboard').style.display = 'none'; displayAdultStock();",
-      :tt_onUnload => "hideAdultStock();") %>
+  <% end %>
 
     <%= submit_tag :value => "Submit" %>
+
   </form>
-
-  <!--<div style="display: none;" id="stock_level_graph">
-    <iframe  src="/sessions/stock_levels_graph"></iframe>
-  </div>-->
-
-  <div style="display: none;" id="stock_level_graph_paeds">
-    <iframe  src="/sessions/stock_levels_graph_paeds"></iframe>
-  </div>
-
-  <div style="display: none;" id="stock_level_graph_adults">
-    <iframe  src="/sessions/stock_levels_graph_adults"></iframe>
-  </div>
-
-<% end %>
