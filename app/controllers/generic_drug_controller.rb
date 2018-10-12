@@ -83,7 +83,7 @@ class GenericDrugController < ApplicationController
   end
 
   def verified_stock
-    @delivery_date = params[:observations].first["value_datetime"]
+    @delivery_date = params[:delivery_date] #params[:observations].first["value_datetime"]
 
     @formatted = preformat_regimen
     @drug_short_names = {} #regimen_name_map
@@ -105,8 +105,7 @@ class GenericDrugController < ApplicationController
   end
 
   def set_receipts
-
-    @delivery_date = params[:observations].first["value_datetime"]
+    @delivery_date = params[:delivery_date] #params[:observations].first["value_datetime"]
     @drugs = params[:drug_name]
     @formatted = preformat_regimen
     @drug_short_names = {} #regimen_name_map
@@ -135,19 +134,22 @@ class GenericDrugController < ApplicationController
 
     data = {}
 
-    Pharmacy.active.where(["value_text =?", params[:barcode]]).each { |entry|
+    records = Pharmacy.joins("INNER JOIN drug_cms d
+     ON d.drug_inventory_id = pharmacy_obs.drug_id").where(value_text: params[:barcode]).select("d.*, pharmacy_obs.value_numeric")
 
-      drug = Drug.find(entry.drug_id).name
+    (records || []).each { |entry|
+
+      drug = Drug.find(entry.drug_inventory_id).name
       qty_size = entry.pack_size.blank? ? 60 : entry.pack_size.to_i
 
       data[drug] = {} if data[drug].blank?
       data[drug][qty_size] = {} if data[drug][qty_size].blank?
       data[drug][qty_size]["tins"] = (entry.value_numeric.to_i/qty_size).round
       data[drug][qty_size]["pack_size"] = qty_size
-      data[drug][qty_size]["id"] = entry.id
+      data[drug][qty_size]["id"] = entry.drug_inventory_id
     }
 
-    render :text => data.to_json
+    render json: data
   end
 
   def void
@@ -223,11 +225,12 @@ class GenericDrugController < ApplicationController
     @drugs.each do |drug_name|
       drug_id = Drug.find_by_name(drug_name).drug_id
       next if drug_cms_hash[drug_id].blank?
-      latest_drug_stock = Pharmacy.latest_drug_stock(drug_id)
+      latest_drug_stock = StockManagement.latest_drug_stock(drug_id)
       @stock_hash[drug_id] = {}
       drug_cms_name = drug_cms_hash[drug_id]
       @stock_hash[drug_id]["name"] = drug_cms_name
-      @stock_hash[drug_id]["latest_drug_stock"] = latest_drug_stock.to_i
+      @stock_hash[drug_id]["expiry_date"] = latest_drug_stock[:expiry_date]
+      @stock_hash[drug_id]["latest_drug_stock"] = latest_drug_stock[:stock].to_i
     end
     
     @stock_hash = @stock_hash.sort_by{|drug_id, values|values["latest_drug_stock"].to_i}.reverse
@@ -288,7 +291,7 @@ class GenericDrugController < ApplicationController
   end
 
   def edit_stock
-    if request.method == :post
+    if request.post?
       disposal_date = params[:disposal_date].to_date
       params[:obs].each { |ob_variations|
         #drug_id = Drug.find_by_name(ob_variations[0]).id rescue (raise "Missing drug #{ob_variations[0]}".to_s)
@@ -688,6 +691,10 @@ class GenericDrugController < ApplicationController
 
   def print_barcode
     if request.post?
+      if params[:pill_count].kind_of?(Array)
+        params[:pill_count] = params[:pill_count][0]
+      end
+
       print_and_redirect("/drug/print?drug_id=#{params[:drug_id]}&quantity=#{params[:pill_count]}", "/drug/print_barcode")
     else
       @drugs = Drug.where(["name IS NOT NULL"])
@@ -695,13 +702,12 @@ class GenericDrugController < ApplicationController
   end
 
   def print
-    pill_count = params[:quantity]
+    drug_quantity = params[:quantity]
     drug = Drug.find(params[:drug_id])
     drug_name = drug.name
     drug_name1=""
     drug_name2=""
-    drug_quantity = pill_count
-    drug_barcode = "#{drug.id}-#{drug_quantity}"
+    drug_barcode = "#{drug.id} #{drug_quantity}"
     drug_string_length =drug_name.length
 
     if drug_name.length > 27
@@ -783,12 +789,14 @@ class GenericDrugController < ApplicationController
   def stock_report_edit
 
     if request.post?
-
       drug_short_names = regimen_name_map
       unless params[:obs].blank?
         params[:obs].each { |obs|
           drug_id = Drug.find_by_name(obs[0]).id rescue []
           next if drug_id.blank?
+          next if obs[0].blank?
+          next if obs[1]["amount"].blank?
+
           tins = obs[1]["amount"].to_i
           pack_size = 60
           pack_size = obs[1]['pills_per_tin'].to_i if  ((obs[1]['pills_per_tin'].present?) rescue false)
@@ -868,12 +876,21 @@ class GenericDrugController < ApplicationController
     packsize = Pharmacy.pack_size(drug_id)
     @drug_name = Drug.find(drug_id).name
 
+
     @stocks = {}
-    ((start_date..end_date).to_a).each do |date|
-      stock_level = (Pharmacy.drug_stock_on(drug_id, date)/packsize).round rescue 0
-      @stocks[date]= {"stock_count" => stock_level,"pack_size" => packsize}
+
+    data = Pharmacy.where("encounter_date BETWEEN ? AND ? AND pharmacy_encounter_type IN(?)",
+      start_date, end_date, [2,4]).order(:encounter_date)
+
+    (data || []).each do |data|
+      #stock_level = (StockManagement.closing_stock(drug_id, date)/packsize).round rescue 0
+      #raise stock_level.inspect if date.to_date == "2017-01-12".to_date
+      @stocks[data.encounter_date.to_date] = {
+        stock_count: (data.value_numeric / data.pack_size).round, 
+        pack_size:   data.pack_size
+      }
     end
-    
+  
     render :layout => "report"
   end
   

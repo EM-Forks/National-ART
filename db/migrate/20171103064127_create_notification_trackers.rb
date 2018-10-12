@@ -1,4 +1,4 @@
-class CreateNotificationTrackers < ActiveRecord::Migration
+class CreateNotificationTrackers < ActiveRecord::Migration[5.2]
   def self.up
     create_table  :notification_tracker,  :id => false do |t|
       t.integer   :tracker_id,            :null => false

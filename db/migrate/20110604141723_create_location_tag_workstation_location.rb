@@ -1,4 +1,4 @@
-class CreateLocationTagWorkstationLocation < ActiveRecord::Migration
+class CreateLocationTagWorkstationLocation < ActiveRecord::Migration[5.2]
   def self.up
     # Check if the location already exists before inserting it to avoid duplicates
     if LocationTag.find_by_name('workstation location').blank?

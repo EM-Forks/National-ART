@@ -1,3 +1,4 @@
+<script>var tt_cancel_destination = "/clinic"</script>
 
 <style>
 
@@ -46,7 +47,7 @@ month_names = month_name_options.gsub('<option value="Unknown">Unknown</option>'
     :tt_pageStyleClass => "Numeric NumbersOnly"
   }  %>
 
-  <%= select_tag "start_month", month_names,
+  <%= select_tag "start_month", month_names.html_safe,
     {:helpText => 'Start month',
     :validationMessage => 'Please enter a valid date'
   }%>
@@ -69,7 +70,7 @@ month_names = month_name_options.gsub('<option value="Unknown">Unknown</option>'
     :tt_pageStyleClass => "Numeric NumbersOnly"
   }  %>
 
-  <%= select_tag "end_month", month_names,
+  <%= select_tag "end_month", month_names.html_safe,
     {:helpText => 'End month',
     :validationMessage => 'Please enter a valid date'
   }%>

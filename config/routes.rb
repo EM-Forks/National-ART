@@ -20,6 +20,17 @@ Rails.application.routes.draw do
   get '/render_date_enrolled_in_art', controller: 'patients', action: 'render_date_enrolled_in_art'
   post '/:controller/:action/:id'
 
+
+  post '/new_deliveries' => 'stock_management#new_deliveries'
+  get '/validate_phone_number/:number', controller:  'people', action: 'validate_phone_number'
+  get '/username_exisits/:username', controller:  'users', action: 'username_exisits'
+  post '/user/merge', controller: 'users', action: 'merge'
+  post '/validate_password', controller: 'users', action: 'validate_password'
+  post '/user/properties', controller: 'users', action: 'properties'
+  
+  get '/user/username', controller: 'users', action: 'username'
+  get '/user/change_password', controller: 'users', action: 'change_password'
+
   resources :dispensations, collection: {quantities: :get}
   resources :barcodes, collection: {label: :get}
   resources :relationships, collection: {search: :get}

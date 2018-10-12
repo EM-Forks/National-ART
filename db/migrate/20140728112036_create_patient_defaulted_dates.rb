@@ -1,4 +1,4 @@
-class CreatePatientDefaultedDates < ActiveRecord::Migration
+class CreatePatientDefaultedDates < ActiveRecord::Migration[5.2]
   def self.up
     create_table :patient_defaulted_dates, :id => false do |t|
       t.integer :id, :null => false

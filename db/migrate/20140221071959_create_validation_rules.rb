@@ -1,4 +1,4 @@
-class CreateValidationRules < ActiveRecord::Migration
+class CreateValidationRules < ActiveRecord::Migration[5.2]
   def self.up                                                                   
     create_table :validation_rules, :id => false do |t|                                       
       t.integer :id, :null => false

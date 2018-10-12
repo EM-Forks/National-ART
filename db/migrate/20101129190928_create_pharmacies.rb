@@ -1,4 +1,4 @@
-class CreatePharmacies < ActiveRecord::Migration
+class CreatePharmacies < ActiveRecord::Migration[5.2]
   def self.up
     create_table :pharmacies, :id => false do |t|
       t.integer :id, :null => false

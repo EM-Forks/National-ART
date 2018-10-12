@@ -1,4 +1,4 @@
-class CreateValidationResults < ActiveRecord::Migration
+class CreateValidationResults < ActiveRecord::Migration[5.2]
   def self.up                                                                   
     create_table :validation_results, :id => false  do |t|                                     
       t.integer :id, :null => false

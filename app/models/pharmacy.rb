@@ -116,7 +116,11 @@ class Pharmacy < ActiveRecord::Base
       auto_verified_encounter.expiry_date = expiry_date
     end
 
+    delivery.creator = User.current.id
+    delivery.date_created = Time.now()
     delivery.save
+    auto_verified_encounter.creator = User.current.id
+    auto_verified_encounter.date_created = Time.now()
     auto_verified_encounter.save
 
     self.update_stock_record(drug_id, date) #Update stock record
@@ -245,6 +249,10 @@ class Pharmacy < ActiveRecord::Base
     current_stock.value_numeric = quantity.to_f                                 
     current_stock.value_text = reason
     current_stock.void_reason = "auth_code:" + auth_code + (receiving_facility.blank? ? "" : ("|relocated_to:"+receiving_facility))
+
+    current_stock.creator = User.current.id
+    current_stock.date_created = Time.now()
+
     current_stock.save
     self.update_stock_record(drug.id, date)
     self.update_average_drug_consumption(drug.id)
@@ -336,6 +344,9 @@ EOF
     if ! type.blank?
       encounter.value_text = type
     end
+  
+    encounter.creator = User.current.id
+    encounter.date_created = Time.now()
     encounter.save
     self.update_stock_record(drug_id, date)
     self.update_average_drug_consumption(drug_id)
@@ -482,6 +493,11 @@ EOF
       pharmacy_obs.pharmacy_encounter_type = edited_stock_encounter_id
       pharmacy_obs.drug_id = drug_id
       pharmacy_obs.value_text = 'Current Stock'
+      pharmacy_obs.creator = User.current.id
+      pharmacy_obs.date_created = Time.now()
+    else
+      pharmacy_obs.changed_by = User.current.id
+      pharmacy_obs.date_changed = Time.now()
     end
     
     pharmacy_obs.encounter_date = encounter_date
@@ -506,6 +522,11 @@ EOF
       pharmacy_obs.pharmacy_encounter_type = edited_stock_encounter_id
       pharmacy_obs.drug_id = drug_id
       pharmacy_obs.value_text = 'Drug Rate'
+      pharmacy_obs.creator = User.current.id
+      pharmacy_obs.date_created = Time.now()
+    else
+      pharmacy_obs.changed_by = User.current.id
+      pharmacy_obs.date_changed = Time.now()
     end
 
     pharmacy_obs.encounter_date = Date.today

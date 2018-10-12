@@ -14,10 +14,10 @@
 
     <script type="text/javascript">
       var results = {};
-      <% (@stocks || []).sort_by{|x, y| x.to_date }.each do |sdate, data| %>
+      <% (@stocks || []).each do |sdate, data| %>
         results["<%= sdate %>"] = {
-          stock_count: <%= data[:stock_count] ||= 0%>,
-          pack_size: <%= data[:pack_size] ||= 0 %>
+          stock_count: <%= data['stock_count'] ||= 0%>,
+          pack_size: <%= data['pack_size'] ||= 0 %>
         }
       <%end%>
       var drug = '<%= @drug_name %>';
@@ -169,6 +169,7 @@
         dates = Object.keys(results);
         for (i = 0; i < dates.length; i++){
           date = new Date(dates[i])
+
           data.push([Date.UTC(date.getFullYear(), date.getMonth(), date.getDate()) ,results[dates[i]]["stock_count"]])
         }
 

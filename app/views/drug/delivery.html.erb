@@ -541,6 +541,7 @@
   next if @cms_drugs[drug].blank?
   options += "<option value = '#{drug}'>#{@cms_drugs[drug]}</option>"
 }
+options = options.html_safe
 relocations_or_disposal = ["", "Relocations", "Disposal"]
 disposal_reasons = ["", "Expired", "Damaged", "Missing"]
 
@@ -653,9 +654,10 @@ disposal_reasons = ["", "Expired", "Damaged", "Missing"]
         :tt_onLoad => "returning = true; hidePreviousDrugs();",
         :tt_pageStyleClass => "longSelectList"} %>
 
-      <%= touch_date_tag "delivery_date", 'delivery_date', nil,
+      <%= text_field_tag "delivery_date", nil,
         {
         :id => "delivery_date",
+        :field_type => "date",
         :helpText => "Delivery Date",
         :maxDate => (Date.today + 30.year)} %>
 
@@ -681,15 +683,17 @@ disposal_reasons = ["", "Expired", "Damaged", "Missing"]
 
         <% unless params[:id] == 'verification' %>
 
-          <%= touch_date_tag "delivery_date", 'delivery_date', nil,
+          <%= text_field_tag "delivery_date", nil,
             {:id => "delivery_date",
+            :field_type => "date",
             :helpText => "Delivery date",
             :absoluteMax => Date.today} %>
 
         <% else %>
 
-          <%= touch_date_tag "delivery_date", 'delivery_date', nil,
+          <%= text_field_tag "delivery_date", nil,
             {:id => "delivery_date",
+            :field_type => "date",
             :helpText => "Verification date",
             :maxDate => (Date.today + 30.year)} %>
 

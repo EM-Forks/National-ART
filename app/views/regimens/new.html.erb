@@ -126,6 +126,24 @@
 
 
 <script>
+
+<%date = session[:datetime].to_date rescue Date.today
+start_date = date.strftime("%Y-%m-%d 00:00:00")
+end_date = date.strftime("%Y-%m-%d 23:59:59")
+reception = Encounter.where(
+  ["patient_id = ? AND DATE(encounter_datetime) = ? AND encounter_type = ?
+  AND encounter_datetime >= ? AND encounter_datetime <=?",@patient.id,date,
+    EncounterType.find_by_name('HIV RECEPTION').id,start_date,end_date]).order("encounter_datetime DESC,date_created DESC").first
+
+reception = reception.observations.collect{|r|r.to_s.squish}.join(',') rescue ''
+patient_present = reception.match(/PATIENT PRESENT FOR CONSULTATION: YES/i)
+
+
+%>
+
+
+
+
   function hideConfirmatoryTestPopup(){
     document.getElementById("confirmatory-test-popup-div").style.display = 'none';
     document.getElementById("confirmatory-test-cover").style.display = 'none';
@@ -3260,7 +3278,7 @@ pyridoxine_options = ["","25", "50"]
 
     <!-- Fast  track questions -->
     <% enable_fast_track = GlobalProperty.find_by_property('enable.fast.track').property_value == 'true' rescue false %>
-    <% if not @fast_track_patient == true and enable_fast_track == true %>
+    <% if not @fast_track_patient == true and enable_fast_track == true and patient_present%>
 
       <%= select_tag "assess_fast_track", options_for_select([['Yes','YES'],['No','NO']]),
         :id => 'assess_fast_track',
