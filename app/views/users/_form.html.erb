@@ -11,7 +11,8 @@ function validateEnteredUserName() {
   xhttp.onreadystatechange = function() {
     if (this.readyState == 4 && (this.status == 201 || this.status == 200)) {
       var obj = JSON.parse(this.responseText);
-      if(obj.username_exisits == true){
+
+      if(obj.username_exisits == "true" || obj.username_exisits == true){
         showMessage("A user with a username: <br />" + username + "<br />already exisits");
       }else{
         gotoNextPage();
@@ -52,7 +53,12 @@ function validateEnteredUserName() {
       <%= text_field 'person_name', 'family_name', :ajaxURL => '/person_names/family_names?search_string=', :value => @user_last_name, :allowFreeText => true%></p>
       <% if current_user.admin? %>
         <p><label for="user_username">Username</label><br/>
-        <%= text_field 'user', 'username', :textCase => "lower",:value => @user_name,:tt_onload =>"$('touchscreenInput5').value = ($('user_first_name').value.substring(0,3)+$('user_last_name').value.substring(0,3)).toLowerCase()" ,:validationRule =>"\\w{6}\\w*" ,:validationMessage => "Username must have at least SIX letters", :textCase => "lower" %></p>
+        <%= text_field 'user', 'username', :textCase => "lower",
+        :value => @user_name,
+        :tt_onload =>"$('touchscreenInput5').value = ($('user_first_name').value.substring(0,3)+$('user_last_name').value.substring(0,3)).toLowerCase()" ,
+        :validationRule =>"\\w{6}\\w*" ,
+        :validationMessage => "Username must have at least SIX letters", 
+        :textCase => "lower" %></p>
       <%end%>
   <%when "destroy"%>
       <!--p><label for="user_voided">Remove User?</label--><br/>
@@ -91,6 +97,7 @@ function validateEnteredUserName() {
         :value => @user_name,:tt_onload =>"$('touchscreenInput5').value = ($('user_first_name').value.substring(0,3)+$('user_last_name').value.substring(0,3)).toLowerCase()" ,
         :validationRule =>"\\w{6}\\w*" ,
         :validationMessage => "Username must have at least SIX letters" ,
+        :helpText => "Username",
         :textCase => "lower"%></p>
 
       <p><label for="user_plain_password">Password</label><br/>

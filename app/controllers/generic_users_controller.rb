@@ -140,11 +140,12 @@ class GenericUsersController < ApplicationController
     session[:user_edit] = nil
     existing_user = User.where(username: params[:user][:username])
 
-    if existing_user
+    unless existing_user.blank?
       flash[:notice] = 'Username already in use'
       redirect_to :action => 'new'
       return
     end
+
     if (params[:user][:plain_password] != params[:user_confirm][:password])
       flash[:notice] = 'Password Mismatch'
       redirect_to :action => 'new'
