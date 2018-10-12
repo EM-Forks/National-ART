@@ -544,6 +544,12 @@ class GenericUsersController < ApplicationController
     render json: {username_exisits: User.where(username: params[:username]).blank? ? false : true}
   end
 
+  def validate_password
+    password = params[:password] ||= ''
+    acc = User.authenticate(User.current.username, params[:password])
+    render json: {valid: acc.blank? ? false : true}
+  end
+
   private
 
   def execute_merge(primary_person, secondary_person)

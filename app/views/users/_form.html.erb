@@ -25,6 +25,33 @@ function validateEnteredUserName() {
   xhttp.send();
   
 }
+
+function checkCurrentPwd() {
+  var nextButton = document.getElementById("nextButton");
+  nextButton.setAttribute("onmousedown","validatePassword()");
+}
+
+function validatePassword() {
+  var password = document.getElementById("touchscreenInput" + tstCurrentPage).value;
+
+  var xhttp = new XMLHttpRequest();
+  xhttp.onreadystatechange = function() {
+    if (this.readyState == 4 && (this.status == 201 || this.status == 200)) {
+      var obj = JSON.parse(this.responseText);
+
+      if(obj.valid == "true" || obj.valid == true){
+        gotoNextPage();
+      }else{
+        showMessage("Current password is wrong");
+      }
+
+    }
+  };
+  xhttp.open("POST", "/validate_password/" + password, true);
+  //xhttp.setRequestHeader('Content-type', "application/json");
+  xhttp.send();
+}
+
 </script>
 
 <% #= error_messages_for 'user' %>
@@ -33,6 +60,12 @@ function validateEnteredUserName() {
         <%= @username = User.all(:order =>'username').map{|u|[u.username]}
            select(:user, :username, @username,{},{:include_blank => true ,:textCase => "lower" ,:validationRule =>"\\w{6}\\w*" ,:validationMessage => "Username must be at least SIX characters long"})%>
   <%when "change_password"%>
+      <%= password_field 'user', 'current_password', 
+      :helpText => 'Current Password' ,
+      :textCase =>"lower", 
+      :tt_onload => "checkCurrentPwd();",
+      :value =>"" %></p>
+
       <p><label for="user_plain_password">Password</label><br/>
       <%= password_field 'user', 'plain_password', :xhelpText => 'Password' ,:textCase =>"lower", :validationRule => "\\w{4}\\w*", :validationMessage => "Password less than six characters", :value =>"", :minlength => 6 %></p>
 
