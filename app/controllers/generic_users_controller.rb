@@ -546,7 +546,9 @@ class GenericUsersController < ApplicationController
 
   def validate_password
     password = params[:password] ||= ''
-    acc = User.authenticate(User.current.username, params[:password])
+    user_id = params[:user_id]
+
+    acc = User.authenticate(User.find(user_id).username, params[:password])
     render json: {valid: acc.blank? ? false : true}
   end
 
