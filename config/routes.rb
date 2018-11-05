@@ -30,6 +30,7 @@ Rails.application.routes.draw do
   
   get '/user/username', controller: 'users', action: 'username'
   get '/user/change_password', controller: 'users', action: 'change_password'
+  post '/user/change_password', controller: 'users', action: 'change_password'
 
   resources :dispensations, collection: {quantities: :get}
   resources :barcodes, collection: {label: :get}
