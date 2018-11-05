@@ -285,7 +285,7 @@ class GenericUsersController < ApplicationController
   end
 
   def change_password
-    @user = RawUser.find(params[:id])
+    @user = User.find(params[:id])
 
     unless request.get?
       if (params[:user][:plain_password] != params[:user_confirm][:password])
@@ -293,15 +293,19 @@ class GenericUsersController < ApplicationController
         redirect_to :action => 'new'
         return
       else
-        params[:user][:password] = params[:user][:plain_password]
-        params[:user][:plain_password] = nil
-        if @user.update_attributes(params[:user].permit!)
+        #params[:user][:password] = params[:user][:plain_password]
+        #params[:user][:plain_password] = nil
+        password = User.encrypt(params[:user][:plain_password], @user.salt)
+
+        if (@user.update_columns(:password => password))
+          sign_in(@user, :bypass => true)
           flash[:notice] = "Password successfully changed"
           redirect_to :action => "show",:id => @user.id
           return
         else
           flash[:notice] = "Password change failed"
         end
+        
       end
     end
 
