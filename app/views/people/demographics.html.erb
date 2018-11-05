@@ -74,33 +74,35 @@
       </td>
     </tr>
 
-    <tr>
-      <th>Regiment ID</th>
-      <td class="data"><%=@patient_bean.regiment_id%></td>
-      <td><%= link_to "Edit",
-          "/patients/mastercard_modify?field=regiment_id&id=#{@person.id}&from_demo=true",
-          :class => "anchor_class" %>
-      </td>
-    </tr>
+    <% if military_site? %>
+      <tr>
+        <th>Regiment ID</th>
+        <td class="data"><%=@patient_bean.regiment_id%></td>
+        <td><%= link_to "Edit",
+            "/patients/mastercard_modify?field=regiment_id&id=#{@person.id}&from_demo=true",
+            :class => "anchor_class" %>
+        </td>
+      </tr>
 
-    <tr>
-      <th>Date Joined Military</th>
-      <td class="data"><%=@patient_bean.date_joined_military %></td>
-      <td><%= link_to "Edit",
-          "/patients/mastercard_modify?field=date_joined_military&id=#{@person.id}&from_demo=true",
-          :class => "anchor_class" %>
-      </td>
-    </tr>
+      <tr>
+        <th>Date Joined Military</th>
+        <td class="data"><%=@patient_bean.date_joined_military %></td>
+        <td><%= link_to "Edit",
+            "/patients/mastercard_modify?field=date_joined_military&id=#{@person.id}&from_demo=true",
+            :class => "anchor_class" %>
+        </td>
+      </tr>
 
-    <tr>
-      <th>Military Rank</th>
-      <td class="data"><%=@patient_bean.military_rank %></td>
-      <td><%= link_to "Edit",
-          "/patients/mastercard_modify?field=military_rank&id=#{@person.id}&from_demo=true",
-          :class => "anchor_class" %>
-      </td>
-    </tr>
-
+      <tr>
+        <th>Military Rank</th>
+        <td class="data"><%=@patient_bean.military_rank %></td>
+        <td><%= link_to "Edit",
+            "/patients/mastercard_modify?field=military_rank&id=#{@person.id}&from_demo=true",
+            :class => "anchor_class" %>
+        </td>
+      </tr>
+    <% end %>
+      
     <tr>
       <th>Date of birth</th>
       <td class="data"><%=@patient_bean.birth_date%></td>
