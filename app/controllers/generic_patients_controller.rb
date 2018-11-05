@@ -756,7 +756,12 @@ EOF
       end
     else
       @patient_id = params[:patient_id]
-      save_mastercard_attribute(params)
+      result = save_mastercard_attribute(params)
+      if result.to_s.match(/birthdate error/i)
+        flash[:notice] = "Invalid birthdate"
+        redirect_to(request.referer) and return
+      end
+
       if params[:source].to_s == "opd"
         redirect_to "/patients/opdcard/#{@patient_id}" and return
       elsif params[:from_demo] == "true"
@@ -2916,6 +2921,8 @@ EOF
         if birthday_params["birth_year"] == "Unknown"
           PatientService.set_birthdate_by_age(patient.person, birthday_params["age_estimate"])
         else
+          birth_date = "#{birthday_params["birth_year"]}-#{birthday_params["birth_month"]}-#{birthday_params["birth_day"]}".to_date rescue nil
+          return "birthdate error" if birth_date.blank?
           PatientService.set_birthdate(patient.person, birthday_params["birth_year"], birthday_params["birth_month"], birthday_params["birth_day"])
         end
         patient.person.birthdate_estimated = 1 if params["birthdate_estimated"] == 'true'
@@ -2964,7 +2971,7 @@ EOF
         PersonAddress.create(:person_id => patient.id,
           :address1 => address2 )
       else
-        addresses.update_attributes(address2)
+        addresses.update_attributes(address2.permit!)
       end
         
     when "ta"
@@ -2975,7 +2982,7 @@ EOF
         PersonAddress.create(:person_id => patient.id,
           :county_district => county_district)
       else
-        addresses.update_attributes(county_district)
+        addresses.update_attributes(county_district.permit!)
       end
 
       when "home_district"
