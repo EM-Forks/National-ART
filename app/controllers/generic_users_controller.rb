@@ -205,7 +205,12 @@ class GenericUsersController < ApplicationController
     username = params[:user]['username'] rescue current_user.username
 
     if username
-      @user.update_attributes(:username => username)
+
+      if !(@user.update_attributes(:username => username))
+        flash[:error] = @user.errors.full_messages.join("<br />")
+        redirect_to :action => 'show', :id => @user.id and return
+      end
+
     end
 
     PersonName.where(["voided = 0 AND person_id = ?",@user.person_id]).each do | person_name |
