@@ -55,12 +55,11 @@
 
 <div class="container">
   <table>
-
     <tr>
       <th>Name</th>
       <td class="data"><%=@patient_bean.name%></td>
       <td><%= link_to "Edit", 
-          "/patients/mastercard_modify?field=name&id=#{@person.id}&from_demo=true",
+          "/patients/mastercard_modify?field=name&id=#{@person.id}&from_demo=true&given_name=#{@patient_bean.first_name}&family_name=#{@patient_bean.last_name}",
           :class => "anchor_class" %>
       </td>
     </tr>
