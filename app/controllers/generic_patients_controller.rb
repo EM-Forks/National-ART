@@ -2912,7 +2912,7 @@ EOF
       permited_params = params.permit!
       patient.patient_identifiers.create!(permited_params[:identifiers])
     when "name"
-      names_params =  {"given_name" => params[:given_name].to_s,"family_name" => params[:family_name].to_s}
+      names_params =  {"given_name" => params[:given_name].to_s, "middle_name" => params[:middle_name].to_s, "family_name" => params[:family_name].to_s}
       patient.person.names.first.update_attributes(names_params) if names_params
     when "age"
       birthday_params = params[:person]

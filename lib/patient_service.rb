@@ -1804,6 +1804,7 @@ EOF
     patient.name = names[names.length > 1 ? (names.length - 1) : 0].given_name + ' ' + names[names.length > 1 ? (names.length - 1) : 0].family_name rescue nil
 		patient.first_name = names[names.length > 1 ? (names.length - 1) : 0].given_name rescue nil
 		patient.last_name = names[names.length > 1 ? (names.length - 1) : 0].family_name rescue nil
+    patient.middle_name = names[names.length > 1 ? (names.length - 1) : 0].middle_name rescue nil
     patient.sex = sex(person)
     if age(person, current_date).blank?
       patient.age = 0
