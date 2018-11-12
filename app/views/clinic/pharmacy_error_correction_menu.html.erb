@@ -20,8 +20,7 @@
 </style>
 
 <form method="POST" action="/clinic/select_pharmacy_obs_date">
-
-  <%= select_tag "drug_name", options,
+  <%= select_tag "drug_name", options.html_safe,
     {
     :id => "select_drugs",
     :field_type => 'alpha',
