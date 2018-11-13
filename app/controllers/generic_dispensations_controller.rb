@@ -296,7 +296,8 @@ class GenericDispensationsController < ApplicationController
    
     (observations || []).each do |obs|
       next unless obs.concept_id == con_id
-      order = Order.find(obs.order_id)
+      order = Order.find(obs.order_id) rescue nil
+      next if order.blank?
       drug_order = order.drug_order
       quantity = drug_order.quantity.to_f rescue 0.0
       if quantity == 0.0
