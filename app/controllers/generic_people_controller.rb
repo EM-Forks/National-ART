@@ -1840,8 +1840,7 @@ EOF
     @patient_identifiers = LabController.new.id_identifiers(@patient)
     results_available = 'false'
     @data = {}
-
-
+    
     if national_lims_activated
       rs = latest_lims_vl(@patient)    
       if rs != nil
@@ -1862,11 +1861,12 @@ EOF
           end
         end
       else       
-        rs = get_vl_with_results(@patient)
+        rs = get_vl_with_results(@patient)      
+        
         if rs != nil
           vl_result = rs[0]
           vl_latest_date = rs[1].strftime("%d-%b-%Y")
-          date_vl_result_given = rs[2].strftime("%d-%b-%Y")
+          date_vl_result_given = rs[2].strftime("%d-%b-%Y")          
           value = vl_result.split(vl_result[0,1])[1]
           high_vl = true
           if (value.to_i < 1000)

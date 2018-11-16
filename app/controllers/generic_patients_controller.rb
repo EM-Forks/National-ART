@@ -4186,7 +4186,7 @@ EOF
     identifier_types = PatientIdentifierType.where(["name IN (?)", id_types]).collect{| type |type.id }
 
     if national_lims_activated
-          
+      
           da = latest_lims_vl(@patient)               
           if da == nil
             da = get_vl_with_results(@patient)   

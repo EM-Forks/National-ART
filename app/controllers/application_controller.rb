@@ -100,10 +100,11 @@ class ApplicationController < GenericApplicationController
     national_id_type = PatientIdentifierType.find_by_name("National id").id
     npid = patient.patient_identifiers.find_by_identifier_type(national_id_type).identifier
     patient_id = patient.patient_id
-
-    da = Order.find_by_sql("SELECT accession_number AS tracking_number,date_created AS dat_created, date_voided AS dat_voided FROM orders WHERE patient_id ='#{patient_id}' AND voided = '1' ORDER BY date_created DESC LIMIT 1")[0]
-    
+    or_type = OrderType.find_by_name('Lab')['order_type_id']
+    da = Order.find_by_sql("SELECT accession_number AS tracking_number,date_created AS dat_created, date_voided AS dat_voided FROM orders WHERE patient_id ='#{patient_id}' AND  voided = '1' AND orders.order_type_id = '4' ORDER BY date_created DESC LIMIT 1")[0]
+   
     if !da.blank? && !da['tracking_number'].blank?
+     
       url = "#{settings['nlims_controller_ip']}/api/#{settings['nlims_api_version']}/query_results_by_tracking_number/#{da['tracking_number']}"
       date_created = da['dat_created']
       date_voided = da['dat_voided']
@@ -113,11 +114,13 @@ class ApplicationController < GenericApplicationController
         token: token_
       }
       if validate_nlims_token == true      
-        res =  JSON.parse(RestClient.get(url,headers))
+        res =  JSON.parse(RestClient.get(url,headers))        
         if res['error'] == false
-          latest_result = res['data']['results']['Viral Load']['Viral Load']      
-        end
-        return [latest_result,date_created,date_voided]
+          latest_result = res['data']['results']['Viral Load']['Viral Load']
+          return [latest_result,date_created,date_voided]
+        else
+          return nil      
+        end        
       else
         if re_authenticate_to_nlims == true
           token_ = File.read("#{Rails.root}/tmp/token")
@@ -127,9 +130,11 @@ class ApplicationController < GenericApplicationController
           }
           res =  JSON.parse(RestClient.get(url,headers))
           if res['error'] == false
-            latest_result = res['data']['results']['Viral Load']['Viral Load']      
-          end        
-          return [latest_result,date_created,date_voided]
+            latest_result = res['data']['results']['Viral Load']['Viral Load'] 
+            return [latest_result,date_created,date_voided]     
+          else
+            return nil
+          end                  
         end
       end
     else
