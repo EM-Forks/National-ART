@@ -2,10 +2,10 @@ class GenericPatientsController < ApplicationController
   before_action :find_patient, :except => [:void]
 
   def show
-    if (params[:tracking_number] && params[:tracking_number] != false) && (params[:date_created] && params[:couch_id])
-    
-        rd = Order.find_by(:accession_number => params[:tracking_number])       
-        if rd == nil         
+        #rd = Order.where(:accession_number => params[:tracking_number])  
+        rd = Order.find_by_sql("SELECT * FROM orders WHERE accession_number='#{params[:tracking_number]}'")
+        if rd.length == 0      
+            
           order_type = OrderType.where(:name => 'Lab')[0]['order_type_id']
           tracking_number = params[:tracking_number]
           couch_id = params[:couch_id]
@@ -55,8 +55,7 @@ class GenericPatientsController < ApplicationController
           ) 
           
         end        
-    end
-
+ 
     current_state = tb_status(@patient).downcase
     @show_period = false
     @show_period = true if current_state.match(/currently in treatment/i)

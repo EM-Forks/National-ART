@@ -22,6 +22,7 @@ class ApplicationController < GenericApplicationController
     patient_id = patient.patient_id
     or_type = OrderType.find_by_name('Lab')['order_type_id']
     da = Order.find_by_sql("SELECT accession_number AS tracking_number,date_created AS dat_created FROM orders WHERE patient_id ='#{patient_id}' AND (voided = '0' AND order_type_id ='#{or_type}') ORDER BY date_created DESC LIMIT 1")[0]
+    dat = Order.find_by_sql("SELECT accession_number AS tracking_number,date_created AS dat_created, date_voided AS dat_voided FROM orders WHERE patient_id ='#{patient_id}' AND  voided = '1' AND orders.order_type_id = '4' ORDER BY date_created DESC LIMIT 1")[0]
    
     if !da.blank? && !da['tracking_number'].blank?
       url = "#{settings['nlims_controller_ip']}/api/#{settings['nlims_api_version']}/query_results_by_tracking_number/#{da['tracking_number']}"
@@ -31,7 +32,12 @@ class ApplicationController < GenericApplicationController
         content_type: 'application/json',
         token: token_
       }
-     
+      if !dat.blank? && !dat['tracking_number'].blank?
+        if da['dat_created'] < dat['dat_created']
+          return nil
+        end
+      end
+
       if validate_nlims_token == true
           res =  JSON.parse(RestClient.get(url,headers))
           
