@@ -2,6 +2,60 @@ class GenericPatientsController < ApplicationController
   before_action :find_patient, :except => [:void]
 
   def show
+    if (params[:tracking_number] && params[:tracking_number] != false) && (params[:date_created] && params[:couch_id])
+    
+        rd = Order.find_by(:accession_number => params[:tracking_number])       
+        if rd == nil         
+          order_type = OrderType.where(:name => 'Lab')[0]['order_type_id']
+          tracking_number = params[:tracking_number]
+          couch_id = params[:couch_id]
+          date_created = params[:date_created]
+          patient_id_ = params[:id]             
+     
+          datetime = session[:datetime].present? ? session[:datetime].to_date : Time.now
+          patient_id = patient_id_
+          encounter_type = EncounterType.find_by_name("Lab").id
+          patient = Patient.find(patient_id)
+          #enc = patient.encounters.current.find_by_encounter_type(encounter_type)
+        
+          #enc ||= patient.encounters.create(:encounter_type => encounter_type,:encounter_datetime=>datetime)
+          #creating encounter for viral load request
+          enc = Encounter.new
+          enc.patient_id = patient.id
+          enc.encounter_type = encounter_type
+          enc.encounter_datetime = datetime
+          enc.save
+          #creating obaservation here
+          cp = Concept.find_by_name("Hiv viral load").concept_id
+          obs = Observation.new
+          obs.person_id = patient_id
+          obs.creator = current_user.id
+          obs.location_id = Location.current_location
+          obs.value_text = "Request"
+          obs.concept_id = cp
+          obs.encounter_id = enc.id
+          obs.obs_datetime = datetime
+          obs.save
+
+          uuid = Order.get_uuid     
+          Order.create(          
+            order_type_id: order_type,
+            concept_id: cp,
+            orderer: current_user.user_id,
+            encounter_id: enc.id,
+            instructions: couch_id,
+            start_date: date_created,
+            discontinued: '0',
+            creator: current_user.user_id,
+            date_created: date_created,
+            voided: '0',
+            patient_id: patient_id,
+            accession_number: tracking_number,
+            uuid: uuid
+          ) 
+          
+        end        
+    end
 
     current_state = tb_status(@patient).downcase
     @show_period = false
@@ -92,10 +146,8 @@ The following block of code should be replaced by a more cleaner function
         AND o.voided = 0)",regimen_category.id, @patient.id]).value_text rescue nil
       
       identifier_types = ["Legacy Pediatric id","National id","Legacy National id","Old Identification Number"]
-
       patient_identifiers = LabController.new.id_identifiers(@patient)
       if show_lab_results
-
         cd4_results = Lab.latest_result_by_test_type(@patient, 'CD4', patient_identifiers) rescue nil
         @cd4_results = cd4_results
         @cd4_latest_date = cd4_results[0].split('::')[0].to_date rescue nil
@@ -103,8 +155,28 @@ The following block of code should be replaced by a more cleaner function
         @cd4_modifier = cd4_results[1]["Range"] rescue nil
 
         if national_lims_activated
-          @vl_modifier, @vl_latest_result, @vl_latest_date = latest_lims_vl(@patient)
-          @vl_results = true if !@vl_latest_result.blank?
+          da = latest_lims_vl(@patient)               
+          if da == nil
+            da = get_vl_with_results(@patient)     
+            if da == nil
+              @vl_latest_result = 'Not Requasted'      
+              @vl_results = false 
+              @vl_results_ready = false 
+              @vl_latest_date = "" 
+            else
+              @vl_latest_result = da[0]        
+              @vl_results = false if !@vl_latest_result.blank?
+              @vl_results_ready = false if !@vl_latest_result.blank?  
+              @vl_latest_date = da[1].to_s     
+            #[latest_result,date_created,date_voided]
+            end
+          else
+            @vl_latest_result = da[0]        
+            @vl_results = true if !@vl_latest_result.blank?
+            @vl_results_ready = true if !@vl_latest_result.blank?  
+            @vl_latest_date = da[1].to_s          
+          end
+         
         else
           vl_results = Lab.latest_result_by_test_type(@patient, 'HIV_viral_load', patient_identifiers) rescue nil
           @vl_results = vl_results
@@ -118,19 +190,7 @@ The following block of code should be replaced by a more cleaner function
 											SELECT patient_id, current_state_for_program(patient_id, 1, '#{session_date}') AS state, c.name as status
 											FROM patient p INNER JOIN program_workflow_state pw ON pw.program_workflow_state_id = current_state_for_program(patient_id, 1, '#{session_date}')
 											INNER JOIN concept_name c ON c.concept_id = pw.concept_id where p.patient_id = '#{@patient.patient_id}'").first.status rescue "Unknown"
-      ####################
-
-      data = []
-      if national_lims_activated
-        settings = YAML.load_file("#{Rails.root}/config/lims.yml")[Rails.env]
-        national_id_type = PatientIdentifierType.find_by_name("National id").id
-        npid = @patient.patient_identifiers.find_by_identifier_type(national_id_type).identifier
-        url = settings['lims_national_dashboard_ip'] + "/api/vl_result_by_npid?npid=#{npid}"
-
-        data = JSON.parse(RestClient.get(url)) rescue []
-      end
-
-      @vl_results_ready = data.length > 0
+      ####################     
 
       render :template => 'patients/index', :layout => false
     end
@@ -281,8 +341,20 @@ The following block of code should be replaced by a more cleaner function
 		lims_link = nil
 		if national_lims_activated
       lims_link = YAML.load_file("#{Rails.root}/config/lims.yml")[Rails.env]['new_order_ip']+"/user/ext"
-			npid = patient.patient_identifiers.find_by_identifier_type(3).identifier
-			lims_link += "?intent=new_order&username=#{User.current.username}&return_path=#{request.referrer}&name=#{User.current.name}&location=#{Location.current_location.name}&identifier=#{npid}&tk=#{User.current.authentication_token}".gsub(/\s+/, '%20')
+      npid = patient.patient_identifiers.find_by_identifier_type(3).identifier
+      p_details = Patient.find_by_sql("SELECT person.gender,person.birthdate,person_name.given_name,person_name.family_name,person_address.address1
+                                      FROM patient
+                                      INNER JOIN person ON patient.patient_id = person.person_id 
+                                      INNER JOIN person_name ON person_name.person_id = patient.patient_id
+                                      INNER JOIN person_address ON person_address.person_id = patient.patient_id
+                                      WHERE patient.patient_id ='#{params[:id]}'
+      ")
+     
+      gender = p_details[0]['gender']
+      dob = p_details[0]['birthdate'] 
+      p_name = p_details[0]['given_name'].to_s + "-" + p_details[0]['family_name'].to_s
+      addres = p_details[0]['address1']
+			lims_link += "?intent=new_order&username=#{User.current.username}&return_path=#{request.referrer}&name=#{User.current.name}&location=#{Location.current_location.name}&identifier=#{npid}&p_name=#{p_name}&gender=#{gender}&dob=#{dob}&address=#{addres}&tk=#{User.current.authentication_token}".gsub(/\s+/, '%20')
 	 	else 
 		  lims_ip = "http://localhost:3001"
 			lims_link = "#{lims_ip}/user/login"
@@ -4114,68 +4186,31 @@ EOF
     identifier_types = PatientIdentifierType.where(["name IN (?)", id_types]).collect{| type |type.id }
 
     if national_lims_activated
-      settings = YAML.load_file("#{Rails.root}/config/lims.yml")[Rails.env]
-      national_id_type = PatientIdentifierType.find_by_name("National id").id
-      npid = patient.patient_identifiers.find_by_identifier_type(national_id_type).identifier
-      url = settings['lims_national_dashboard_ip'] + "/api/vl_result_by_npid?npid=#{npid}&test_status=verified__reviewed"
-      trail_url = settings['lims_national_dashboard_ip'] + "/api/patient_lab_trail?npid=#{npid}"
+          
+          da = latest_lims_vl(@patient)               
+          if da == nil
+            da = get_vl_with_results(@patient)   
+            if da == nil        
+              @latest_result  = "Not Requested"  
+              @modifier = ''
+              @latest_date = "----------" 
+              @date_vl_result_given = "----------"     
+            else
+              @latest_result  = da[0]    
+              @modifier = ''
+              @latest_date = da[1]  
+              @date_vl_result_given = da[2]     
+            end
+          else
+            @latest_result  = da[0]        
+            @vl_results = true if !@vl_latest_result.blank?
+            @vl_results_ready = true if !@vl_latest_result.blank?  
+            @modifier = ''
+            @latest_date = da[1]            
+          end
 
-      data = JSON.parse(RestClient.get(url)) rescue []
-      @latest_date = data.last[0].to_date rescue nil
-      @latest_result = data.last[1]["Viral Load"] rescue nil
-
-      @latest_result = "Rejected" if (data.last[1]["Viral Load"] rescue nil) == "Rejected"
-
-      @modifier = '' #data.last[1]["Viral Load"].strip.scan(/\<\=|\=\>|\=|\<|\>/).first rescue 
-
-      @date_vl_result_given = nil
-      if ((data.last[2].downcase == "reviewed") rescue false)
-        @date_vl_result_given = Observation.find(:last, :conditions => ["
-          person_id =? AND concept_id =? AND value_text REGEXP ? AND DATE(obs_datetime) = ?", patient.id,
-            Concept.find_by_name("Viral load").concept_id, 'Result given to patient', data.last[3].to_date]).value_datetime rescue nil
-
-        @date_vl_result_given = data.last[3].to_date if @date_vl_result_given.blank?
-      end
-
-      #[["97426", {"result_given"=>"no", "result"=>"253522", "date_result_given"=>"", "date_of_sample"=>Sun, 17 Aug 2014, "second_line_switch"=>"no"}]]
-      trail = JSON.parse(RestClient.get(trail_url)) rescue []
-      
-			@vl_result_hash = []
-      (trail || []).each do |order|
-        results = order['results']['Viral Load']
-        if (order['sample_status'] || order['status']).match(/rejected|voided/i)
-          @vl_result_hash << [order['_id'], {"result_given" =>  'no',
-              "result" => (order['sample_status'] || order['status']).humanize,
-              "date_of_sample" => order['date_time'].to_date,
-              "date_result_given" => "",
-              "second_line_switch" => '?'
-            }
-          ]
-          next
-        end
-
-        next if results.blank?
-        timestamp = results.keys.sort.last rescue nil
-        next if (!(order['sample_status'] || order['status']).match(/rejected|voided/)) && (!['verified', 'reviewed'].include?(results[timestamp]['test_status'].downcase.strip) rescue true)
-        result = results[timestamp]['results']
-
-        date_given = nil
-        if ((results[timestamp]['test_status'].downcase.strip == "reviewed") rescue false)
-          date_given = Observation.where(["person_id =? AND concept_id =? AND value_text REGEXP ? AND DATE(obs_datetime) = ?", patient.id,
-              Concept.find_by_name("Viral load").concept_id, 'Result given to patient', timestamp.to_date]).last.value_datetime rescue nil
-
-          date_given = timestamp.to_date.to_date if date_given.blank?
-        end
-
-        @vl_result_hash << [order['_id'], {"result_given" => (results[timestamp]['test_status'].downcase.strip == 'reviewed' ? 'yes' : 'no'),
-            "result" => (result["Viral Load"] rescue nil),
-            "date_of_sample" => order['date_time'].to_date,
-            "date_result_given" => date_given,
-            "second_line_switch" => '?'
-          }
-        ]
-      end
-
+      @vl_result_hash = patient_vl_trail(patient)
+         
     else
       patient_identifiers = PatientIdentifier.where(["patient_id=? AND identifier_type IN (?)",
           patient.id,identifier_types]).collect{| i | i.identifier }
@@ -4191,12 +4226,14 @@ EOF
           Concept.find_by_name("Viral load").concept_id, 'Result given to patient']).last.value_datetime rescue nil
 
     end
-
+   
     @reason_for_art = PatientService.reason_for_art_eligibility(patient)
-    @vl_request = Observation.where(["person_id = ? AND concept_id = ? AND value_coded IS NOT NULL AND DATE(obs_datetime) <= ?",
+    @vl_request = Observation.where(["person_id = ? AND concept_id = ? AND value_text IS NOT NULL AND DATE(obs_datetime) <= ?",
         patient.patient_id, Concept.find_by_name("Viral load").concept_id,session_date]
     ).last.answer_string.squish.upcase rescue nil
-
+    if @vl_request != nil
+        @vl_request = "YES"
+    end
     @high_vl = true
 
     if ((!national_lims_activated && @latest_result.to_i < 1000) || (national_lims_activated && ((@latest_result.scan(/\d+/).first.to_i rescue 0) < 1000)))

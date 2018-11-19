@@ -82,7 +82,8 @@
   }
 
   function giveResultPath(){
-<%  person_id =  params[:patient_id] %>
+    <%  person_id =  params[:patient_id] %>
+    
     window.location = "/lab/give_result?patient_id=<%= person_id %>"
   }
 

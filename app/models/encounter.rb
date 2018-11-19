@@ -97,5 +97,10 @@ EOF
 
     return fast_track_encounters
   end
+
+  def self.get_uuid
+    res = Encounter.find_by_sql("SELECT uuid() AS uuid")[0]['uuid']
+    return res
+  end
   
 end

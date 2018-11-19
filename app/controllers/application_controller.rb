@@ -15,16 +15,188 @@ class ApplicationController < GenericApplicationController
   end
 
   def latest_lims_vl(patient)
+    
     settings = YAML.load_file("#{Rails.root.to_s}/config/lims.yml")[Rails.env]
     national_id_type = PatientIdentifierType.find_by_name("National id").id
     npid = patient.patient_identifiers.find_by_identifier_type(national_id_type).identifier
-    url = settings['lims_national_dashboard_ip'] + "/api/vl_result_by_npid?npid=#{npid}&test_status=verified__reviewed"
-    trail_url = settings['lims_national_dashboard_ip'] + "/api/patient_lab_trail?npid=#{npid}"
-    data = JSON.parse(RestClient.get(url)) rescue []
-    latest_date = data.last[0].to_date rescue nil
-    latest_result = data.last[1]["Viral Load"] rescue nil
-    modifier = ''
-    [modifier, latest_result, latest_date] rescue []
+    patient_id = patient.patient_id
+    or_type = OrderType.find_by_name('Lab')['order_type_id']
+    da = Order.find_by_sql("SELECT accession_number AS tracking_number,date_created AS dat_created FROM orders WHERE patient_id ='#{patient_id}' AND (voided = '0' AND order_type_id ='#{or_type}') ORDER BY date_created DESC LIMIT 1")[0]
+   
+    if !da.blank? && !da['tracking_number'].blank?
+      url = "#{settings['nlims_controller_ip']}/api/#{settings['nlims_api_version']}/query_results_by_tracking_number/#{da['tracking_number']}"
+      date_created = da['dat_created']
+      token_ = File.read("#{Rails.root}/tmp/token")
+      headers = {
+        content_type: 'application/json',
+        token: token_
+      }
+      
+      if validate_nlims_token == true
+          res =  JSON.parse(RestClient.get(url,headers))
+          if res['error'] == false
+            latest_result = res['data']['results']['Viral Load']['Viral Load']      
+          end 
+          
+          return [latest_result,date_created]
+      else
+        if re_authenticate_to_nlims == true
+          token_ = File.read("#{Rails.root}/tmp/token")
+          headers = {
+            content_type: 'application/json',
+            token: token_
+          }
+          res =  JSON.parse(RestClient.get(url,headers))
+          if res['error'] == false
+            latest_result = res['data']['results']['Viral Load']['Viral Load']      
+          end 
+          return [latest_result,date_created]
+        end
+      end
+    else 
+      return nil
+    end          
+    
+  end
+
+  def validate_nlims_token
+    settings = YAML.load_file("#{Rails.root.to_s}/config/lims.yml")[Rails.env]
+    token = File.read("#{Rails.root}/tmp/token")
+    headers = {
+      content_type: 'application/json',
+      token: token
+    }
+    url = "#{settings['nlims_controller_ip']}/api/#{settings['nlims_api_version']}/check_token_validity"
+    res =  JSON.parse(RestClient.get(url,headers))
+    if res['error'] == false
+      return true
+    else
+      return
+    end    
+  end
+
+  def re_authenticate_to_nlims
+    settings = YAML.load_file("#{Rails.root.to_s}/config/lims.yml")[Rails.env]
+    token = File.read("#{Rails.root}/tmp/token")
+    headers = {
+      content_type: 'application/json',
+      token: token
+    }
+    url = "#{settings['nlims_controller_ip']}/api/#{settings['nlims_api_version']}/re_authenticate/#{settings['nlims_custome_username']}/#{settings['nlims_custome_password']}"
+    res =  JSON.parse(RestClient.get(url,headers))
+    if res['error'] == false
+      tok = res['data']['token']
+      File.open("#{Rails.root}/tmp/token","w"){ |f|
+        f.write(tok)
+      }
+      return true
+    else
+      return
+    end    
+  end
+
+  def get_vl_with_results(patient)
+    settings = YAML.load_file("#{Rails.root.to_s}/config/lims.yml")[Rails.env]
+    national_id_type = PatientIdentifierType.find_by_name("National id").id
+    npid = patient.patient_identifiers.find_by_identifier_type(national_id_type).identifier
+    patient_id = patient.patient_id
+
+    da = Order.find_by_sql("SELECT accession_number AS tracking_number,date_created AS dat_created, date_voided AS dat_voided FROM orders WHERE patient_id ='#{patient_id}' AND voided = '1' ORDER BY date_created DESC LIMIT 1")[0]
+    
+    if !da.blank? && !da['tracking_number'].blank?
+      url = "#{settings['nlims_controller_ip']}/api/#{settings['nlims_api_version']}/query_results_by_tracking_number/#{da['tracking_number']}"
+      date_created = da['dat_created']
+      date_voided = da['dat_voided']
+      token_ = File.read("#{Rails.root}/tmp/token")
+      headers = {
+        content_type: 'application/json',
+        token: token_
+      }
+      if validate_nlims_token == true      
+        res =  JSON.parse(RestClient.get(url,headers))
+        if res['error'] == false
+          latest_result = res['data']['results']['Viral Load']['Viral Load']      
+        end
+        return [latest_result,date_created,date_voided]
+      else
+        if re_authenticate_to_nlims == true
+          token_ = File.read("#{Rails.root}/tmp/token")
+          headers = {
+            content_type: 'application/json',
+            token: token_
+          }
+          res =  JSON.parse(RestClient.get(url,headers))
+          if res['error'] == false
+            latest_result = res['data']['results']['Viral Load']['Viral Load']      
+          end        
+          return [latest_result,date_created,date_voided]
+        end
+      end
+    else
+      return nil
+    end
+  end
+
+  def patient_vl_trail(patient)
+    settings = YAML.load_file("#{Rails.root.to_s}/config/lims.yml")[Rails.env]
+    national_id_type = PatientIdentifierType.find_by_name("National id").id
+    npid = patient.patient_identifiers.find_by_identifier_type(national_id_type).identifier
+    url = "#{settings['nlims_controller_ip']}/api/#{settings['nlims_api_version']}/query_results_by_npid/#{npid}"
+    token_ = File.read("#{Rails.root}/tmp/token")
+    headers = {
+      content_type: 'application/json',
+      token: token_
+    }
+    if validate_nlims_token == true
+        res =  JSON.parse(RestClient.get(url,headers))
+        if !res.blank? && res['error'] == false
+          results = res['data']['results']
+          rv_data = []
+          results.each do |key, value|
+            tracking_number = key
+            rst_value = value['tests']['Viral Load']['test_result']['Viral Load'] rescue nil
+            ord = Order.find_by_sql("SELECT date_voided,date_created,voided FROM orders WHERE accession_number='#{tracking_number}'")
+            if !ord.blank?
+              date_voided = ord[0]['date_voided']
+              date_created = ord[0]['date_created']
+              if ord[0]['voided'] ==  1
+                rv_data.push([date_created.strftime("%d-%b-%y"),date_voided.strftime("%d-%b-%y"),rst_value,"Yes"])
+              else
+                rv_data.push([date_created.strftime("%d-%b-%y"),"------","Not Available","No"])
+              end
+            end
+          end      
+        end
+    else
+        if re_authenticate_to_nlims == true
+          token_ = File.read("#{Rails.root}/tmp/token")
+          headers = {
+            content_type: 'application/json',
+            token: token_
+          }
+          res =  JSON.parse(RestClient.get(url,headers))
+          if !res.blank? && res['error'] == false
+            results = res['data']['results']
+            rv_data = []
+            results.each do |key, value|
+              tracking_number = key
+              rst_value = value['tests']['Viral Load']['test_result']['Viral Load'] rescue nil
+              ord = Order.find_by_sql("SELECT date_voided,date_created,voided FROM orders WHERE accession_number='#{tracking_number}'")
+              if !ord.blank?
+                date_voided = ord[0]['date_voided']
+                date_created = ord[0]['date_created']
+                if ord[0]['voided'] ==  1
+                  rv_data.push([date_created.strftime("%d-%b-%y"),date_voided.strftime("%d-%b-%y"),rst_value,"Yes"])
+                else
+                  rv_data.push([date_created.strftime("%d-%b-%y"),date_voided.strftime("%d-%b-%y"),rst_value,"No"])
+                end
+              end
+            end      
+          end
+        end
+    end
+    
+    return rv_data
   end
 
   def todays_consultation_encounters(patient, session_date = Date.today)

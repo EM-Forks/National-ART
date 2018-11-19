@@ -256,7 +256,7 @@ class GenericLabController < ApplicationController
     redirect_to("/people/confirm?found_person_id=#{params[:patient_id]}") and return
   end
 
-  def result_given_to_patient
+  def result_given_to_patient  
     patient_id = params[:patient_id]
     date_or_year_given = params[:set_year]
     month_given = params[:set_month]
@@ -319,40 +319,12 @@ class GenericLabController < ApplicationController
     end
 
     if national_lims_activated
-      settings = YAML.load_file("#{Rails.root.to_s}/config/lims.yml")[Rails.env]
-
-      national_id_type = PatientIdentifierType.find_by_name("National id").id
-      npid = patient.patient_identifiers.find_by_identifier_type(national_id_type).identifier
-
-      get_url = settings['lims_national_dashboard_ip'] + "/api/vl_result_by_npid?npid=#{npid}&raw=true&test_status=verified"
-      data = JSON.parse(RestClient.get(get_url)) rescue []
-
-      if !data.blank?
-        result        = data['results']['Viral Load']
-        timestamp     = result.keys.sort.last
-        result        = result[timestamp]
-
-        order                          = {"_id"           => data["_id"],
-                                          "sample_status" => data["status"]}
-
-        h                              = {}
-        h['test_status']               = "reviewed"
-        h['remarks']                   = result['remarks'] rescue nil
-        h['datetime_started']          = result['datetime_started'] rescue nil
-        h['datetime_completed']        = result['datetime_completed'] rescue nil
-        h['who_updated']               = {}
-        who                            = current_user
-        h['who_updated']['first_name'] = who.name.strip.scan(/^\w+/).first
-        h['who_updated']['last_name']  = who.name.strip.scan(/\w+$/).last
-        h['who_updated']['ID_number']  = who.username
-
-        h['results']                   = result['results']
-        order['results']               = {}
-        order['results']["Viral Load"] = h
-
-        remote_post_url = "#{settings['central_repo']}/pass_json/"
-        RestClient::Request.execute(:method => 'post',  :url => remote_post_url, :payload => order.to_json, :headers => {"Content-Type" => "application/json"})
-      end
+      ord = Order.find_by(:order_id => Order.find_by_sql("SELECT order_id AS o_id FROM orders WHERE patient_id ='#{patient_id}' AND voided = 0 ORDER BY date_created DESC LIMIT 1")[0]['o_id'])
+      ord.voided = 1
+      ord.voided_by = current_user.user_id
+      ord.date_voided = date_given_result
+      ord.void_reason = 'result given'
+      ord.save()
     end
 
     unless params[:go_to_patient_dashboard].blank?

@@ -120,23 +120,24 @@ latest_result = results[1]["TestValue"] rescue nil
 
 <%= form_tag 'result_given_to_patient', :method => :post do %>
   <%
-  optionsString = "<option>" "" "</option>"
-  1.upto(12){ |number|
-    optionsString += "<option value = '" + number.to_s + "'>" + Date::MONTHNAMES[number] + "</option>"
-  }
-%>
+    optionsString = "<option>" "" "</option>"
+    1.upto(12){ |number|
+      optionsString += "<option value = '" + number.to_s + "'>" + Date::MONTHNAMES[number] + "</option>"
+    }
+  %>
 
   <%  day=Array.new(31){|d|d + 1 }
-  options = "<option>" "" "</option>"
-  day.each{ |number|
-    options += "<option value = '" + number.to_s + "'>" + number.to_s + "</option>"
-  }
-%>
+    options = "<option>" "" "</option>"
+    day.each{ |number|
+      options += "<option value = '" + number.to_s + "'>" + number.to_s + "</option>"
+    }
+  %>
+
   <%
-  today = Date.today.strftime("%d-%b-%Y").to_s
-  choices = [["Today", today]]
-  choices += (2011..Date.today.year).to_a.reverse
-%>
+    today = Date.today.strftime("%d-%b-%Y").to_s
+    choices = [["Today", today]]
+    choices += (2011..Date.today.year).to_a.reverse
+  %>
 
   <%= select_tag :set_year, options_for_select(choices),
     {
@@ -166,6 +167,7 @@ latest_result = results[1]["TestValue"] rescue nil
       :tt_onLoad => "validateDay();",
       :tt_onUnLoad => "resetKeyBoard();"
     })  %>
+
   <% if latest_result.to_i >= 1000 %>
     <%= select_tag(:counselling_done, options_for_select(['', 'Yes', 'No']),
       {
@@ -173,7 +175,9 @@ latest_result = results[1]["TestValue"] rescue nil
         :helpText => 'Enhanced adherent counselling done if viral load is > 1000?'
       })  %>
   <% end %>
+
   <%= hidden_field_tag("patient_id", params[:patient_id]) %>
+  <%= hidden_field_tag("tracking_number", params[:patient_id]) %>
 
   <% if params[:go_to_next_task] %>
     <%= hidden_field_tag "go_to_next_task", "true" %>

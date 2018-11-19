@@ -38,4 +38,8 @@ class Order < ActiveRecord::Base
     "#{drug_order}"
   end
   
+  def self.get_uuid
+    res = Order.find_by_sql("SELECT uuid() AS uuid")[0]['uuid']
+    return res
+  end
 end

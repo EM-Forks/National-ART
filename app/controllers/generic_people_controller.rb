@@ -449,7 +449,7 @@ class GenericPeopleController < ApplicationController
         end
       end
     end
-     
+   
     render :layout => 'report'
 	end
 
@@ -1843,27 +1843,43 @@ EOF
 
 
     if national_lims_activated
-      settings = YAML.load_file("#{Rails.root}/config/lims.yml")[Rails.env]
-      url = settings['lims_national_dashboard_ip'] + "/api/vl_result_by_npid?npid=#{@patient_identifiers}&test_status=verified__reviewed"
-
-      data = JSON.parse(RestClient.get(url)) rescue []
-
-      results_available = 'true' if ((!data.blank? && data.last[2].downcase == 'verified') rescue false)
-
-      vl_latest_date = data.last[0].to_date rescue nil
-      vl_result = data.last[1]["Viral Load"] rescue nil
-
-      vl_result = 'Rejected' if (data.last[1]['Viral Load'] rescue nil) == 'Rejected'
-
-      date_vl_result_given = nil
-      if ((data.last[2].downcase == 'reviewed') rescue false)
-        date_vl_result_given = Observation.where(['person_id =? AND concept_id =? AND value_text
-                                                                         REGEXP ? AND DATE(obs_datetime) = ?',@patient.id,
-            Concept.find_by_name('Viral load').concept_id,
-            'Result given to patient', data.last[3].to_date]
-        ).last.value_datetime rescue nil
-
-        date_vl_result_given = data.last[3].to_date if date_vl_result_given.blank?
+      rs = latest_lims_vl(@patient)    
+      if rs != nil
+        vl_result = rs[0]
+        vl_result = "<span style='font-weight: bold; color: red;'>(Requested)</span>" if vl_result == nil
+        vl_latest_date = rs[1].strftime("%d-%b-%Y")
+        date_vl_result_given = "<span style='font-weight: bold; color: red;'>(Result not available)</span>" if vl_result == "<span style='font-weight: bold; color: red;'>(Requested)</span>"
+        date_vl_result_given = "<span style='font-weight: bold; color: red;'>(Result not given)</span>" if vl_result != "<span style='font-weight: bold; color: red;'>(Requested)</span>"
+        results_available = true if vl_result != "<span style='font-weight: bold; color: red;'>(Requested)</span>"
+        if vl_result != nil
+          value = vl_result.split(vl_result[0,1])[1]
+          high_vl = true
+          if (value.to_i < 1000)
+            high_vl = false
+          end
+          if high_vl
+            vl_result = "<span style='color: red; font-weight: bolder;'>#{vl_result}</span>"
+          end
+        end
+      else       
+        rs = get_vl_with_results(@patient)
+        if rs != nil
+          vl_result = rs[0]
+          vl_latest_date = rs[1].strftime("%d-%b-%Y")
+          date_vl_result_given = rs[2].strftime("%d-%b-%Y")
+          value = vl_result.split(vl_result[0,1])[1]
+          high_vl = true
+          if (value.to_i < 1000)
+            high_vl = false
+          end
+          if high_vl
+            vl_result = "<span style='color: red; font-weight: bolder;'>#{vl_result}</span>"
+          end
+        else
+          vl_result = "<span style='font-weight: bold; color: red;'>(Not requested)</span>"
+          vl_latest_date = "------"
+          date_vl_result_given = "------"    
+        end
       end
     else
 

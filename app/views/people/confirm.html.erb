@@ -454,7 +454,7 @@
         vl_date = vl_data["vl_date"];
         vl_date_given = vl_data["vl_date_given"]; //results_available
         results_available = vl_data["results_available"];
-
+      
         give_result_button = document.getElementById("give_result_button");
         console.log(results_available);
         if (results_available === "false"){
@@ -632,25 +632,25 @@
     document.getElementById('vl_lab_trail').style.display='none';
   }
 
-  function getPatientVLTrail(){
+  function getPatientVLTrail(){ 
     jQuery.ajax({
       type: "POST",
       url: "/patients/get_patient_vl_trail",
       data: "patient_id=" + patientID,
-      success: function(results){
-        vl_data = JSON.parse(results);
+      success: function(results){        
+        vl_data = JSON.parse(results);            
         vl_tbody = document.getElementById('vl_tbody');
         vl_tbody.innerHTML = "";
         for (var i in vl_data){
-          date_of_sample = vl_data[i]["date_of_sample"];
-          result = vl_data[i]["result"];
-          result_given = vl_data[i]["result_given"];
-          date_result_given = vl_data[i]["date_result_given"];
-          switched_to_second_line = vl_data[i]["switched_to_second_line"];
+         
+          date_of_sample = vl_data[i][0];
+          result = vl_data[i][2];
+          result_given = vl_data[i][1];
+          date_result_given = vl_data[i][3];
+          switched_to_second_line = "------";
           if (date_result_given == null || date_result_given == ""){
             date_result_given = "-------";
           }
-
           tr = '<tr style="line-height: 3em;" class="vl_tbody">';
           tr += '<td style="border-left: 1px solid black;"><span><center>' + date_of_sample + '</center></span></td>';
           tr += '<td style="border-left: 1px solid black;"><span><center>' + result + '</center></span></td>';
@@ -663,7 +663,7 @@
         
       },
       error: function(e){
-        console.log(e);
+        alert(e.responseText);
       }
 
     });

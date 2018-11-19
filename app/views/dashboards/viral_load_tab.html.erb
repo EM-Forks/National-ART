@@ -183,7 +183,9 @@ div, table{
         <table style="position:absolute; left:14%; width: 80%;">
           <tr>
             <td style="font-weight: bold; font-size: 1em; padding: 2px; ">Last Viral load </td>
+           
             <% unless @latest_result.blank?%>
+            
                 <% if @high_vl == true %>
                   <td style="color:red; font-weight: bold; font-size: 14px"><%= (@modifier + ' ' + @latest_result.to_s) rescue nil %></td>
                 <% elsif @latest_result.match(/rejected/i)%>
@@ -192,6 +194,7 @@ div, table{
                   <td style=""><%= (@modifier + ' ' + @latest_result.to_s) rescue nil %></td>
                 <% end %>
             <% else %>
+           
                 <% if @vl_request == "YES" || @repeat_vl_request == "REPEAT" %>
                   <td><span style="margin-left: 8%; font-weight: bold; color: red">(Requested)</span></td>
                 <%  else %>
@@ -202,14 +205,15 @@ div, table{
           <tr>
             <td style="font-weight: bold; font-size: 1em; padding: 2px; ">Date of test</td>
             <% unless  @latest_date.blank?%>
-            <td style=""><%= @latest_date.strftime("%d-%b-%Y") rescue nil %></td>
+              <td style=""><%= @latest_date.strftime("%d-%b-%Y") rescue nil %></td>
             <% else %>
               <td id="" style="">----------------------------</td>
             <% end %>
           </tr>
           <tr>
               <td style="font-weight: bold; font-size: 1em; padding: 2px; max-width: 61%;">Date given to patient</td>
-              <% if vl_available_and_result_given(@patient) == true %>
+             
+              <% if vl_available_and_result_given(@patient) == true || !@date_vl_result_given.blank? %>
                   <td style=""><%= @date_vl_result_given.strftime("%d-%b-%Y") rescue '----------------------------'%></td>
               <% else %>
                   <td id="" style="">----------------------------</td>
@@ -367,16 +371,16 @@ div, table{
               <td><span><center>Date result given</center></span></td>
               <td><span><center>Switched to second line?</center></span></td>
             </tr>
-          <% (@vl_result_hash || {}).each do |sample_id, result| %>
-            <% value_modifier = result["range"] %>
+          <% (@vl_result_hash || {}).each do |result| %>
+           
             <tr style="line-height: 3em;" class="vl_tbody">
               <td style="border-left: 1px solid black;">
-                <span><center>  <%= result["date_of_test"].strftime("%d-%b-%Y") rescue "" %></center></span>
+                <span><center>  <%= result[0] rescue "" %></center></span>
               </td>
-              <td><span><center><%= value_modifier.to_s + " " +  result["result"].to_s %></center></span></td>
-              <td><span><center><%= result["result_given"].capitalize %></center></span></td>
-              <td><span><center><%= result["date_result_given"].strftime("%d-%b-%Y") rescue "------" %></center></span></td>
-              <td><span><center><%= result["second_line_switch"].capitalize %></center></span></td>
+              <td><span><center><%= result[2] rescue "------" %></center></span></td>
+              <td><span><center><%= result[3].capitalize %></center></span></td>
+              <td><span><center><%= result[1] rescue "------" %></center></span></td>
+              <td><span><center><%= result["second_line_switch"].capitalize rescue "------" %></center></span></td>
             </tr>
           <% end %>
           </table>

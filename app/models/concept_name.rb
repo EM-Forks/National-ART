@@ -27,5 +27,6 @@ class ConceptName < ActiveRecord::Base
                         }.compact rescue []
   end
 
+  
 end
 
