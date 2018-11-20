@@ -10,6 +10,7 @@ Rails.application.routes.draw do
   post '/logout', controller:  'sessions', action:  'destroy'
   get  '/clinic', controller: 'clinic', action: 'index'
   get '/patient/create_remote',  controller: 'people', action: 'create_remote'
+  post '/patient/create_remote',  controller: 'people', action: 'create_remote'
   get '/encounters/new/:encounter_type', controller:  'encounters', action: 'new'
   post '/encounters/new/:encounter_type', controller:  'encounters', action: 'new'
   get '/encounters/new/:encounter_type/:id', controller: 'encounters', action: 'new'
