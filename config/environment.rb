@@ -6,7 +6,7 @@ Rails.application.initialize!
 
 # Specifies gem version of Rails to use when vendor/rails is not present
 RAILS_GEM_VERSION = '5.2.0' unless defined? RAILS_GEM_VERSION
-ART_VERSION = "v3.7.8" #`git describe`.gsub("\n", "")
+ART_VERSION = "v3.7.9" #`git describe`.gsub("\n", "")
 
 # Bootstrap the Rails environment, frameworks, and default configuration
 require File.join(File.dirname(__FILE__), 'boot')
