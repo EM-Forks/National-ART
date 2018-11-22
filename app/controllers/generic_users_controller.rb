@@ -205,7 +205,12 @@ class GenericUsersController < ApplicationController
     username = params[:user]['username'] rescue current_user.username
 
     if username
-      @user.update_attributes(:username => username)
+
+      if !(@user.update_attributes(:username => username))
+        flash[:error] = @user.errors.full_messages.join("<br />")
+        redirect_to :action => 'show', :id => @user.id and return
+      end
+
     end
 
     PersonName.where(["voided = 0 AND person_id = ?",@user.person_id]).each do | person_name |
@@ -285,7 +290,7 @@ class GenericUsersController < ApplicationController
   end
 
   def change_password
-    @user = RawUser.find(params[:id])
+    @user = User.find(params[:id])
 
     unless request.get?
       if (params[:user][:plain_password] != params[:user_confirm][:password])
@@ -293,15 +298,19 @@ class GenericUsersController < ApplicationController
         redirect_to :action => 'new'
         return
       else
-        params[:user][:password] = params[:user][:plain_password]
-        params[:user][:plain_password] = nil
-        if @user.update_attributes(params[:user].permit!)
+        #params[:user][:password] = params[:user][:plain_password]
+        #params[:user][:plain_password] = nil
+        password = User.encrypt(params[:user][:plain_password], @user.salt)
+
+        if (@user.update_columns(:password => password))
+          sign_in(@user, :bypass => true)
           flash[:notice] = "Password successfully changed"
           redirect_to :action => "show",:id => @user.id
           return
         else
           flash[:notice] = "Password change failed"
         end
+        
       end
     end
 

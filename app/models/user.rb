@@ -10,7 +10,8 @@ class User < ActiveRecord::Base
 	include Openmrs
 
 	before_save :set_password, :before_create
-	
+	validates_uniqueness_of :username
+  
 	attr :plain_password
 	#cattr_accessor :current_user
 	#attr_accessor :plain_password

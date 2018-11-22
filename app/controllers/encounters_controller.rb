@@ -2238,7 +2238,7 @@ EOF
     result["on_cpt"] = cpt_ids.join(",")
     result["arv_before_visit_one"] = b4_visit_one.join(",")
     result["no_art"] = no_art.join(",")
-    render :text => result.to_json
+    render  json: result.to_json
   end
 
   def art_summary

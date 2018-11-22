@@ -9,6 +9,8 @@ Rails.application.routes.draw do
   get  '/login', controller: 'sessions', action: 'new'
   post '/logout', controller:  'sessions', action:  'destroy'
   get  '/clinic', controller: 'clinic', action: 'index'
+  get '/patient/create_remote',  controller: 'people', action: 'create_remote'
+  post '/patient/create_remote',  controller: 'people', action: 'create_remote'
   get '/encounters/new/:encounter_type', controller:  'encounters', action: 'new'
   post '/encounters/new/:encounter_type', controller:  'encounters', action: 'new'
   get '/encounters/new/:encounter_type/:id', controller: 'encounters', action: 'new'
@@ -30,6 +32,7 @@ Rails.application.routes.draw do
   
   get '/user/username', controller: 'users', action: 'username'
   get '/user/change_password', controller: 'users', action: 'change_password'
+  post '/user/change_password', controller: 'users', action: 'change_password'
 
   resources :dispensations, collection: {quantities: :get}
   resources :barcodes, collection: {label: :get}

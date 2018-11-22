@@ -5,7 +5,7 @@ class PatientBean
    :reg_type, :adherence, :patient_visits, :sputum_count, :end_date, :art_status, :encounter_id , :notes, :appointment_date,
    :home_district, :birth_date, :traditional_authority, :current_residence, :mothers_surname, :eid_number, :pre_art_number, :dead,
    :person_id, :national_id_with_dashes, :filing_number, :archived_filing_number, :age_in_months, :birthdate_estimated, :first_name,
-   :last_name, :cell_phone_number, :office_phone_number, :home_phone_number, :old_identification_number, :birthdate,
+   :last_name, :middle_name, :cell_phone_number, :office_phone_number, :home_phone_number, :old_identification_number, :birthdate,
    :regiment_id, :date_joined_military, :military_rank
 
  attr_accessor :patient_id,:arv_number, :national_id ,:name ,:age ,:sex, :init_wt, :init_ht ,

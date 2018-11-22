@@ -302,6 +302,25 @@ class GenericEncountersController < ApplicationController
     patient_id = @encounter.patient_id
     current_day = session[:datetime].to_date rescue Date.today
     patient = encounter.patient
+
+    if encounter.name.match(/HIV CLINIC REGISTRATION/i)
+      hiv_staging_encounter_type = EncounterType.find_by_name("HIV STAGING").id
+      vitals_encounter_type = EncounterType.find_by_name("vitals").id
+
+      hiv_staging_encounters = patient.encounters.where(["encounter_type =? AND DATE(date_created) =? 
+          AND TIME(encounter_datetime) =?", hiv_staging_encounter_type, current_day, "00:00:00"])
+
+      vitals_encounters = patient.encounters.where(["encounter_type =? AND DATE(date_created) =? 
+          AND TIME(encounter_datetime) =?", vitals_encounter_type, current_day, "00:00:00"])
+
+      hiv_staging_encounters.each do |hiv_staging_encounter|
+        hiv_staging_encounter.void
+      end
+
+      vitals_encounters.each do |vitals_encounter|
+        vitals_encounter.void
+      end
+    end
     
     if encounter.name == 'DISPENSING'
       if !(Patient.ever_had_dispensations(patient, current_day))
