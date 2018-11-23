@@ -420,7 +420,7 @@ class DdeController < ApplicationController
       li_elements += "<li value='#{doc_id}'>#{location_name}</li>"
     end
     li_elements += "<li></li>"
-    render :text => li_elements and return
+    render plain: li_elements and return
   end
 
   def dde_add_user
