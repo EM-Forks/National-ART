@@ -7,7 +7,7 @@ class HtnEncounterController < ApplicationController
     patient = Patient.find(params[:patient_id])
     @patient = patient
 		date = session[:datetime].blank? ? Date.today : session[:datetime]
-    @patient_eligible = patient.eligible_for_htn_screening(date)
+    @patient_eligible = patient.eligible_for_htn_screening(date.to_date)
     @patient_bean = PatientService.get_patient(@patient.person)
     if session[:datetime]
       @retrospective = true
