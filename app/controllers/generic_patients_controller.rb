@@ -4,7 +4,7 @@ class GenericPatientsController < ApplicationController
   def show
         #rd = Order.where(:accession_number => params[:tracking_number])  
         rd = Order.find_by_sql("SELECT * FROM orders WHERE accession_number='#{params[:tracking_number]}'")
-        if rd.length == 0      
+        if rd.length == 0  && !params[:tracking_number].blank?    
             
           order_type = OrderType.where(:name => 'Lab')[0]['order_type_id']
           tracking_number = params[:tracking_number]
