@@ -281,7 +281,7 @@ end -%>
 
 </script>
 <body onload = "setTimeout('setAttributes();', 300);">
-  <% form_tag "select", :method => :post do %>
+  <%= form_tag "select", :method => :post do %>
     <% if @results.blank? %>
 
       <% if @relation.blank? %>
