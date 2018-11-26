@@ -1,0 +1,13 @@
+development:
+ enable_lims: true
+ lims_national_dashboard_ip: 'http://localhost:3010'
+ new_order_ip: 'http://localhost:3011'
+ nlims_controller_ip: 'http://localhost:3010'
+ nlims_api_version: 'v1'
+ partner: 'BHT'
+ app_name: 'NART'
+ district: 'Lilongwe'
+ nlims_custome_password: 'nart'
+ nlims_custome_username: 'nart'
+ nlims_default_username: 'admin'
+ nlims_default_password: 'knock_knock'
