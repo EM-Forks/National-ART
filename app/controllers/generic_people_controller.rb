@@ -1842,15 +1842,15 @@ EOF
     @data = {}
     
     if national_lims_activated
-      rs = latest_lims_vl(@patient)    
+      rs = latest_lims_vl(@patient)             
       if rs != nil
         vl_result = rs[0]
-        vl_result = "<span style='font-weight: bold; color: red;'>(Requested)</span>" if vl_result == nil
+        vl_result = "<span style='font-weight: bold; color: red;'>(Requested)</span>" if vl_result == "results not available"
         vl_latest_date = rs[1].strftime("%d-%b-%Y")
         date_vl_result_given = "<span style='font-weight: bold; color: red;'>(Result not available)</span>" if vl_result == "<span style='font-weight: bold; color: red;'>(Requested)</span>"
         date_vl_result_given = "<span style='font-weight: bold; color: red;'>(Result not given)</span>" if vl_result != "<span style='font-weight: bold; color: red;'>(Requested)</span>"
         results_available = true if vl_result != "<span style='font-weight: bold; color: red;'>(Requested)</span>"
-        if vl_result != nil
+        if vl_result != "results not available"
           value = vl_result.split(vl_result[0,1])[1]
           high_vl = true
           if (value.to_i < 1000)
@@ -1860,9 +1860,9 @@ EOF
             vl_result = "<span style='color: red; font-weight: bolder;'>#{vl_result}</span>"
           end
         end
+  
       else       
-        rs = get_vl_with_results(@patient)      
-        
+        rs = get_vl_with_results(@patient)           
         if rs != nil
           vl_result = rs[0]
           vl_latest_date = rs[1].strftime("%d-%b-%Y")

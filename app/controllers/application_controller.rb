@@ -31,14 +31,16 @@ class ApplicationController < GenericApplicationController
         content_type: 'application/json',
         token: token_
       }
-      
+     
       if validate_nlims_token == true
           res =  JSON.parse(RestClient.get(url,headers))
-          if res['error'] == false
-            latest_result = res['data']['results']['Viral Load']['Viral Load']      
-          end 
           
-          return [latest_result,date_created]
+          if res['error'] == false
+            latest_result = res['data']['results']['Viral Load']['Viral Load']    
+            return [latest_result,date_created]  
+          elsif res['message'] == "results not available"
+            return ['results not available',date_created]
+          end         
       else
         if re_authenticate_to_nlims == true
           token_ = File.read("#{Rails.root}/tmp/token")
@@ -48,9 +50,11 @@ class ApplicationController < GenericApplicationController
           }
           res =  JSON.parse(RestClient.get(url,headers))
           if res['error'] == false
-            latest_result = res['data']['results']['Viral Load']['Viral Load']      
-          end 
-          return [latest_result,date_created]
+            latest_result = res['data']['results']['Viral Load']['Viral Load']     
+            return [latest_result,date_created]
+          else 
+            return nil 
+          end           
         end
       end
     else 

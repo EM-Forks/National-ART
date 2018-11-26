@@ -170,6 +170,8 @@ The following block of code should be replaced by a more cleaner function
               @vl_latest_date = da[1].to_s     
             #[latest_result,date_created,date_voided]
             end
+          elsif da[0] == "results not available"
+              @vl_results = false 
           else
             @vl_latest_result = da[0]        
             @vl_results = true if !@vl_latest_result.blank?
@@ -4184,10 +4186,9 @@ EOF
     @patient = patient
     id_types = ["Legacy Pediatric id","National id","Legacy National id","Old Identification Number"]
     identifier_types = PatientIdentifierType.where(["name IN (?)", id_types]).collect{| type |type.id }
-
-    if national_lims_activated
-      
-          da = latest_lims_vl(@patient)               
+   
+    if national_lims_activated      
+          da = latest_lims_vl(@patient)                   
           if da == nil
             da = get_vl_with_results(@patient)   
             if da == nil        
@@ -4201,6 +4202,9 @@ EOF
               @latest_date = da[1]  
               @date_vl_result_given = da[2]     
             end
+          elsif da[0] == "results not available"
+              @vl_request = "YES"
+              @latest_date = da[1]  
           else
             @latest_result  = da[0]        
             @vl_results = true if !@vl_latest_result.blank?
