@@ -33,3 +33,9 @@ Do a rails database migration to add a table which will be used to store dde use
 ```
   $ rails db:migrate
 ```
+
+### Put things together
+Copy dde_connection.yml.example to dde_connection.yml in the config folder:
+```
+  $ cd config && cp dde_connection.yml.example dde_connection.yml
+```
