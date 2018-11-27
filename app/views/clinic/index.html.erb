@@ -364,7 +364,7 @@ on the rest of the stations %>
 
     document.getElementById("alert-cover").style.display = 'inline';
     document.getElementById("feedback-popup").style.display = 'inline';
-  
+
     jQuery.ajax({
       type: "POST",
       url: "/notification_tracker/shown",
@@ -373,7 +373,7 @@ on the rest of the stations %>
         return;
       }
     });
-  
+
   }
 
   function viewIndividualStats() {
@@ -423,7 +423,7 @@ on the rest of the stations %>
   }
 
 </style>
-                
+
 <%if create_from_dde_server %>
 <script>
   tt_cancel_show = '/dde/search_by_name_and_gender'; //?identifier=' + this.value;
