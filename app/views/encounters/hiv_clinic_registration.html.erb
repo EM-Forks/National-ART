@@ -1728,13 +1728,16 @@
   :helpText => "Date of confirmatory HIV test"} %>
 
     <%= text_field_tag "year_confirmatory_hiv_test", nil,
-      {	:helpText => 'Confirmatory HIV test year',
-      :field_type => 'number',
-      :condition => '$("type_of_confirmatory_hiv_test").value != "NOT DONE"',
-      :tt_onLoad => "changeNextButtonForConfirmatoryYear(); changeAbsoluteMinForConfirmatoryYear();",
-      :absoluteMax => Date.today.year,
-      :tt_pageStyleClass => "Numeric NumbersOnly",
-      :id => "confirmatory_hiv_test_year"}  %>
+       {	:helpText => 'Confirmatory HIV test year',
+          :field_type => 'number',
+          :condition => '$("type_of_confirmatory_hiv_test").value != "NOT DONE"',
+          :tt_onLoad => "changeNextButtonForConfirmatoryYear(); changeAbsoluteMinForConfirmatoryYear();",
+          :absoluteMax => Date.today.year,
+          :min => 1995,
+          :validationRule => "^(19|20)\\d{2}$|Unknown",
+          :validationMessage => "Not a valid year",
+          :tt_pageStyleClass => "Numeric NumbersOnly",
+          :id => "confirmatory_hiv_test_year"}  %>
 
     <%= select_tag "month_confirmatory_hiv_test", month_name_options,
       {	:helpText => 'Confirmatory HIV test month',
@@ -2068,8 +2071,8 @@
       jQuery('#touchscreenInput'+ tstCurrentPage).attr("absoluteMin", year_started_art);
       jQuery('#touchscreenInput'+ tstCurrentPage).attr("min", year_started_art);
     }else{
-      jQuery('#touchscreenInput'+ tstCurrentPage).attr("absoluteMin", '1840');
-      jQuery('#touchscreenInput'+ tstCurrentPage).attr("min", '1940');
+      jQuery('#touchscreenInput'+ tstCurrentPage).attr("absoluteMin", birthYear);
+      jQuery('#touchscreenInput'+ tstCurrentPage).attr("min", birthYear);
     }
   }
 
@@ -2082,6 +2085,18 @@
 
     year_started_art = parseInt(jQuery('#year_started_art')[0].value);
     month_started_art = parseInt(jQuery('#month_started_art')[0].value);
+
+    if (confirmatoryYear == birthYear){
+        currentMonth = [];
+        start_point = birthMonth - 1;
+
+        for(var i = start_point; i < availableMonths.length; i++){
+            currentMonth.push(availableMonths[i]);
+        }
+        rule = currentMonth.join("|");
+        rule = rule + "|Unknown";
+        return $('touchscreenInput'+tstCurrentPage).setAttribute('validationRule',rule);
+    }
 
     if (confirmatoryYear == currYear){
       currentMonth = [];
@@ -2251,6 +2266,7 @@
         return $('touchscreenInput'+tstCurrentPage).setAttribute('absoluteMax',currDay);
       }
     }
+
   }
 
   function validateConfirmatoryDay(){
@@ -2270,6 +2286,12 @@
       if (confirmatoryMonth == currMonth){
         return $('touchscreenInput'+tstCurrentPage).setAttribute('absoluteMax',currDay);
       }
+    }
+
+    if (confirmatoryYear == birthYear) {
+          if (confirmatoryMonth == birthMonth){
+              return $('touchscreenInput'+tstCurrentPage).setAttribute('absoluteMin',birthDay);
+          }
     }
 
   }
