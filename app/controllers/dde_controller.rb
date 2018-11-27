@@ -342,6 +342,9 @@ class DdeController < ApplicationController
 	end
 
   def dde_login
+    program_id = YAML.load_file("#{Rails.root}/config/dde_connection.yml")[Rails.env]["program_id"]
+    dde_app_user = DdeApplicationUsers.find_by_program_id(program_id)
+    
     @dde_status = GlobalProperty.find_by_property('dde.status').property_value rescue ""
     @dde_status = 'Yes' if @dde_status.match(/ON/i)
     @dde_status = 'No' if @dde_status.match(/OFF/i)
@@ -356,12 +359,37 @@ class DdeController < ApplicationController
     
       if (dde_status == 'ON') #Do this part only when DDE is activated
         address = params[:dde_address].to_s + ":" + params[:dde_port].to_s
+
+        unless (dde_app_user.blank?)
+          #raise address.inspect
+          data = {
+            :username => dde_app_user.username,
+            :password => dde_app_user.password,
+            :address  => address
+          }
+
+          dde_token = DDEService.dde_login_from_params(data)
+
+          unless dde_token.blank?
+            dde_app_user.update_attributes(:port => params[:dde_port], 
+              :ipaddress => params[:dde_address], 
+              :creator => User.current.id)
+
+            global_property_dde_status = GlobalProperty.find_by_property('dde.status')
+            global_property_dde_status.property_value = dde_status
+            global_property_dde_status.save
+
+            redirect_to("/clinic") and return
+          end
+
+        end
+        
         data = {
           :username => params[:dde_username],
           :password => params[:dde_password],
           :address => address
         }
-        
+         
         dde_token = DDEService.dde_login_from_params(data)
 
         if dde_token.blank?
@@ -369,9 +397,24 @@ class DdeController < ApplicationController
           redirect_to("/dde/dde_login") and return
         else
           session[:dde_token] = dde_token
-          create_dde_properties(params)
-          redirect_to("/dde/dde_add_user") and return
+          #create_dde_properties(params, dde_status)
+          dde_username    = params[:dde_username]
+          dde_port        = params[:dde_port]
+          dde_ipaddress   = params[:dde_address]
+          
+          url = "/dde/dde_add_user?dde_token=#{dde_token}"
+          url += "&dde_username=#{dde_username}&dde_port=#{dde_port}"
+          url +=  "&dde_ipaddress=#{dde_ipaddress}" 
+          redirect_to url and return
         end
+      else
+        global_property_dde_status = GlobalProperty.find_by_property('dde.status')
+        global_property_dde_status = GlobalProperty.new if global_property_dde_status.blank?
+        global_property_dde_status.property = 'dde.status'
+        global_property_dde_status.property_value = dde_status
+        global_property_dde_status.save
+
+        redirect_to("/clinic") and return
       end
       
     end

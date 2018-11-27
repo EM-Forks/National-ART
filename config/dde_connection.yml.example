@@ -1,0 +1,13 @@
+program: &default
+  dde_protocol: http
+  program_id: 1
+  name: HIV
+
+development:
+  <<: *default
+
+test:
+  <<: *default
+
+production:
+  <<: *default
