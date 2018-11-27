@@ -747,7 +747,7 @@ class GenericPeopleController < ApplicationController
     else
       success = true
       params[:person].merge!({"identifiers" => {"National id" => identifier}}) unless identifier.blank?
-      person = PatientService.create_from_form(params[:person])
+      person = PatientService.create_from_form(person_params)
     end
 
     if params[:person][:patient] && success
@@ -1978,7 +1978,17 @@ EOF
     render plain: years and return
   end
 
-	private
+  private
+  
+  def person_params
+    params.require(:person).permit(:gender, :birth_year, :birth_month, 
+      :age_estimate, :birth_day, :citizenship, :race, 
+      :cell_phone_number, :occupation, :patient,
+      names: [ :given_name,:family_name, :middle_name ],
+      addresses: [ :address2, :county_district, :neighborhood_cell, 
+        :state_province, :city_village, :address1
+      ])
+  end
 
 	def search_complete_url(found_person_id, primary_person_id)
 		unless (primary_person_id.blank?)

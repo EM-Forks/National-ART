@@ -2221,7 +2221,7 @@ EOF
       person_params["gender"] = 'M'
     end
 
-    person = Person.create(person_params.permit!)
+    person = Person.create(person_params)
 
     unless birthday_params.empty?
       if birthday_params["birth_year"] == "Unknown"
@@ -2237,8 +2237,8 @@ EOF
 
     person.save
 
-    person.names.create(names_params.permit!)
-    person.addresses.create(address_params.permit!) unless address_params.empty? rescue nil
+    person.names.create(names_params)
+    person.addresses.create(address_params) unless address_params.empty? rescue nil
 
     person.person_attributes.create(
 		  :person_attribute_type_id => PersonAttributeType.find_by_name("Occupation").person_attribute_type_id,
@@ -3146,6 +3146,16 @@ EOF
     else #if current_user_activities
       return 'HIV program'
     end
+  end
+
+  def person_params
+    params.require(:person).permit(:gender, :birth_year, :birth_month, 
+      :age_estimate, :birth_day, :citizenship, :race, 
+      :cell_phone_number, :occupation, :patient,
+      names: [ :given_name,:family_name, :middle_name ],
+      addresses: [ :address2, :county_district, :neighborhood_cell, 
+        :state_province, :city_village, :address1
+      ])
   end
 
 end

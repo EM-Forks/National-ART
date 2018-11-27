@@ -3,23 +3,27 @@ module DDEService
   
   def self.dde_settings
     data = {}
-    dde_ip = GlobalProperty.find_by_property('dde.address').property_value
-    dde_port = GlobalProperty.find_by_property('dde.port').property_value
-    dde_username = GlobalProperty.find_by_property('dde.username').property_value
-    dde_password = GlobalProperty.find_by_property('dde.password').property_value
+    program_id    = YAML.load_file("#{Rails.root.to_s}/config/dde_connection.yml")[Rails.env]["program_id"]
+    dde_protocol  = YAML.load_file("#{Rails.root.to_s}/config/dde_connection.yml")[Rails.env]["dde_protocol"]
+    dde_user = DdeApplicationUsers.find_by_program_id(program_id)
+    
+    dde_ip = dde_user.ipaddress
+    dde_port = dde_user.port
+    dde_username = dde_user.username
+    dde_password = dde_user.password
+
 
     data["dde_ip"] = dde_ip
     data["dde_port"] = dde_port
     data["dde_username"] = dde_username
     data["dde_password"] = dde_password
-    data["dde_address"] = "http://#{dde_ip}:#{dde_port}"
+    data["dde_address"] = "#{dde_protocol}://#{dde_ip}:#{dde_port}"
 
     return data
   end
 
   def self.search_local_by_identifier(identifier)
-    Person.joins("INNER JOIN patient_identifier i ON i.patient_id = person.person_id").where(
-      ["i.identifier = ?", identifier])
+    Person.joins("INNER JOIN patient_identifier i ON i.patient_id = person.person_id").where(["i.identifier = ?", identifier])
   end
 
   def self.initial_dde_authentication_token
@@ -33,8 +37,9 @@ module DDEService
 
   def self.dde_authentication_token
     dde_address = "#{dde_settings["dde_address"]}/v1/login"
-    dde_username = GlobalProperty.find_by_property('dde.username').property_value
-    dde_password = GlobalProperty.find_by_property('dde.password').property_value
+    dde_username = dde_settings["dde_username"]
+    dde_password = dde_settings["dde_password"]
+
     passed_params = {:username => dde_username, :password => dde_password}
     headers = {:content_type => "json" }
     received_params = RestClient.post(dde_address, passed_params, headers = headers){|response, request, result|response}
@@ -64,16 +69,16 @@ module DDEService
     return dde_token
   end
 
-  def self.dde_locations(token, name = "")
-    dde_address = "#{dde_settings["dde_address"]}/v1/get_locations"
-    passed_params = {:name => name}
-    headers = {:content_type => "json", :Authorization => token }
-    received_params = RestClient.post(dde_address, passed_params.to_json, headers = headers){|response, request, result|response}
+  def self.dde_locations(dde_address, token, name = "")
+    dde_url = "#{dde_address}/v1/get_locations"
+    received_params = RestClient::Request.execute( { :method => :post, :url => dde_url,
+      :payload => {:name => name}, :headers => {:Authorization => token} } )
+
     return JSON.parse(received_params)
   end
 
-  def self.add_dde_user(data, token)
-    dde_address = "#{dde_settings["dde_address"]}/v1/add_user"
+  def self.add_dde_user(dde_address, data, token)
+    dde_address = "#{dde_address}/v1/add_user"
     passed_params = {
       :username => data["username"],
       :password => data["password"],
@@ -81,9 +86,17 @@ module DDEService
       :location => data["location"],
     }
     headers = {:content_type => "json", :Authorization => token }
-    received_params = RestClient.post(dde_address, passed_params.to_json, headers = headers){|response, request, result|response}
+    received_params = RestClient.post(dde_address, passed_params, headers = headers){|response, request, result|response}
     dde_status = JSON.parse(received_params)["status"]
     return dde_status
+  end
+
+  def self.get_dde_location(url, doc_id,token)
+    dde_location_uri = "#{url}/v1/find_location"
+    passed_params = {:location_id => doc_id}
+    headers = {:content_type => "json", :Authorization => token}
+    dde_response = RestClient.post(dde_location_uri, passed_params, headers = headers)
+    return JSON.parse(dde_response)
   end
 
   def self.verify_dde_token_authenticity(dde_token)
@@ -242,7 +255,8 @@ module DDEService
 
     person = ""
     ActiveRecord::Base.transaction do
-      person = PatientService.create_from_form(demographics["person"])
+      person_params = demographics["person"]
+      person = PatientService.create_from_form(person_params)
       self.create_dde_document_id(person, data["doc_id"])
     end
 
@@ -402,8 +416,8 @@ module DDEService
     national_patient_identifier_type_id = PatientIdentifierType.find_by_name("National id").patient_identifier_type_id
     old_patient_identifier_type_id = PatientIdentifierType.find_by_name("Old Identification Number").patient_identifier_type_id
 
-    patient_national_identifier = person.patient.patient_identifiers.find(:last, :conditions => ["identifier_type =?",
-        national_patient_identifier_type_id])
+    patient_national_identifier = person.patient.patient_identifiers.where(["identifier_type =?",
+        national_patient_identifier_type_id]).last
 
     ActiveRecord::Base.transaction do
       new_old_identification_identifier = person.patient.patient_identifiers.new
@@ -562,9 +576,8 @@ module DDEService
   
   def self.get_patient_identifier(patient, identifier_type)
     patient_identifier_type_id = PatientIdentifierType.find_by_name(identifier_type).patient_identifier_type_id rescue nil
-    patient_identifier = PatientIdentifier.where(["patient_id = ? and identifier_type = ?",
-        patient.id, patient_identifier_type_id]
-    ).order("date_created DESC").select("identifier").first.identifier rescue nil
+    patient_identifier = PatientIdentifier.find(["patient_id = ? and identifier_type = ?", patient.id,
+        patient_identifier_type_id]).order("date_created DESC").select("identifier").first.identifier rescue nil
     return patient_identifier
   end
   

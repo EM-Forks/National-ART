@@ -2,29 +2,39 @@
   tt_cancel_destination = "/clinic"
 </script>
 
-<form action = "search_by_name_and_gender" methopd="POST">
+<form action = "search_by_name_and_gender" method="POST">
 
   <%= text_field_tag "person[names][given_name]", params[:given_name],
-                     {:id => 'given_name', :field_type => 'alpha',
-                      :helpText => 'First name',
-                      :ajaxURL => '/person_names/given_names?search_string=',
-                      :allowFreeText => true,
-                      :condition => '$("given_name").value == "" || skipped[tstCurrentPage] == 1',
-                      :tt_onLoad => 'seen(tstCurrentPage);' } %>
+    {
+      :id => 'given_name', 
+      :field_type => 'alpha',
+      :helpText => 'First name',
+      :ajaxURL => '/person_names/given_names?search_string=',
+      :allowFreeText => true,
+      :condition => '$("given_name").value == "" || skipped[tstCurrentPage] == 1',
+      :tt_onLoad => 'seen(tstCurrentPage);' 
+    } 
+  %>
 
   <%= text_field_tag "person[names][family_name]", params[:family_name],
-                     {:id => 'family_name', :field_type => 'alpha',
-                      :helpText => 'Last name',
-                      :ajaxURL => '/person_names/family_names?search_string=',
-                      :allowFreeText => true,
-                      :condition => '$("family_name").value == "" || skipped[tstCurrentPage] == 1',
-                      :tt_onLoad => 'seen(tstCurrentPage);' } %>
+    {
+      :id => 'family_name', 
+      :field_type => 'alpha',
+      :helpText => 'Last name',
+      :ajaxURL => '/person_names/family_names?search_string=',
+      :allowFreeText => true,
+      :condition => '$("family_name").value == "" || skipped[tstCurrentPage] == 1',
+      :tt_onLoad => 'seen(tstCurrentPage);' 
+    } 
+  %>
 
 
-  <%= select_tag "person[gender]",options_for_select({"" => "", "Male" => "M", "Female" => "F"},params[:gender]),
-                 {:id => 'gender',
-                  :helpText => 'Gender'
-                 } %>
-
+  <%= select_tag "person[gender]",
+    options_for_select({"" => "", "Male" => "M", "Female" => "F"},params[:gender]),
+    {
+      :id => 'gender',
+      :helpText => 'Gender'
+    } 
+  %>
 
 </form>
