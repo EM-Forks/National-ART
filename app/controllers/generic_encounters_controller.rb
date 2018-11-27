@@ -1038,6 +1038,13 @@ class GenericEncountersController < ApplicationController
 			observation[:person_id] ||= encounter.patient_id
 			observation[:concept_name].upcase ||= "DIAGNOSIS" if encounter.type.name.upcase == "OUTPATIENT DIAGNOSIS"
 
+
+      #format value_datetime to suit ruby version/mysql datetime format
+      unless observation[:value_datetime].blank?
+        observation[:value_datetime] = observation[:value_datetime].to_time.strftime("%Y-%m-%d %H:%M:%S")
+      end
+
+
 			# Handle multiple select
 
 			if observation[:value_coded_or_text_multiple] && observation[:value_coded_or_text_multiple].is_a?(String)
