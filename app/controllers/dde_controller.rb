@@ -356,6 +356,13 @@ class DdeController < ApplicationController
       else
         dde_status = 'OFF'
       end
+
+      global_property_dde_status = GlobalProperty.find_by_property('dde.status')
+      global_property_dde_status = GlobalProperty.new if global_property_dde_status.blank?
+      global_property_dde_status.property = 'dde.status'
+      global_property_dde_status.property_value = dde_status
+      global_property_dde_status.save
+
     
       if (dde_status == 'ON') #Do this part only when DDE is activated
         address = params[:dde_address].to_s + ":" + params[:dde_port].to_s
@@ -408,12 +415,6 @@ class DdeController < ApplicationController
           redirect_to url and return
         end
       else
-        global_property_dde_status = GlobalProperty.find_by_property('dde.status')
-        global_property_dde_status = GlobalProperty.new if global_property_dde_status.blank?
-        global_property_dde_status.property = 'dde.status'
-        global_property_dde_status.property_value = dde_status
-        global_property_dde_status.save
-
         redirect_to("/clinic") and return
       end
       
