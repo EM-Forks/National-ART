@@ -1365,7 +1365,7 @@
         :field_type => 'number',
         :absoluteMin => "1890", :min => "1940",
         :tt_pageStyleClass => "Numeric NumbersOnly",
-        :tt_onLoad => "showCategory2('when starting ART'); setAbsoluteMaxYearStartedART();" ,
+        :tt_onLoad => "showCategory2('when starting ART'); setAbsoluteMaxYearStartedART(); setAbsoluteMinYearStartedART();" ,
         :tt_onUnLoad => "hideCategory()",
         :condition => '$("ever_received_art").value == "YES" && $("ever_registered_at_ART_clinic").value == "YES"',
         :id => "year_started_art" }  %>
@@ -2150,6 +2150,18 @@
 
     year_started_art = parseInt(jQuery('#year_started_art')[0].value);
 
+    if (year_started_art == birthYear){
+        currentMonth = [];
+        start_point = birthMonth - 1;
+
+        for(var i = start_point; i < availableMonths.length; i++){
+            currentMonth.push(availableMonths[i]);
+        }
+        rule = currentMonth.join("|");
+        rule = rule + "|Unknown";
+        return $('touchscreenInput'+tstCurrentPage).setAttribute('validationRule',rule);
+    }
+
     if (year_started_art < year_art_last_taken){
       rule = availableMonths.join("|");
       rule = rule + "|Unknown";
@@ -2184,6 +2196,10 @@
     }else{
       jQuery('#touchscreenInput'+ tstCurrentPage).attr("absoluteMax", currYear);
     }
+  }
+
+  function setAbsoluteMinYearStartedART(){
+      jQuery('#touchscreenInput'+ tstCurrentPage).attr("absoluteMin", birthYear);
   }
 
   function validateMonthARTTaken(){
@@ -2266,6 +2282,12 @@
         return $('touchscreenInput'+tstCurrentPage).setAttribute('absoluteMax',currDay);
       }
     }
+
+      if (year_started_art == birthYear) {
+          if (month_started_art == birthMonth){
+              return $('touchscreenInput'+tstCurrentPage).setAttribute('absoluteMin',birthDay);
+          }
+      }
 
   }
 
