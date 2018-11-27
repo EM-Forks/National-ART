@@ -1292,9 +1292,19 @@ class GenericEncountersController < ApplicationController
           next if observation['concept_name'].upcase == 'HAS THE PATIENT TAKEN ART IN THE LAST TWO MONTHS'
           observations << observation
         end
-      elsif obs['concept_name'].upcase == 'Date antiretrovirals started'.upcase || obs['concept_name'].upcase == 'ART START DATE'
+			elsif obs['concept_name'].upcase == 'Date antiretrovirals started'.upcase || obs['concept_name'].upcase == 'ART START DATE'
         date_art_started = obs['value_datetime'].to_date rescue nil
         art_start_date_estimation = params[:art_start_date_estimation]
+
+				year_started_art = params[:year_started_art]
+				month_started_art = params[:month_started_art]
+				unless year_started_art.blank?
+					if month_started_art.match(/UNKNOWN/i)
+						obs[:value_datetime] = "#{year_started_art}-01-01"
+						obs[:value_text] = "Estimated"
+					end
+				end
+				
         if date_art_started.blank? and not art_start_date_estimation.blank?
           case art_start_date_estimation
           when '6 months ago'
@@ -1314,7 +1324,8 @@ class GenericEncountersController < ApplicationController
             obs[:value_modifier] = '>'
           end
           obs[:value_text] = art_start_date_estimation
-        end
+				end
+
       elsif obs['concept_name'].upcase == 'DATE ART LAST TAKEN' 
         new_patient = false
         (params[:observations] || []).each do |observation|
