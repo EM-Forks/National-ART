@@ -22,3 +22,14 @@ Things you may want to cover:
 * Deployment instructions
 
 * ...
+
+## DDE Configurations
+
+In order for the application to communicate with DDE follow the following steps to configure the integration:
+
+### Database migration
+
+Do a rails database migration to add a table which will be used to store dde users for the application:
+```
+  $ rails db:migrate
+```
