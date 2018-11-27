@@ -5,7 +5,7 @@ class DdeController < ApplicationController
     birthdate = birthdate_params[0]
     birthdate_estimated = birthdate_params[1]
 
-    person_params = {
+     person_params = {
       :given_name   =>  params[:person][:names][:given_name],
       :family_name  =>  params[:person][:names][:family_name],         
       :middle_name  =>  params[:person][:names][:middle_name],
@@ -14,8 +14,8 @@ class DdeController < ApplicationController
       :birthdate_estimated => birthdate_estimated,   
       :attributes => {
         :occupation => "",
-        :cellphone_number => params[:home_phone_number],           
-                  
+        :cell_phone_number => params[:person][:cell_phone_number],
+        :home_phone_number => params[:person][:home_phone_number],                  
         :home_district    => params[:person][:addresses]['address2'],            
         :home_traditional_authority => params[:person][:addresses]['county_district'],
         :home_village     => params[:person][:addresses]['neighborhood_cell'],            
@@ -38,14 +38,19 @@ class DdeController < ApplicationController
       flash[:notice] = "Failed to register patient."
       redirect_to("/dde/search?gender=Female") and return
     end
+    
+    #Add phone numbers to results for Local saving
+    dde_results['cell_phone_number'] = params[:person][:cell_phone_number]
+    dde_results['home_phone_number'] = params[:person][:home_phone_number]
 
     local_people = DDEService.create_local_person(dde_results)
 
+    
 		if params[:guardian_present] == "YES"
 			redirect_to "/relationships/search?patient_id=#{local_people.first.id}&return_to=/people/redirections?person_id=#{local_people.first.id}" and return
     else
-      print_and_redirect("/patients/national_id_label?patient_id=#{local_people.first.id}", next_task(local_people.first.patient))
-    	#redirect_to "/people/redirections?person_id=#{local_people.first.id}" and return
+      next_url = "/people/redirections?person_id=#{local_people.first.id}"
+      print_and_redirect("/patients/national_id_label?patient_id=#{local_people.first.id}", next_url) and return
     end
 
   end
@@ -76,17 +81,12 @@ class DdeController < ApplicationController
 
     output = JSON.parse(output)[0]
     local_people = DDEService.create_local_person(output)
-    url = "/patients/national_id_label?patient_id=#{local_people.first.id}"
-    #redirect_to "/people/redirections?person_id=#{local_people.first.id}" and return
-    print_and_redirect(url, next_task(local_people.first.patient)) and return
+    redirect_to "/people/confirm?found_person_id=#{local_people.first.id}" and return
   end
 
   def confirm
     if request.post?
-      PatientIdentifier.create(:patient_id => params[:person_id],
-        :identifier => params[:doc_id], 
-        :identifier_type => PatientIdentifierType.find_by_name('DDE person document ID').id)
-
+      connect_local_and_remote_clients(params[:person_id], params[:doc_id])
       redirect_to "/people/confirm?found_person_id=#{params[:person_id]}" and return
     end
 
@@ -102,12 +102,12 @@ class DdeController < ApplicationController
       :name => "#{(names.given_name rescue nil)} #{names.family_name}",
       :birthdate => "#{(person.birthdate.strftime('%d/%b/%Y') rescue nil)}",
       :gender => person.gender,
-      :home_district => addresses.address2,
-      :home_ta => addresses.county_district,
-      :home_village => addresses.neighborhood_cell,
-      :current_district => addresses.state_province,
-      :current_district => addresses.address1,
-      :current_village =>  addresses.city_village
+      :home_district => (addresses.address2 rescue nil),
+      :home_ta => (addresses.county_district rescue nil),
+      :home_village => (addresses.neighborhood_cell rescue nil),
+      :current_district => (addresses.state_province rescue nil),
+      :current_district => (addresses.address1 rescue nil),
+      :current_village =>  (addresses.city_village rescue nil)
     }
 
     @dde_results  = JSON.parse(output)[0]
@@ -155,11 +155,11 @@ class DdeController < ApplicationController
 
 				message = local_client_to_dde(person_id)
 		
-				unless message.blank? 
+        unless message.blank? 
           if message.match(/Search by name and update patient address info/i)
             redirect_to :controller => "dde", 
               :action => "edit_demographics", 
-              :patient_id => person_id, :message => message  and return
+                :patient_id => person_id, :message => message  and return
           end rescue nil
 				end
 
@@ -216,19 +216,28 @@ class DdeController < ApplicationController
 
 
     @results = []
+    i = 0
     (dde_search_results || []).each do |r|
+      i += 1
       birthdate_estimated = (r['birthdate_estimated'] == false ? 0 : 1)
-      birth_date = birthdate_formatted(r['birthdate'].to_date, birthdate_estimated) rescue nil
+      birth_date = birthdate_formatted(r["birthdate"].to_date, birthdate_estimated) rescue "01/01/1900"
+      puts birthdate_estimated
+      puts birth_date
       session_date = session[:datetime].to_date rescue Date.today
-      age = (session_date.year) - (birth_date.to_date.year) rescue  nil
-      
+
+      if birth_date.include?('?')
+        age = (session_date.year - birth_date.slice(7..11).to_i).to_i
+      else
+        age = (session_date.year - birth_date.to_date.year).to_i
+      end
+     
       @results << {
         :given_name             =>  r['given_name'],
         :family_name            =>  r['family_name'],
         :name                   =>  r['given_name'].to_s + " " + r['family_name'],
         :gender                 =>  r['gender'],
         :birthdate              =>  r['birthdate'],
-        :birth_date             =>  (birthdate_formatted(r['birthdate'].to_date, birthdate_estimated) rescue nil),
+        :birth_date             =>  birth_date,
         :birthdate_estimated    =>  birthdate_estimated,
         :home_district          =>  r['attributes']['home_district'],
         :home_ta                =>  r['attributes']['home_traditional_authority'],
@@ -239,25 +248,31 @@ class DdeController < ApplicationController
         :person_id              =>  0,
         :age                    => age
       }
+    
     end
+
 
     (local_search_results || []).each do |person|
        
       birthdate_estimated = person.birthdate_estimated
       names     = person.names #.last
       addresses = person.addresses.last
-      birth_date = birthdate_formatted(person.birthdate.to_date, birthdate_estimated) rescue nil
+      birth_date = birthdate_formatted(person.birthdate.to_date, birthdate_estimated) rescue "01/01/1900"
       session_date = session[:datetime].to_date rescue Date.today
-      age = (session_date.year) - (birth_date.to_date.year) rescue  nil
 
-      #raise addresses.inspect
+      if birth_date.include?('?')
+        age = (session_date.year - birth_date.slice(7..11).to_i).to_i
+      else
+        age = (session_date.year - birth_date.to_date.year).to_i
+      end
+      
       local_person = {
         :given_name             =>  names.last.given_name,
         :family_name            =>  names.last.family_name,
         :name                   =>  names.last.given_name.to_s + " " + names.last.family_name,
-        :gender                 =>  person.gender.first,
-        :birthdate              =>  person.birthdate.to_date,
-        :birth_date             =>  (birthdate_formatted(person.birthdate.to_date, birthdate_estimated) rescue nil),
+        :gender                 =>  (person.gender.first rescue nil),
+        :birthdate              =>  (person.birthdate.to_date rescue '01/01/1900'),
+        :birth_date             =>  birth_date,
         :birthdate_estimated    =>  birthdate_estimated,
         :home_district          =>  (addresses.address2 rescue nil),
         :home_ta                =>  (addresses.county_district rescue nil),
@@ -266,7 +281,7 @@ class DdeController < ApplicationController
         :npid                   =>  PatientService.get_patient_identifier(person.patient, "National ID"),
         :doc_id                 =>  PatientService.get_patient_identifier(person.patient, "DDE person document ID"),
         :person_id              =>  person.person_id,
-        :age                    => age
+        :age                    =>  age
       }
       same_record = false
       (@results || []).each do |dde_person|
@@ -305,9 +320,9 @@ class DdeController < ApplicationController
   end
 
   def reassign_npid
-    dde_url = DDEService.dde_settings['dde_address'] + "/v1/assign_npid"
+    dde_url = DDEService.dde_settings['dde_address'] + "/v1/reassign_npid"
     search_params = {:doc_id => params[:doc_id]} 
-
+    
     output = RestClient::Request.execute( { :method => :post, :url => dde_url,
         :payload => search_params, :headers => {:Authorization => session[:dde_token]} } )
     result  = JSON.parse(output)
@@ -344,7 +359,7 @@ class DdeController < ApplicationController
         :name                   =>  r['given_name'].to_s + " " + r['family_name'],
         :gender                 =>  r['gender'],
         :birthdate              =>  r['birthdate'],
-        :birth_date             =>  (birthdate_formatted(r['birthdate'].to_date, birthdate_estimated) rescue nil),
+        :birth_date             =>  birthdate_formatted(r['birthdate'].to_date, birthdate_estimated),
         :birthdate_estimated    =>  birthdate_estimated,
         :home_district          =>  r['attributes']['home_district'],
         :home_ta                =>  r['attributes']['home_traditional_authority'],
@@ -370,12 +385,12 @@ class DdeController < ApplicationController
         :name                   =>  names.last.given_name.to_s + " " + names.last.family_name,
         :gender                 =>  person.gender.first,
         :birthdate              =>  person.birthdate.to_date,
-        :birth_date             =>  (birthdate_formatted(person.birthdate.to_date, birthdate_estimated) rescue nil),
+        :birth_date             =>  birthdate_formatted(person.birthdate.to_date, birthdate_estimated),
         :birthdate_estimated    =>  birthdate_estimated,
-        :home_district          =>  addresses.address2,
-        :home_ta                =>  addresses.county_district,
-        :home_village           =>  addresses.neighborhood_cell,
-        :current_residence      =>  addresses.city_village,
+        :home_district          =>  (addresses.address2 rescue nil),
+        :home_ta                =>  (addresses.county_district rescue nil),
+        :home_village           =>  (addresses.neighborhood_cell rescue nil),
+        :current_residence      =>  (addresses.city_village rescue nil),
         :npid                   =>  PatientService.get_patient_identifier(person.patient, "National ID"),
         :doc_id                 =>  PatientService.get_patient_identifier(person.patient, "DDE person document ID"),
         :person_id              =>  person.person_id
@@ -386,12 +401,12 @@ class DdeController < ApplicationController
         break if same_record
       end
 
-      #if !same_record
+      if !same_record
         @results << local_person
-      #end
+      end
 
     end
-
+    #raise @results.inspect
     #render :layout => 'report'
   end
   
@@ -606,8 +621,8 @@ class DdeController < ApplicationController
     # Update dde token session
     property = GlobalProperty.find_by_property('dde.status')
     if property.blank?
-      g           = GlobalProperty.new
-      g.property  = "dde.status"
+      g = GlobalProperty.new
+      g.property = "dde.status"
       g.property_value = "ON"
       g.save
     else
@@ -990,7 +1005,7 @@ class DdeController < ApplicationController
         if message.match(/Search by name and update patient address info/i)
           redirect_to :controller => "dde", 
             :action => "edit_demographics", 
-            :patient_id =>params[:person_id], :message => message  and return
+              :patient_id =>params[:person_id], :message => message  and return
         end rescue nil
       end
     end
@@ -1004,16 +1019,92 @@ class DdeController < ApplicationController
 		message = local_client_to_dde(params[:person_id])
 		
 		unless message.blank? 
-			redirect_to :controller => "dde", 
-				:action => "edit_demographics", 
-          :patient_id =>params[:person_id], :message => message  and return
+      if message.match(/Search by name and update patient address info/i)
+			  redirect_to :controller => "dde", 
+				  :action => "edit_demographics", 
+            :patient_id =>params[:person_id], :message => message  and return
+      end rescue nil
 		end
     
-    next_url = "/people/confirm?found_person_id=#{params[:person_id]}"
-    print_and_redirect("/patients/national_id_label?patient_id=#{params[:person_id]}", next_url) and return
+    print_and_redirect("/patients/national_id_label?patient_id=#{params[:person_id]}", "/") and return
+  end
+
+  def merge_clients
+    primary_client_id = nil
+    secondary_clients_ids = []
+
+    (params[:client_ids].split(',') || []).each_with_index do |id, i|
+      if i == 0
+        primary_client_id = id
+      else
+        secondary_clients_ids << id
+      end
+    end
+
+    (secondary_clients_ids || []).each_with_index do |id, i|
+      if is_numeric?(id)
+        if is_numeric?(primary_client_id)
+          Patient.merge(primary_client_id, id)
+        else
+          connect_local_and_remote_clients(id, primary_client_id)
+        end
+      else
+        if is_numeric?(primary_client_id)
+          connect_local_and_remote_clients(primary_client_id, id)
+        else
+          merged_remote_clients(primary_client_id, id)
+        end
+      end
+    end
+
+    render :text => primary_client_id.to_json and return 
+  end
+
+  def find_by_identifier
+    people = DDEService.search_local_by_identifier(params[:identifier])
+    if people.blank?
+      render :text => {}.to_json and return
+    end
+
+    patient = Patient.find(people.last.person_id)
+    person  = patient.person
+    doc_id  = DDEService.get_patient_identifier(patient, "DDE person document ID")
+    npid    = DDEService.get_patient_identifier(patient, "National ID")
+
+    name    = person.names.last rescue nil
+    address = person.addresses.last rescue nil
+     
+    patient_obj = {
+      :given_name           => (name.given_name rescue nil),
+      :family_name          => (name.family_name rescue nil),
+      :middle_name          => (name.middle_name rescue nil),
+      :gender               => person.gender,
+      :birthdate            => person.birthdate,
+      
+      :home_district        => (address.address2 rescue nil),
+      :home_ta              => (address.county_district rescue nil),
+      :home_village         => (address.neighborhood_cell rescue nil),
+      :current_district     => (address.state_province rescue nil) ,
+      :current_ta           => (address.address1 rescue nil) ,
+      :current_village      => (address.city_village rescue nil) ,
+
+
+      :cell_phone           => DDEService.get_attribute(person, "Cell Phone Number"),
+      :home_phone_number    => DDEService.get_attribute(person, "Home Phone Number") ,
+      :occupation           => DDEService.get_attribute(person, "Occupation"),
+      :patient_id           => patient.id,
+      :doc_id               => doc_id,
+      :npid                 => npid
+    }
+    
+    render :text => patient_obj.to_json and return
   end
 
   private
+
+  def is_numeric?(string)
+    return Float(string) != nil rescue false
+  end
 
   def birthdate_formatted(birthdate, birthdate_estimated)
     if birthdate_estimated == 1
@@ -1145,10 +1236,8 @@ class DdeController < ApplicationController
       PatientIdentifier.create(:identifier => dde_results['npid'], 
         :patient_id => patient_id, :identifier_type => identifier_type)
 
-      PatientIdentifier.create(:identifier => dde_results['doc_id'], 
-        :patient_id => patient_id, :identifier_type => PatientIdentifierType.find_by_name('DDE person document ID').id)
-
-  
+      connect_local_and_remote_clients(patient_id, dde_results['doc_id'])
+    
       identifiers = PatientIdentifier.where(["patient_id = ? AND identifier_type = ?
         AND LENGTH(identifier) <> 6", patient_id, identifier_type])		
     
@@ -1177,5 +1266,19 @@ class DdeController < ApplicationController
       return identifiers.first rescue nil 
     end
 
+    def connect_local_and_remote_clients(patient_id, doc_id)
+      identifier_type = PatientIdentifierType.find_by_name('DDE person document ID').id
+      PatientIdentifier.create(:identifier => doc_id, 
+        :patient_id => patient_id, :identifier_type => identifier_type)
+    end
 
-end
+    def merged_remote_clients(primary_client_id, secondary_clients_id)
+      dde_url = DDEService.dde_settings['dde_address'] + "/v1/merge_people"
+      person_params = {:primary_person_doc_id => primary_client_id, :secondary_person_doc_id => secondary_clients_id}
+
+      output = RestClient::Request.execute( { :method => :post, :url => dde_url,
+        :payload => person_params, :headers => {:Authorization => session[:dde_token]} } )
+
+    end
+
+  end
