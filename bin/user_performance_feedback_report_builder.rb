@@ -1,6 +1,6 @@
 User.current = User.first
 
-Session_date = (Date.today) 
+Session_date = ("2018-09-27 14:53:35").to_date 
 @start_date = Session_date.strftime('%Y-%m-%d 00:00:00')
 @end_date = Session_date.strftime('%Y-%m-%d 23:59:59')
 
@@ -16,7 +16,7 @@ FastConcept = ConceptName.find_by_name('FAST')
 	hiv_encounter_types = ['HIV RECEPTION','HIV STAGING','VITALS','PART_FOLLOWUP','HIV CLINIC REGISTRATION',
     'DISPENSING','HIV CLINIC CONSULTATION','TREATMENT','ART ADHERENCE','APPOINTMENT']
 
-	HIV_encounter_ids = EncounterType.find(:all, :conditions =>["name IN(?)", hiv_encounter_types]).map(&:id)
+	HIV_encounter_ids = EncounterType.where("name IN(?)", hiv_encounter_types).map(&:id)
 
 
 @selected_activities = {} 
@@ -107,7 +107,7 @@ def fetch_patient_seen
 	hiv_encounter_types = ['HIV RECEPTION','HIV STAGING','VITALS','PART_FOLLOWUP','HIV CLINIC REGISTRATION',
     'DISPENSING','HIV CLINIC CONSULTATION','TREATMENT','ART ADHERENCE','APPOINTMENT']
 
-	encounter_ids = EncounterType.find(:all, :conditions =>["name IN(?)", hiv_encounter_types]).map(&:id)
+	encounter_ids = EncounterType.where("name IN(?)", hiv_encounter_types).map(&:id)
 
   ActiveRecord::Base.connection.execute <<EOF
     INSERT INTO patient_seen (patient_id, visit_date) 
@@ -236,9 +236,8 @@ def check_visit_completeness(patient_id, check_all_encounters = false)
 
   ############## no.1 HIV clinic registration ##################################
   encounter_type = EncounterType.find_by_name('HIV clinic registration')
-  hiv_clinic_registration = Encounter.find(:last, 
-    :conditions =>["encounter_type = ? 
-    AND patient_id = #{patient_id}", encounter_type.id])
+  hiv_clinic_registration = Encounter.where("encounter_type = ? 
+    AND patient_id = #{patient_id}", encounter_type.id).last
 
   if hiv_clinic_registration.blank?
     all_encounters_missed << encounter_type
@@ -247,9 +246,8 @@ def check_visit_completeness(patient_id, check_all_encounters = false)
 
 
   encounter_type = EncounterType.find_by_name('HIV STAGING')
-  hiv_staging = Encounter.find(:last, 
-    :conditions =>["encounter_type = ? 
-    AND patient_id = #{patient_id}", encounter_type.id])
+  hiv_staging = Encounter.where("encounter_type = ? 
+    AND patient_id = #{patient_id}", encounter_type.id).last
 
   if hiv_staging.blank?
     all_encounters_missed << encounter_type
@@ -267,29 +265,28 @@ def check_visit_completeness(patient_id, check_all_encounters = false)
 
   ############## no.2 HIV reception ##################################
   encounter_type = EncounterType.find_by_name('HIV Reception')
-  hiv_reception = Encounter.find(:last, 
-    :conditions =>["encounter_type = ? AND encounter_datetime
+  hiv_reception = Encounter.where("encounter_type = ? AND encounter_datetime
     BETWEEN '#{@start_date}' AND '#{@end_date}' 
-    AND patient_id = #{patient_id}", encounter_type.id])
+    AND patient_id = #{patient_id}", encounter_type.id).last
 
   if hiv_reception.blank?
     all_encounters_missed << encounter_type
     return encounter_type unless check_all_encounters
   end
 
-  patient_visit = Observation.find(:last, :conditions =>["person_id = ? 
+  patient_visit = Observation.where("person_id = ? 
   	AND obs_datetime BETWEEN ? AND ? AND concept_id = ? AND value_coded = ?",
   	patient_id, @start_date, @end_date, 
-  	Patient_visit_concept_name.concept_id, YesConcept.concept_id])
+  	Patient_visit_concept_name.concept_id, YesConcept.concept_id).last
   
   patient_visit = patient_visit.blank? ? false : true
   ####################################################################
 
 
 	############################### chacking for fast track ##################
-  latest_fast_track_answer_obs = Observation.find(:last, :conditions =>["person_id = ? 
+  latest_fast_track_answer_obs = Observation.where("person_id = ? 
   	AND obs_datetime < ? AND concept_id = ?", patient_id, @start_date, 
-		FastConcept.concept_id])
+		FastConcept.concept_id).last
 
 	fast_track_patient = false
 	unless latest_fast_track_answer_obs.blank?
@@ -305,10 +302,9 @@ def check_visit_completeness(patient_id, check_all_encounters = false)
   ############## no.3 Vitals ##################################
   if patient_visit
     encounter_type = EncounterType.find_by_name('Vitals')
-    hiv_reception = Encounter.find(:last, 
-      :conditions =>["encounter_type = ? AND encounter_datetime
+    hiv_reception = Encounter.where("encounter_type = ? AND encounter_datetime
       BETWEEN '#{@start_date}' AND '#{@end_date}' 
-      AND patient_id = #{patient_id}", encounter_type.id])
+      AND patient_id = #{patient_id}", encounter_type.id).last
 
     if hiv_reception.blank?
       all_encounters_missed << encounter_type
@@ -326,20 +322,19 @@ def check_visit_completeness(patient_id, check_all_encounters = false)
   ############## no.4 HIV CLINIC CONSULTATION ##################################
   unless fast_track_patient
 		encounter_type = EncounterType.find_by_name('HIV CLINIC CONSULTATION')
-		hiv_clinic_cons = Encounter.find(:last, 
-			:conditions =>["encounter_type = ? AND encounter_datetime
+		hiv_clinic_cons = Encounter.where("encounter_type = ? AND encounter_datetime
 			BETWEEN '#{@start_date}' AND '#{@end_date}' 
-			AND patient_id = #{patient_id}", encounter_type.id])
+			AND patient_id = #{patient_id}", encounter_type.id).last
 
 		if hiv_clinic_cons.blank?
       all_encounters_missed << encounter_type
       return encounter_type unless check_all_encounters
 		end
 
-		prescribe_meds = Observation.find(:last, :conditions =>["person_id = ? 
+		prescribe_meds = Observation.where("person_id = ? 
 			AND obs_datetime BETWEEN ? AND ? AND concept_id = ? AND value_coded = ?",
 			patient_id, @start_date, @end_date, 
-			Prescribe_meds.concept_id, YesConcept.concept_id]).blank? != true
+			Prescribe_meds.concept_id, YesConcept.concept_id).blank? != true
 		
 	end
   ####################################################################
@@ -347,11 +342,9 @@ def check_visit_completeness(patient_id, check_all_encounters = false)
 
   ############## no.4.5 ART ADHERENCE ##################################
   encounter_type = EncounterType.find_by_name('ART ADHERENCE')
-	adherence_encounter_available = Encounter.find(:last,
-		:conditions =>["patient_id = ? AND encounter_type = ? 
+	adherence_encounter_available = Encounter.where("patient_id = ? AND encounter_type = ? 
 		AND encounter_datetime BETWEEN ? AND ?",
-		patient_id, encounter_type.id, @start_date, @end_date],
-		:order =>'encounter_datetime DESC,date_created DESC')
+		patient_id, encounter_type.id, @start_date, @end_date).order('encounter_datetime DESC,date_created DESC').last
 
 	arv_drugs_given = false
 	MedicationService.art_drug_given_before(Patient.find(patient_id), @start_date.to_date).each do |order|
@@ -370,10 +363,9 @@ def check_visit_completeness(patient_id, check_all_encounters = false)
   if prescribe_meds
     ############## no.5 TREATMENT ##################################
     encounter_type = EncounterType.find_by_name('TREATMENT')
-    treatment = Encounter.find(:last, 
-      :conditions =>["encounter_type = ? AND encounter_datetime
+    treatment = Encounter.where("encounter_type = ? AND encounter_datetime
       BETWEEN '#{@start_date}' AND '#{@end_date}' 
-      AND patient_id = #{patient_id}", encounter_type.id])
+      AND patient_id = #{patient_id}", encounter_type.id).last
 
     if treatment.blank?
       all_encounters_missed << encounter_type
@@ -384,10 +376,9 @@ def check_visit_completeness(patient_id, check_all_encounters = false)
 
     ############## no.6 DISPENSING ##################################
     encounter_type = EncounterType.find_by_name('DISPENSING')
-    dispensing = Encounter.find(:last, 
-      :conditions =>["encounter_type = ? AND encounter_datetime
+    dispensing = Encounter.where("encounter_type = ? AND encounter_datetime
       BETWEEN '#{@start_date}' AND '#{@end_date}' 
-      AND patient_id = #{patient_id}", encounter_type.id])
+      AND patient_id = #{patient_id}", encounter_type.id).last
 
     if dispensing.blank?
       all_encounters_missed << encounter_type
@@ -398,10 +389,9 @@ def check_visit_completeness(patient_id, check_all_encounters = false)
 
     ############## no.7 APPOINTMENT ##################################
     encounter_type = EncounterType.find_by_name('APPOINTMENT')
-    appointment = Encounter.find(:last, 
-      :conditions =>["encounter_type = ? AND encounter_datetime
+    appointment = Encounter.where("encounter_type = ? AND encounter_datetime
       BETWEEN '#{@start_date}' AND '#{@end_date}' 
-      AND patient_id = #{patient_id}", encounter_type.id])
+      AND patient_id = #{patient_id}", encounter_type.id).last
 
     if appointment.blank?
       all_encounters_missed << encounter_type
@@ -421,7 +411,7 @@ def fetch_individual_record_complete_status
 	hiv_encounter_types = ['HIV RECEPTION','HIV STAGING','VITALS','PART_FOLLOWUP','HIV CLINIC REGISTRATION',
     'DISPENSING','HIV CLINIC CONSULTATION','TREATMENT','ART ADHERENCE','APPOINTMENT']
 
-	encounter_ids = EncounterType.find(:all, :conditions =>["name IN(?)", hiv_encounter_types]).map(&:id)
+	encounter_ids = EncounterType.where("name IN(?)", hiv_encounter_types).map(&:id)
 
   ActiveRecord::Base.connection.execute <<EOF
     INSERT INTO providers_who_interacted_with_patients (user_id, visit_date) 
