@@ -390,6 +390,12 @@ class GenericEncountersController < ApplicationController
 			(@encounter.observations || []).each do |o|
 				o.void('Voided from app')
 			end
+
+			todays_dispensation_encounters = Encounter.where(["patient_id =? AND encounter_type =? AND DATE(encounter_datetime) =?",
+																								 patient_id, dispensing_enc_type, current_day])
+			todays_dispensation_encounters.each do |disp_encounter|
+				disp_encounter.void('Voided from app')
+			end
 		end
 
 		if @encounter.name.upcase.match(/REQUEST/)
