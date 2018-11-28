@@ -75,6 +75,9 @@
 
   .tt_controls_month_of_cd4_count .keyboard{ display: none !important; }
 
+  .tt_controls_location_of_art_initiation #Unknown, .tt_controls_location_of_art_initiation #date { display:none;}
+  .tt_controls_location_of_confirmatory_hiv_test #Unknown, .tt_controls_location_of_confirmatory_hiv_test #date { display:none;}
+
   .NoKeyboard .options {
     height: 591px !important;
   }
@@ -1355,7 +1358,7 @@
       <%= (touch_location_tag "LOCATION OF ART INITIATION", @patient, nil,
         {	:id => "location_of_art_initialization",
         :condition => '$("ever_registered_at_ART_clinic").value == "YES" && $("ever_received_art").value == "YES"',
-        :tt_onLoad => "showCategory2('when starting ART')" ,
+        :tt_onLoad => "showCategory2('when starting ART'); " ,
         :tt_onUnLoad => "hideCategory()",
         :helpText => "Location of ART initiation" }).html_safe %>
 
