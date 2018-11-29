@@ -23,7 +23,7 @@ function validateEnteredUserName() {
   xhttp.open("GET", "/username_exisits/" + username, true);
   //xhttp.setRequestHeader('Content-type', "application/json");
   xhttp.send();
-  
+
 }
 
 function checkCurrentPwd() {
@@ -40,7 +40,7 @@ function validatePassword() {
   <%else%>
     user_id = <%= params[:id] %>;
   <%end%>
-  
+
   var xhttp = new XMLHttpRequest();
   xhttp.onreadystatechange = function() {
     if (this.readyState == 4 && (this.status == 201 || this.status == 200)) {
@@ -67,20 +67,20 @@ function validatePassword() {
         <%= @username = User.all(:order =>'username').map{|u|[u.username]}
            select(:user, :username, @username,{},{:include_blank => true ,:textCase => "lower" ,:validationRule =>"\\w{6}\\w*" ,:validationMessage => "Username must be at least SIX characters long"})%>
   <%when "change_password"%>
-      <%= password_field 'user', 'current_password', 
+      <%= password_field 'user', 'current_password',
       :helpText => 'Current Password' ,
-      :textCase =>"lower", 
+      :textCase =>"lower",
       :tt_onload => "checkCurrentPwd();",
       :value =>"" %></p>
 
-      <p><label for="user_plain_password">Password</label><br/>
+      <p><label for="user_plain_password">New password</label><br/>
       <%= password_field 'user', 'plain_password', :xhelpText => 'Password' ,:textCase =>"lower", :validationRule => "\\w{4}\\w*", :validationMessage => "Password less than six characters", :value =>"", :minlength => 6 %></p>
 
       <p><label for="user_confirm_password">Re-enter Password</label><br/>
-      <%= password_field 'user_confirm', 'password', 
+      <%= password_field 'user_confirm', 'password',
         :xhelpText => 'Password',
         :textCase =>"lower",
-        :validationRule =>"\\w{4}\\w*", 
+        :validationRule =>"\\w{4}\\w*",
         :validationMessage =>"Password less than FOUR characters."%></p>
   <%when "edit"%>
      <p><label for="person_name_given_name">First name</label><br/>
@@ -97,7 +97,7 @@ function validatePassword() {
         :value => @user_name,
         :tt_onload =>"$('touchscreenInput5').value = ($('user_first_name').value.substring(0,3)+$('user_last_name').value.substring(0,3)).toLowerCase()" ,
         :validationRule =>"\\w{6}\\w*" ,
-        :validationMessage => "Username must have at least SIX letters", 
+        :validationMessage => "Username must have at least SIX letters",
         :textCase => "lower" %></p>
       <%end%>
   <%when "destroy"%>
@@ -124,15 +124,15 @@ function validatePassword() {
 
       <p><label for="user_role_role_id">User Role</label></br>
       <%= text_field 'user_role', 'role_id', :xhelpText => 'User role', :ajaxURL => '/users/role/Role?field=role&value='%></p>
-        
+
 
       <!--p><label for="user_role_admin_role">Is user a system administrator?</label><br/-->
       <!--%= select(:user_role_admin, :role, %w{ Yes No},:include_blank =>"true", :value =>@user_admin_role) %></p-->
 
       <p><label for="user_username">Username</label><br/>
-      <%= text_field 'user', 'username', 
-        :xhelpText => 'Username', 
-        :textCase => "lower", 
+      <%= text_field 'user', 'username',
+        :xhelpText => 'Username',
+        :textCase => "lower",
         :id => "username",
         :value => @user_name,:tt_onload =>"$('touchscreenInput5').value = ($('user_first_name').value.substring(0,3)+$('user_last_name').value.substring(0,3)).toLowerCase()" ,
         :validationRule =>"\\w{6}\\w*" ,
@@ -144,10 +144,10 @@ function validatePassword() {
       <%= password_field 'user', 'plain_password', :xhelpText => 'Password', :minlength => 6 ,:textCase =>"lower", :validationRule => "\\w{4}\\w*", :validationMessage => "Password less than six characters" %></p>
 
       <p><label for="user_confirm_password">Re-enter Password</label><br/>
-      <%= password_field 'user_confirm', 'password', 
-        :xhelpText => 'Password', 
+      <%= password_field 'user_confirm', 'password',
+        :xhelpText => 'Password',
         :textCase =>"lower",
-        :validationRule =>"\\w{4}\\w*", 
+        :validationRule =>"\\w{4}\\w*",
         :validationMessage =>"Password less than FOUR characters.",
         :tt_onload => "validateUserName();" %></p>
 <%end%>
