@@ -65,6 +65,8 @@
   tt_cancel_destination = "/patients/show?patient_id=<%= @patient_obj[:patient_id]%>";
 </script>
 
+<body onload="showAlerts();">
+
 <div class="container">
   <div id="details" style="max-height:650px;overflow:auto;display:block">
     <!--form>
@@ -81,21 +83,21 @@
             First Name
           </td>
           <td class='data-top'><%= @patient_obj[:given_name] %></td>
-          <td><a href="edit_demographics?patient_id=<%=@patient_obj[:patient_id]%>&field=first_name&person_id=<%=
-                 @patient_obj[:patient_id] %>&cat=<%= (params["cat"] rescue "") %>&given_name=<%= @patient_obj[:patient_id] %>">Edit</a></td>
+          <td><a href="edit_names?patient_id=<%=@patient_obj[:patient_id]%>&field=first_name&doc_id=<%=
+                 @patient_obj[:doc_id] %>&given_name=<%= @patient_obj[:given_name] %>">Edit</a></td>
         </tr>
         <tr>
           <td class='title'>Last Name</td>
           <td class='data'><%=@patient_obj[:family_name]%></td>
-          <td><a href="edit_demographics?patient_id=<%=@patient_obj[:patient_id]%>&field=last_name&person_id=<%=
-                 @patient_obj[:patient_id] %>&cat=<%= (params["cat"] rescue "") %>&family_name=<%= @patient_obj[:family_name] %>">Edit</a></td>
+          <td><a href="edit_names?patient_id=<%=@patient_obj[:patient_id]%>&field=last_name&doc_id=<%=
+                 @patient_obj[:doc_id] %>&family_name=<%= @patient_obj[:family_name] %>">Edit</a></td>
         </tr>
 
         <tr>
           <td class='title'>Birthdate</td>
           <td class='data'><%=@patient_obj[:birthdate]%></td>
-          <td><a href="edit_demographics?patient_id=<%=@patient_obj[:patient_id]%>&field=birthdate&person_id=<%=
-                 @patient_obj[:patient_id] %>&cat=<%= (params["cat"] rescue "") %>">Edit</a></td>
+          <td><a href="edit_birthdate?patient_id=<%=@patient_obj[:patient_id]%>&
+                 field=birthdate&doc_id=<%=@patient_obj[:doc_id] %>">Edit</a></td>
         </tr>
 
         <tr>
@@ -134,22 +136,22 @@
         <tr>
           <td class='title'>Current Village</td>
           <td class='data'> <%= @patient_obj[:current_village] %></td>
-          <td><a href="edit_demographics?patient_id=<%=@patient_obj[:patient_id]%>&doc_id=<%=
+          <td><a href="edit_address?patient_id=<%=@patient_obj[:patient_id]%>&doc_id=<%=
                  @patient_obj[:doc_id] %>&field=city_village"> Edit</a></td>
         </tr>
 
         <tr>
           <td class='title'>Primary phone</td>
           <td class='data'> <%= @patient_obj[:cell_phone] %></td>
-          <td><a href="edit_demographics?patient_id=<%=@patient_obj[:patient_id]%>&person_id=<%=
-                 @patient_obj[:patient_id] %>&cat=<%= (params["cat"] rescue "") %>&field=cell_phone"> Edit</a></td>
+          <td><a href="edit_attribute?patient_id=<%=@patient_obj[:patient_id]%>&doc_id=<%=
+                 @patient_obj[:doc_id] %>&field=cell_phone&cell_phone_number=<%= @patient_obj[:cell_phone] %>"> Edit</a></td>
         </tr>
 
         <tr>
           <td class='title'>Occupation</td>
           <td class='data'> <%= @patient_obj[:occupation] %></td>
-          <td><a href="edit_demographics?patient_id=<%=@patient_obj[:patient_id]%>&person_id=<%=
-                 @patient_obj[:patient_id] %>&cat=<%= (params["cat"] rescue "") %>&field=occupation"> Edit</a></td>
+          <td><a href="edit_attribute?patient_id=<%=@patient_obj[:patient_id]%>&doc_id=<%=
+                 @patient_obj[:doc_id] %>&field=occupation&occupation=<%= @patient_obj[:occupation] %>"> Edit</a></td>
         </tr>
 
       </table>
@@ -166,12 +168,22 @@
       <span>Finish</span>
     </button>
 
-    <button onclick="window.location = '/patients/national_id_label?patient_id=<%= @patient_obj[:patient_id] %>'"
-            style="float: right;">
-      <span>Print Registration</span>
-    </button>
+    <button onclick="window.location = '/dde/npid_label?person_id=<%= @patient_obj[:patient_id] %>'"
+      style="float: right;" id="print-barcode"><span>Print Barcode</span></button>
 
   </div>
   <div id="tt_extraButtons"/>
 </div>
+
+</body>
+
+<script>
+  function showAlerts() {
+    <%if params[:message] %>
+      showMessage("<%= params[:message].gsub('_', ' ').html_safe%>");
+      barcode = document.getElementById('print-barcode');
+      barcode.setAttribute('onclick',"window.location='/dde/reassign_local_client_npid?person_id=<%= @patient_obj[:patient_id] %>'");
+    <%end%>
+  }
+</script>
 

@@ -1,0 +1,269 @@
+<style>
+#nextButton {
+  display: none;
+}
+
+.main-table {
+  display: table;
+  width: 99%;
+  height: 99%;
+}
+
+.main-table-row {
+  display: table-row;
+  height: 99%;
+}
+
+.main-table-cell {
+  display: table-cell;
+}
+
+.left-cell {
+  height: 100%;
+  width: 48%;
+  float: left;
+  border-style: solid;
+  border-width: 0px 1px 0px 0px;
+}
+
+.right-cell {
+  height: 90%;
+  width: 45%;
+  float: right;
+}
+
+.find-btn {
+	top: 50%;
+	transform: translateY(-50%);
+	position: sticky;
+	margin: 25%;
+}
+
+.data-tables {
+  width: 98%;
+  text-align: left;
+  border-collapse: collapse;
+}
+
+.data-tables th {
+  padding-left: 5px;
+  border-style: solid;
+  border-width: 0px 0px 1px 0px;
+  width: 165px;
+  text-transform: capitalize;
+}
+
+.data-tables td {
+  padding-left: 5px;
+  border-style: solid;
+  border-width: 0px 0px 1px 0px;
+}
+
+</style>
+
+<script>
+function addInitView(){
+  containerDiv = document.createElement('div');
+  containerDiv.setAttribute('class','main-table');
+
+  containerDivRow = document.createElement('div');
+  containerDivRow.setAttribute('class','main-table-row');
+  containerDiv.appendChild(containerDivRow);
+
+  var cells = ['left-cell','right-cell'];
+  for(var i = 0; i < cells.length; i++){
+    containerDivCell = document.createElement('div');
+    containerDivCell.setAttribute('class','main-table-cell ' + cells[i]);
+    addBTN(containerDivCell, cells[i]);
+    containerDivRow.appendChild(containerDivCell);
+  }
+
+
+  var frame = document.getElementById("inputFrame" + tstCurrentPage);
+  frame.setAttribute('style',"height: 89%;");
+  frame.appendChild(containerDiv);
+
+  	
+}
+
+var btnClicked = null;
+
+function addBTN(e, pos) {
+  if(pos.match(/left/i)){
+    var client_type = 'primary';
+  }else{
+    var client_type = 'secondary';
+  }
+
+  var btn = document.createElement('button');
+  btn.setAttribute('class', 'button navButton blue find-btn btn-' + pos);
+  btn.innerHTML = "<span>Add " + client_type + " client</span>";
+  btn.setAttribute('onmousedown',"popupSearchID('" + pos + "')");
+  e.appendChild(btn);
+}
+
+function popupSearchID(pos) {
+  document.getElementById("alert-cover").style.display = 'inline';
+  document.getElementById("alert-popup-div").style.display = 'inline';
+  btnClicked = pos;
+}
+
+function alertPOP(data) {
+  document.getElementById("alert-cover").style.display = 'none';
+  document.getElementById("alert-popup-div").style.display = 'none';
+
+  var person = JSON.parse(data);
+  if (person['patient_id'] == null){
+    clearDIV()
+  }
+
+  if(btnClicked.match(/left/i)){
+    primary_client_id = person['patient_id'];
+  }else{
+    secondary_client_id = person['patient_id'];
+  }
+
+  var table = document.createElement('table');
+  table.setAttribute('class','data-tables');
+
+  attributes = ["npid","given_name","middle_name","family_name", 
+    "gender","birthdate","home_district","home_ta","home_village",
+    "current_district","current_ta","current_village",
+    "occupation","cell_phone"]
+
+  for(var i = 0; i < attributes.length; i++){
+    var tablerow = document.createElement('tr');
+    table.appendChild(tablerow);
+
+  /* ........................................ */
+    var tableth = document.createElement('th');
+    tableth.innerHTML = attributes[i].replace("_"," ").toUpperCase();
+    tablerow.appendChild(tableth);
+
+    var tabletd = document.createElement('td');
+    tabletd.innerHTML = person[attributes[i]];
+    tablerow.appendChild(tabletd);
+  /* ........................................ */
+  }
+    
+  var tablerow = document.createElement('tr');
+  table.appendChild(tablerow);
+
+  var tabletd = document.createElement('td');
+  tabletd.setAttribute('colspan',2);
+  var btn = document.createElement('button');
+  btn.setAttribute('onmousedown',"clearDIV('" + btnClicked + "');");
+  btn.innerHTML = "<span>Clear</span>";
+  btn.setAttribute('class','button navButton blue');
+  tabletd.appendChild(btn);
+  tablerow.appendChild(tabletd);
+
+  var containerData = document.getElementsByClassName(btnClicked)[0]
+  containerData.innerHTML = null;
+  containerData.appendChild(table);  
+
+  if(!(document.getElementsByClassName('left-cell')[0].innerHTML.match(/add primary/i))){
+    if(!(document.getElementsByClassName('right-cell')[0].innerHTML.match(/add secondary/i))){
+      addMergeBTN();
+    }
+  }
+
+}
+
+function clearDIV(pos) {
+  console.log(pos)
+  containerDivCell = document.getElementsByClassName(pos)[0];
+  containerDivCell.innerHTML = null;
+  addBTN(containerDivCell, pos);
+  removeMergeBTN();
+}
+
+function addMergeBTN() {
+  var btn = document.createElement('button');
+  btn.setAttribute('onmousedown',"mergeClients();");
+  btn.setAttribute('id',"mergeClients");
+  btn.innerHTML = "<span>Merge clients</span>";
+  btn.setAttribute('class','button navButton green');
+
+  document.getElementById('buttons').appendChild(btn);
+}
+
+function removeMergeBTN() {
+  try {
+    var btn = document.getElementById('mergeClients');
+    document.getElementById('buttons').removeChild(btn);
+  }catch(e){
+  }
+}
+
+var primary_client_id = null;
+var secondary_client_id = null;
+
+function mergeClients() {
+  document.getElementById("alert-cover").style.display = 'inline';
+
+	var xhttp = new XMLHttpRequest();
+  xhttp.onreadystatechange = function() {
+    if (this.readyState == 4 && this.status == 200) {
+      //document.location = "/confirm/" + this.responseText;
+			document.getElementById("alert-cover").style.display = 'none';
+    }
+  };
+  xhttp.open("GET", "/dde/merge_clients" + "?client_ids=" + primary_client_id + "," + secondary_client_id, true);
+  xhttp.send();
+
+}
+
+</script>
+
+
+<script type="text/javascript" src="/javascripts/client-scan-barcode.js"></script>
+
+<form action="merge" method="post">
+  
+  <%= text_field_tag :summary, nil, { 
+      :tt_onLoad => "__$('keyboard').style.display = 'none';addInitView();", 
+      :optional => "true", 
+      :helpText => 'Merge clients',
+      :tt_pageStyleClass => "NoControls" } %>
+
+</form>
+
+
+<div id="alert-cover"></div>
+
+<div id="alert-popup-div">
+  <div class="barcode" url="/dde/find_by_identifier" functionName="alertPOP"></div>
+</div>
+
+
+<style>
+#alert-cover{
+  display: none;
+  position: absolute;
+  background-color: black;
+  width: 100%;
+  height: 102%;
+  left: 0%;
+  top: 0%;
+  z-index: 990;
+  opacity: 0.65;
+}
+
+#alert-popup-div {
+  display: none;
+  background-color: #F4F4F4;
+  border: 2px solid #E0E0E0;
+  border-radius: 15px;
+  height: 220px;
+  padding: 5px;
+  position: absolute;
+  margin-top: 100px;
+  width: 530px;
+  /*margin-left: 430px;*/
+  left: 34%;
+  z-index: 991;
+}
+
+
+</style>

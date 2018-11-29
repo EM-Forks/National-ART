@@ -296,7 +296,7 @@ class GenericClinicController < ApplicationController
       @reports = [['/clinic/management_tab','Drug Management']]
     else
       if create_from_dde_server
-        merge_patients_url = '/patients/dde_duplicates'
+        merge_patients_url = '/dde/merge'
       else  
         merge_patients_url = '/patients/merge_menu'
       end
