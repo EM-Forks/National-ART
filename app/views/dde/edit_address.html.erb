@@ -5,7 +5,7 @@
 </script>
 
 
-<% form_for :person, @person, :url => { :action => "update_address" } do |f| %>
+<form method="POST" action="update_address">
 
     <%= text_field "region" , 'region_name', 
     :xhelpText => 'Region', 
@@ -48,7 +48,7 @@
     <input type="hidden" name="address_type" value="<%= params[:field]%>" />
     <input type="hidden" name="document_id" value="<%= params[:doc_id]%>" />
     <input type="hidden" name="patient_id" value="<%=params[:patient_id]%>" />
-<%end%>
+</form>
 
 <script>
   function set_ajaxURL_for_suggestions(url, filter_value) {

@@ -779,6 +779,9 @@ class DdeController < ApplicationController
 
   def update_address
     #raise address_params.inspect
+    patient_id = params[:patient_id]
+    addresses = PersonAddress.where(["person_id = ?", patient_id]).last
+    
     if params[:address_type] == 'home_district'
       address_params = {
         :attributes => {
@@ -788,6 +791,16 @@ class DdeController < ApplicationController
         },
         :doc_id => params[:document_id]
       }
+      if addresses.blank?
+        PersonAddress.create(person_id: patient_id, 
+          address2: address_params[:attributes][:home_district],
+          county_district: address_params[:attributes][:home_traditional_authority],
+          neighborhood_cell: address_params[:attributes][:home_village])
+      else
+        addresses.update_attributes(:address2 => params[:person][:addresses][:address2],
+          :county_district => params[:person][:addresses][:county_district],
+          :neighborhood_cell => params[:person][:addresses][:neighborhood_cell])
+      end
     else
       address_params = {
         :attributes => {
@@ -797,12 +810,21 @@ class DdeController < ApplicationController
         },
         :doc_id => params[:document_id]
       }
+      if addresses.blank?
+        PersonAddress.create(state_province: address_params[:attributes][:current_district],
+          :address1 => address_params[:current_traditional_authority],
+          :city_village => address_params[:attributes][:current_village])
+       else
+        addresses.update_attributes(:state_province => params[:person][:addresses][:address2],
+          :address1 => params[:person][:addresses][:county_district],
+          :city_village => params[:person][:addresses][:neighborhood_cell])
+      end
     end
 
     dde_url = DDEService.dde_settings['dde_address'] + "/v1/update_person"
     output = RestClient::Request.execute( { :method => :post, :url => dde_url,
       :payload => address_params, :headers => {:Authorization => session[:dde_token]} } )
-
+=begin
     addresses = PersonAddress.where(["person_id = ?", params[:patient_id]])
     
     (addresses || []).each do |address|
@@ -816,7 +838,7 @@ class DdeController < ApplicationController
           :city_village => params[:person][:addresses][:neighborhood_cell])
       end
     end
-
+=end
     redirect_to "/dde/edit_demographics?patient_id=#{params[:patient_id]}" and return
   end
 
