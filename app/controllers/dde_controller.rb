@@ -519,6 +519,7 @@ class DdeController < ApplicationController
           dde_token = DDEService.dde_login_from_params(data)
 
           unless dde_token.blank?
+            session[:dde_token] = dde_token
             dde_app_user.update_attributes(:port => params[:dde_port], 
               :ipaddress => params[:dde_address], 
               :creator => User.current.id)
