@@ -1,312 +1,266 @@
-<html>
-    <head>
-    <title>Appointments</title>
-    <%= javascript_include_tag "prototype" %>
-    <%= javascript_include_tag 'jquery' %>
-    <%= stylesheet_link_tag 'extra_buttons' %>
-    <%= javascript_include_tag 'jquery_data_table.js' %>
-    <%= stylesheet_link_tag 'jquery.dataTables' %>
-    <%=javascript_include_tag "jquery.table2CSV.min" %>
-    <script type="text/javascript" charset="utf8" src="/javascripts/jquery.dataTables.min.js"></script>
+<style>
+.main-table {
+  display: table;
+  width: 100%;
+}
+
+.main-table-row {
+  display: table-row;
+}
+
+.main-table-cell {
+  display: table-cell;
+  border-style: solid;
+  border-width: 1px;
+  padding: 5px;
+}
+
+.middle {
+  width: 55%;
+}
+
+.right {
+  text-align: center;
+}
+
+.left {
+  text-align: middle !important;
+  width: 10%;
+}
+
+.checkboxes {
+  transform: scale(3.5);
+  margin-left: 45%;
+}
+
+#nextButton { display: none; }
+
+#newBtn {
+  float: right;
+}
+
+/* .................................... */
+#cover{
+	display: none;
+	position: absolute;
+	background-color: black;
+	width: 100%;
+	height: 102%;
+	left: 0%;
+	top: 0%;
+	z-index: 1000;
+	opacity: 0.5;
+
+}
+/*
+#popup_box {
+	display:none;
+	z-index:1001;
+	left:489px;
+	top:100px;
+	text-align:center;
+	font-size:28;
+	color: #FFFFFF;
+	border: 2px solid #9999FF;
+	border-radius: 15px 15px 15px 15px;
+	height: 154px;
+	padding: 5px;
+	position: absolute;
+	top: 199px;
+	width: 421px;
+	-moz-user-select:none;
+}
+
+#popup_box span{
+	font-size:40px;
+}
+*/
+#confirmPage{
+	background: tomato;
+	border: 1px solid tomato;
+	left: 514.5px;
+	position: absolute;
+	top: 50%;
+	left: 45%;
+	margin-top: -295px;
+	margin-left: -100px;
+	opacity: 0.9999899999999999;
+	KHTMLOpacity: 0;
+	filter: alpha(opacity=0);
+	-moz-opacity: 0;
+	z-index: 1000;
+	-moz-user-select:none;
+	height: 200px;
+	width: 400px;
+
+	text-align:center;
+	font-size: 28px;
+	color: #FFFFFF;
+}
+
+</style>
 
 <script>
-      jQuery(document).ready(function($) {
-          $('#table_id').dataTable({
-            "bAutoWidth": true,
-            "bPaginate": false,
-            "bProcessing": true,
-            "sScrollY": "430px",
-            "bInfo": true,
-            "bPaginate": false
-          });
-    search_box = $('#table_id').dataTable()
-    search = document.getElementsByTagName("input")[0];
-    search.setAttribute("id","search");
-    document.getElementById('search').setAttribute("onclick","showKeyboard();");
-    //document.getElementById("find").innerHTML = "<span>Back</span>";
-   // document.getElementById("find").style.cssFloat = "left";
-    //xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx
-    keyboard = document.getElementsByClassName("keypad")[0]
-    function getCharButtonSetID(character,id){
-      return '<button onMouseDown="press(\''+character+'\');" class="keyboardButton" id="'+id+'">' +"<span style='width:32px'>"+character+"</span>"+ "</button>";
-    }
-    function getButtonString(id,string){
-      return "<button \
-                            onMouseDown='press(this.id);' \
-                            class='keyboardButton' \
-                            id='"+id+"'>"+
-        string +
-        "</button>";
-    }
+tt_cancel_destination = "/clinic"
+function loadData() {
+  var t = document.createElement('div');
+  t.setAttribute('class','main-table');
 
-    function getButtons(chars){
-      var buttonLine = "";
-      for(var i=0; i<chars.length; i++){
-        character = chars.substring(i,i+1)
-        buttonLine += getCharButtonSetID(character,character)
-      }
-      return buttonLine;
-    }
-
-    showAlphaKeypad();
-
-    function showAlphaKeypad(){
-      document.getElementById("keypad").style.height = "280";
-      keyboard.innerHTML= getButtons("0123456789") + "</br>"
-      keyboard.innerHTML+= getButtons("QWERTYUIOP") + "</br>"
-      keyboard.innerHTML+= getButtons("ASDFGHJKL:") + "</br>"
-      keyboard.innerHTML+= getButtons("ZXCVBNM,.?")
-      keyboard.innerHTML+= getButtonString('backspace','<span>Bksp</span>')
-      keyboard.innerHTML+= getButtonString('Space','<span>Space</span>')
-      keyboard.innerHTML+= getButtonString('clear','<span>Clear</span>')
-    }
-
-    function showNumericKeypad(){
-      document.getElementById("keypad").style.height = "145";
-      keyboard.innerHTML = getButtons("123")
-      keyboard.innerHTML+= getButtons("456")
-      keyboard.innerHTML+= getButtons("7890")
-      keyboard.innerHTML+= getButtonString('space','<span>Space</span>')
-      keyboard.innerHTML+= getButtonString('clear','<span>Clear</span>')
-      keyboard.innerHTML+= getButtonString('backspace','<span>Bksp</span>')
-      keyboard.innerHTML+= getButtonString('abc','<span>abc</span>')
-      keyboard.innerHTML+= getButtonString('dash','<span>-</span>')
-      keyboard.innerHTML+= getButtonString('slash','<span>/</span>')
-    }
-
-    data_table_length =document.getElementsByName('table_id_length')[0];
-    data_table_length.setAttribute("style","font-size:20px;");
-
-    table_length = document.getElementById("table_id_length");
-    table_length.setAttribute("style","width:100px;");
-
-  })
-    </script>
-
-    <script>
-
-      function showKeyboard(){
-        key = document.getElementById("keypad")
-        if(key.style.display == 'none' || key.style.display == ""){
-          key.style.display = "inline";
-          return
-        }
-
-        key.style.display = "none";
-      }
-
-      function press(pressedChar){
-        switch (pressedChar) {
-          case 'backspace':
-            search.value = search.value.substring(0,search.value.length-1);
-            search_box.fnFilter(search.value)
-            return;
-          case 'Space':
-            search.value+= " "
-            search_box.fnFilter(search.value)
-            return
-          case 'clear':
-            search.value = ""
-            search_box.fnFilter(search.value)
-            return
-          case 'num':
-            showNumericKeypad();
-            return
-          case 'slash':
-            search.value+= "/"
-            search_box.fnFilter(search.value)
-            return
-          case 'dash':
-            search.value+= "-"
-            search_box.fnFilter(search.value)
-            return
-          case 'abc':
-            showAlphaKeypad();
-            return
-        }
-        search.value+= pressedChar
-        search_box.fnFilter(search.value)
-      }
-      //xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx
-    </script>
-
-    <style>
-#backspace{
-        position:absolute;
-        left:100px;
-        bottom:2px;
-      }
-
-      #Space{
-        position:absolute;
-        left:220px;
-        bottom:2px;
-        width:200px;
-      }
-
-      #clear{
-        position:absolute;
-        left:470px;
-        bottom:2px;
-      }
-       #num{
-        position:absolute;
-        left:470px;
-        bottom:2px;
-        width:200px;
-      }
-      #keypad{
-        background-color: #FFFFFF;
-        border: 2px solid #9999FF;
-        border-radius: 15px 15px 15px 15px;
-        display: none;
-        height: 304px;
-        padding: 5px;
-        position: absolute;
-        right: 13px;
-        top: 194px;
-        width: 672px;
-      }
-    </style>
-    <style>
-        div {
-        -moz-user-select: none;
-      }
-      .basic_span {
-        position:relative;
-        width:50%;
-        display:block;
-        float:left;
-      }
-
-      .logo {
-        float:left
-      }
-
-      #table_id {
-        width: 100%;
-      }
-
-      #table_id_filter{
-        position:absolute;
-        top:10px;
-        right:1%;
-        margin-top:-40px;
-        display: none;
-      }
-
-      #table_id_filter input{
-        padding:0.5em;
-      }
-
-
-      .dataTables_length select {
-        font-size: 25px;
-      }
-      .horizontal_line hr{
-        position:absolute;
-        bottom:104px;
-      }
-      #table_id_info{
-        left: 10px;
-        position: absolute;
-        top: 491px;
-        font-weight:bold;
-        display:none;
-      }
-       #table_id_paginate{
-        display:none;
-      }
-      #num{ display:none; }
-      #char{ display:none; }
-
-      div {
-        -moz-user-select: none;
-      }
-      .basic_span {
-        position:relative;
-        width:50%;
-        display:block;
-        float:left;
-      }
-
-      .logo {
-        float:left
-      }
-
-      #find{
-       display: none;
-      }
-
-      .horizontal_line hr{
-        position:absolute;
-        bottom:104px;
-      }
-     
-    #number {
-      background-color: #4A708B;
-      border-bottom: 1px outset black;
-      border-style: outset;
-      border-top: 1px outset black;
-      color: white;
-      display: block;
-      padding: 10px 16px 10px 10px;
-      text-align: center;
-      text-decoration: none;
-    }
-
-    tbody td {
-      padding-left: 10px;
-    }
-    </style>
-  </head>
-
-
-
-
-<body>
-<table id="table_id">
-  <thead>
-    <tr>
-      <th class='tb_art'>NPID</th>
-      <th class='tb'>Name</th>
-      <th>Gender</th>
-      <th>Birthdate</th>
-      <th>Home District</th>
-      <th>Home TA</th>
-      <th>Home Village</th>
-      <th>&nbsp;</th>
-    </tr>
-  </thead>
-  <tbody>
-  <% (@results || []).each do |patient|%>
-    <tr>
-      <td><%= patient[:npid]%></td>
-      <td><%= "#{patient[:given_name]} #{patient[:family_name]}"%></td>
-      <td><%= patient[:gender]%></td>
-      <td><%= patient[:birth_date]%></td>
-      <td><%= patient[:home_district]%></td>
-      <td><%= patient[:home_ta]%></td>
-      <td><%= patient[:home_village]%></td>
-      <td><a href="#" onmousedown='selectPatient("<%=patient[:doc_id]%>","<%=patient[:patient_id]%>")'>Select</a></td>
-    </tr>
+  <%(@results || []).each do |r|%>
+  <%unless r[:doc_id].blank? %>
+    reassign_link = "/dde/reassign_npid?doc_id=<%= r[:doc_id]%>";
+    checkbox_id = "<%= r[:doc_id]%>";
+  <%else%>
+    reassign_link = "/dde/reassign_local_client_npid?person_id=<%= r[:person_id] %>";
+    checkbox_id = "<%= r[:person_id]%>";
   <%end%>
 
+  var tr = document.createElement('div');
+  tr.setAttribute('class','main-table-row');
+  t.appendChild(tr);
 
-  </tbody>
+  /* .................................................. */
+  var td = document.createElement('div');
+  td.setAttribute('class','main-table-cell left');
+  var checkbox = document.createElement('input');
+  checkbox.setAttribute('type','checkbox');
+  checkbox.setAttribute('class','checkboxes');
+  checkbox.setAttribute('id', checkbox_id);
+  checkbox.setAttribute('onclick', "activateMerge();");
+  td.appendChild(checkbox);
+  tr.appendChild(td);
+  /* .................................................. */
 
-</html>
+  var td = document.createElement('div');
+  td.setAttribute('class','main-table-cell middle');
+  td.innerHTML = "<b>Name:</b> <%= r[:given_name]%> <%= r[:middle_name]%> <%= r[:family_name]%> (<%= r[:gender]%>) <%= r[:birthdate]%>";
+  td.innerHTML += "<br /><b>Home district:</b> <%= r[:home_district]%> <b>Home TA:</b> <%= r[:home_ta]%> <b>Home village:</b> <%= r[:home_village]%>";
+  tr.appendChild(td);
 
+  var td = document.createElement('div');
+  td.setAttribute('class','main-table-cell right');
+  btn = document.createElement('button');
+  btn.setAttribute('onmousedown', "reassignID('" + reassign_link + "');");
+  btn.innerHTML = "<span>Re-assign ID</span>";
+  td.appendChild(btn);
 
-<script>
-function selectPatient(doc_id, patient_id) {
-  if (doc_id.length > 1) {
-    document.location = "/dde/reassign_npid?doc_id=" + doc_id;
-  }else if(parseInt(patient_id) > 0) {
-    document.location = "/dde/reassign_npid?patient_id=" + patient_id;
+  tr.appendChild(td);
+  t.appendChild(tr);
+  <%end%>
+
+  inputFrame = document.getElementById('inputFrame' + tstCurrentPage);
+  inputFrame.appendChild(t);
+
+}
+
+function reassignID(link){
+  document.location = link;
+}
+
+function activateMerge() {
+  var checkboxes = document.getElementsByClassName('checkboxes');
+  var counter = 0;
+  hideMergeBtn();
+
+  for(var i = 0; i < checkboxes.length; i++){
+    if(checkboxes[i].checked == true) {
+      counter++;
+    }
+  }
+
+  if(counter > 1){
+    displayMergeBtn();
   }else{
-    alert(patient_id);
+    hideMergeBtn();
+  }  
+
+}
+
+function displayMergeBtn() {
+  var footer = document.getElementById('buttons');
+  var newbutton = document.createElement('button');
+  newbutton.setAttribute('id', 'newBtn');
+  newbutton.setAttribute('class', 'green');
+  newbutton.setAttribute('onmousedown', 'confirmMerge();');
+  newbutton.innerHTML="<span>Merge selected records</span>";
+  footer.appendChild(newbutton);
+}
+
+function hideMergeBtn(){
+  try {
+    var footer = document.getElementById('buttons');
+    footer.removeChild(document.getElementById('newBtn')); 
+  }catch(e){
   }
 }
 
+function confirmMerge() {
+  document.getElementById('confirmPage').style.display='inline'
+  document.getElementById('cover').style.display='inline'
+
+	mergeClients();
+}
+
+function mergeClients(){
+  var checkboxes = document.getElementsByClassName('checkboxes');
+  var client_ids = [];
+
+  for(var i = 0; i < checkboxes.length; i++){
+    if(checkboxes[i].checked == true) {
+      client_ids.push(checkboxes[i].id);
+    }
+  }
+	
+	if (window.XMLHttpRequest) {// code for IE7+, Firefox, Chrome, Opera, Safari  
+		xmlhttp=new XMLHttpRequest();
+	}else{// code for IE6, IE5
+		xmlhttp=new ActiveXObject("Microsoft.XMLHTTP");
+	}
+	xmlhttp.onreadystatechange=function() {
+		if (xmlhttp.readyState==4 && xmlhttp.status==200) {
+			var results = xmlhttp.responseText;
+			if(results) {
+				//location.reload(); 
+				window.location = '/';
+			}
+		}
+	}
+	xmlhttp.open("POST","/dde/merge_clients?client_ids=" + client_ids, true);
+	xmlhttp.send();
+
+}
+
 </script>
+
+<form action="/dde/dde_duplicate" method="post">
+
+    <%= text_field_tag :summary, nil, { 
+      :tt_onLoad => "loadData();__$('keyboard').style.display = 'none';", 
+      :optional => "true",
+      :helpText => "Duplicate identifier (#{params[:npid]})", 
+      :tt_pageStyleClass => "NoControls" } %>
+
+</form>
+
+<div id="cover"></div>
+
+<div id="confirmPage" style="display:none">
+  <p>Merging clients</p>
+  <p>Please wait <span class="blinking">...</span></p>
+</div>
+
+<style>
+.blinking{
+	animation:blinkingText 0.8s infinite;
+	font-size: 38px;
+}
+
+@keyframes blinkingText{
+    0%{     color: white;    }
+    49%{    color: transparent; }
+    50%{    color: transparent; }
+    99%{    color:transparent;  }
+    100%{   color: white;    }
+}
+
+</style>

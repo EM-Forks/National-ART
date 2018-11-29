@@ -1058,7 +1058,7 @@ class DdeController < ApplicationController
       end
     end
 
-    render :text => primary_client_id.to_json and return 
+    render plain: primary_client_id.to_json and return 
   end
 
   def find_by_identifier
