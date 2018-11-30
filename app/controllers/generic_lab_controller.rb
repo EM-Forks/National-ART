@@ -125,120 +125,256 @@ class GenericLabController < ApplicationController
     @patient = Patient.find(person_id)
   end
 
+  def check_patient_order(npid)
+    ord = Order.find_by_sql("SELECT accession_number FROM orders WHERE patient_id='#{npid}' AND (order_type_id ='4' AND voided = '0') ORDER BY date_created DESC LIMIT 1")
+    if ord.length == 1
+      return [ord[0]['accession_number'],true]
+    elsif ord.length == 0
+      return ['',false]
+    end
+  end
+
   def create_viral_load_result
     #raise params.inspect
     person = Person.find(params[:patient_id])
     patient_bean = PatientService.get_patient(person)
-
+    result_given = params[:result_given]
     test_date_or_year = params[:test_year]
     test_month = params[:test_month]
     test_day = params[:test_day]
+    test_modifier = params[:test_value].to_s.match(/=|>|</)[0]
+    test_value = params[:test_value].first.to_s.gsub('>','').gsub('<','').gsub('=','')
 
     test_date = test_date_or_year.to_date rescue (test_date_or_year.to_s + '-' + test_month.to_s + '-' + test_day.to_s).to_date
     date = test_date
 
-    test_type = LabTestType.where(["TestName = ?",params[:lab_result].to_s]).first
-    test_modifier = params[:test_value].to_s.match(/=|>|</)[0]
-    test_value = params[:test_value].first.to_s.gsub('>','').gsub('<','').gsub('=','')
-    available_test_type = LabTestType.where(["TestType IN (?)", test_type.TestType]).collect{|n|n.Panel_ID}
-    lab_test_table = LabTestTable.new()
-    lab_test_table.TestOrdered = LabPanel.test_name(available_test_type)[0]
-    lab_test_table.Pat_ID = patient_bean.national_id
-    lab_test_table.OrderDate = date
-    lab_test_table.OrderTime = Time.now().strftime("%H:%M:%S")
-    lab_test_table.OrderedBy = current_user.id
-    lab_test_table.Location = Location.current_health_center.name
-    lab_test_table.save
-
-    lab_test_table.reload
-
-    lab_sample = LabSample.new()
-    lab_sample.AccessionNum = lab_test_table.AccessionNum
-    lab_sample.USERID = current_user.id
-    lab_sample.TESTDATE = date
-    lab_sample.PATIENTID = patient_bean.national_id
-    lab_sample.DATE = date
-    lab_sample.TIME = Time.now().strftime("%H:%M:%S")
-    lab_sample.SOURCE = Location.current_location.id
-    lab_sample.DeleteYN = 0
-    lab_sample.Attribute = "pass"
-    lab_sample.TimeStamp = Time.now()
-    lab_sample.save
-
-    lab_sample.reload
-
-    lab_parameter = LabParameter.new()
-    lab_parameter.Sample_ID = lab_sample.Sample_ID
-    lab_parameter.TESTTYPE =  test_type.TestType
-    lab_parameter.TESTVALUE = test_value
-    lab_parameter.TimeStamp = Time.now()
-    lab_parameter.Range = test_modifier
-    lab_parameter.save
-
     #create an order
-
     settings = YAML.load_file("#{Rails.root.to_s}/config/lims.yml")[Rails.env] rescue nil
     create_url = "#{settings['national-repo-node']}/create_hl7_order" rescue nil
+
     
     if national_lims_activated
-      json = { :return_path => "http://#{request.host}:#{request.port}",
-               :district => settings['district'],
-               :health_facility_name => settings['facility_name'],
-               :first_name=> patient_bean.name.split(/\s+/).first,
-               :last_name=>  patient_bean.name.split(/\s+/).last,
-               :middle_name=>"",
-               :date_of_birth=> (person.birthdate rescue nil),
-               :gender=> ((patient_bean.sex == "Female") ? "F" : "M"),
-               :national_patient_id=> patient_bean.national_id,
-               :phone_number=> (patient_bean.cell_phone_number ||
-                   patient_bean.home_phone_number ||
-                   patient_bean.office_phone_number),
-               :reason_for_test=> '',
-               :sample_collector_last_name=> '',
-               :sample_collector_first_name=> '',
-               :sample_collector_phone_number=> '',
-               :sample_collector_id=> '',
-               :sample_order_location=> Location.current_location.name,
-               :sample_type=> "Blood",
-               :date_sample_drawn=> "",
-               :tests=> ["Viral Load"],
-               :sample_priority=> 'Routine',
-               :target_lab=> settings['receiving_facility'],
-               :tracking_number => "",
-               :art_start_date => "",
-               :date_dispatched => "",
-               :date_received => Time.now,
-               :return_json => 'true'
-      }
+      ch_result = check_patient_order(params[:patient_id])      
+      if  ch_result[1] != false         
+          tracking_number = ch_result[0]                            
+          json = {
+            :tracking_number => tracking_number,
+            :test_status => 'verified',
+            :test_name => 'Viral Load',       
+            :who_updated => {
+                    'id_number': '1',
+                    'phone_number': '2939393',
+                    'first_name': 'gibo',
+                    'last_name': 'malolo'
+            },
+            :results => {
+                    'Viral Load': test_modifier + test_value
+            }
+          }
+          token_ = File.read("#{Rails.root}/tmp/token")
+          headers =  {
+                  content_type: 'application/json',
+                  token: token_
+          }
 
-      test_date = "#{params[:test_year]}/#{params[:test_month]}/#{params[:test_day]}".to_datetime.strftime("%Y%m%d%H%M%S")
-      #Post to NLIMS
-      data = JSON.parse(RestClient::Request.execute(:method => 'post',  :url => create_url, :payload => json.to_json, :headers => {"Content-Type" => "application/json"})) #rescue nil
+          if validate_nlims_token == true
+              url = "#{settings['nlims_controller_ip']}/api/#{settings['nlims_api_version']}/update_test"
+              res =  JSON.parse(RestClient.post(url,json,headers))              
+              if res['error'] == false      
+                
+              else               
+              end         
+          else
+            if re_authenticate_to_nlims == true
+              token_ = File.read("#{Rails.root}/tmp/token")
+              headers = {
+                content_type: 'application/json',
+                token: token_
+              }
+              url = "#{settings['nlims_controller_ip']}/api/#{settings['nlims_api_version']}/update_test"
+              res =  JSON.parse(RestClient.post(url,json,headers))
+              if res['error'] == false
+              else  
+              end           
+            end
+          end
+      else
+        
+        json = {
+                  :district => settings['district'],
+                  :health_facility_name => settings['facility_name'],
+                  :first_name=> patient_bean.name.split(/\s+/).first,
+                  :last_name=>   patient_bean.name.split(/\s+/).last,
+                  :middle_name=> "",
+                  :date_of_birth=> (person.birthdate rescue nil),
+                  :gender=> ((patient_bean.sex == "Female") ? "F" : "M"),
+                  :national_patient_id=>   patient_bean.national_id,
+                  :phone_number=> (patient_bean.cell_phone_number ||
+                                    patient_bean.home_phone_number ||
+                                    patient_bean.office_phone_number),
+                  :reason_for_test=> '',
+                  :who_order_test_last_name=> 'ss',
+                  :who_order_test_first_name=> 'ddd',
+                  :who_order_test_phone_number=> 'wwww',
+                  :who_order_test_id=> '1',
+                  :order_location=>  Location.current_location.name,
+                  :sample_type=>  "Blood",
+                  :date_sample_drawn=> test_date.strftime("%Y%m%d%H%M%S"),
+                  :tests=> ['Viral Load'],
+                  :sample_priority=>  'Routine',
+                  :target_lab=> settings['receiving_facility'],            
+                  :art_start_date => '',            
+                  :date_received => '',
+                  :requesting_clinician => ""         
+          }
+          
+          token_ = File.read("#{Rails.root}/tmp/token")
+          headers =  {
+                  content_type: 'application/json',
+                  token: token_
+          }
 
+          if validate_nlims_token == true
+              url = "#{settings['nlims_controller_ip']}/api/#{settings['nlims_api_version']}/create_order"
+              res =  JSON.parse(RestClient.post(url,json,headers))                
+             
+              if res['error'] == false      
+                tracking_number = res['data']['tracking_number']
+                couch_id = res['data']['couch_id']
+                order_type = OrderType.where(:name => 'Lab')[0]['order_type_id']         
 
-      if !data.blank?
-        order                          = {"_id"           => data["tracking_number"],
-                                          "sample_status" => "specimen-accepted"}
+                patient_id = params[:patient_id]
+                encounter_type = EncounterType.find_by_name("Lab").id
+                patient = Patient.find(patient_id)
+                datetime = session[:datetime].present? ? session[:datetime].to_date : Time.now
+                enc = Encounter.new
+                enc.patient_id = patient.id
+                enc.encounter_type = encounter_type
+                enc.encounter_datetime = datetime
+                enc.save
+  
+                cp = Concept.find_by_name("Hiv viral load").concept_id
+                obs = Observation.new
+                obs.person_id = patient_id
+                obs.creator = current_user.id
+                obs.location_id = Location.current_location
+                obs.value_text = "Request"
+                obs.concept_id = cp
+                obs.encounter_id = enc.id
+                obs.obs_datetime = datetime
+                obs.save
+                
+                uuid = Order.get_uuid     
+                if result_given == "No"            
+                  
+                  Order.create(          
+                    order_type_id: order_type,
+                    concept_id: cp,
+                    orderer: current_user.user_id,
+                    encounter_id: enc.id,
+                    instructions: couch_id,
+                    start_date:   test_date.strftime("%Y%m%d%H%M%S"),
+                    discontinued: '0',
+                    creator: current_user.user_id,
+                    date_created: test_date.strftime("%Y%m%d%H%M%S"),
+                    voided: '0',
+                    patient_id: patient_id,
+                    accession_number: tracking_number,
+                    uuid: uuid
+                  )  
+                else
+                  Order.create(          
+                    order_type_id: order_type,
+                    concept_id: cp,
+                    orderer: current_user.user_id,
+                    encounter_id: enc.id,
+                    instructions: couch_id,
+                    start_date:   test_date.strftime("%Y%m%d%H%M%S"),
+                    discontinued: '0',
+                    creator: current_user.user_id,
+                    date_created: test_date.strftime("%Y%m%d%H%M%S"),
+                    voided: '0',
+                    patient_id: patient_id,
+                    accession_number: tracking_number,
+                    uuid: uuid
+                  )  
+                end
+                json = {
+                  :tracking_number => tracking_number,
+                  :test_status => 'verified',
+                  :test_name => 'Viral Load',       
+                  :who_updated => {
+                          'id_number': '1',
+                          'phone_number': '2939393',
+                          'first_name': 'gibo',
+                          'last_name': 'malolo'
+                  },
+                  :results => {
+                          'Viral Load': test_modifier + test_value
+                  }
+                }
+                
+                url = "#{settings['nlims_controller_ip']}/api/#{settings['nlims_api_version']}/update_test"
+                res =  JSON.parse(RestClient.post(url,json,headers)) 
+                
+              else               
+              end         
+          else
+            if re_authenticate_to_nlims == true
+              token_ = File.read("#{Rails.root}/tmp/token")
+              headers = {
+                content_type: 'application/json',
+                token: token_
+              }
+              url = "#{settings['nlims_controller_ip']}/api/#{settings['nlims_api_version']}/create_order"
+              res =  JSON.parse(RestClient.post(url,json,headers))
+              if res['error'] == false
+              else  
+              end           
+            end
+          end
 
-        h                              = {}
-        h['test_status']               = "verified"
-        h['remarks']                   = ""
-        h['datetime_started']          = ""
-        h['datetime_completed']        = test_date
-        h['who_updated']               = {}
-        who                            = current_user
-        h['who_updated']['first_name'] = who.name.strip.scan(/^\w+/).first
-        h['who_updated']['last_name']  = who.name.strip.scan(/\w+$/).last
-        h['who_updated']['ID_number']  = who.username
-
-        h['results']                   = {"Viral Load" => (params[:test_value].first rescue "") }
-        order['results']               = {}
-        order['results']["Viral Load"] = h
-
-        remote_post_url = "#{settings['central_repo']}/pass_json/"
-        RestClient::Request.execute(:method => 'post',  :url => remote_post_url, :payload => order.to_json, :headers => {"Content-Type" => "application/json"})
 
       end
+
+    else
+      test_type = LabTestType.where(["TestName = ?",params[:lab_result].to_s]).first
+      test_modifier = params[:test_value].to_s.match(/=|>|</)[0]
+      test_value = params[:test_value].first.to_s.gsub('>','').gsub('<','').gsub('=','')
+      available_test_type = LabTestType.where(["TestType IN (?)", test_type.TestType]).collect{|n|n.Panel_ID}
+      lab_test_table = LabTestTable.new()
+      lab_test_table.TestOrdered = LabPanel.test_name(available_test_type)[0]
+      lab_test_table.Pat_ID = patient_bean.national_id
+      lab_test_table.OrderDate = date
+      lab_test_table.OrderTime = Time.now().strftime("%H:%M:%S")
+      lab_test_table.OrderedBy = current_user.id
+      lab_test_table.Location = Location.current_health_center.name
+      lab_test_table.save
+  
+      lab_test_table.reload
+  
+      lab_sample = LabSample.new()
+      lab_sample.AccessionNum = lab_test_table.AccessionNum
+      lab_sample.USERID = current_user.id
+      lab_sample.TESTDATE = date
+      lab_sample.PATIENTID = patient_bean.national_id
+      lab_sample.DATE = date
+      lab_sample.TIME = Time.now().strftime("%H:%M:%S")
+      lab_sample.SOURCE = Location.current_location.id
+      lab_sample.DeleteYN = 0
+      lab_sample.Attribute = "pass"
+      lab_sample.TimeStamp = Time.now()
+      lab_sample.save
+  
+      lab_sample.reload
+  
+      lab_parameter = LabParameter.new()
+      lab_parameter.Sample_ID = lab_sample.Sample_ID
+      lab_parameter.TESTTYPE =  test_type.TestType
+      lab_parameter.TESTVALUE = test_value
+      lab_parameter.TimeStamp = Time.now()
+      lab_parameter.Range = test_modifier
+      lab_parameter.save
     end
 
     unless params[:go_to_patient_dashboard].blank?

@@ -172,12 +172,12 @@ class ApplicationController < GenericApplicationController
             rst_value = value['tests']['Viral Load']['test_result']['Viral Load'] rescue nil
             ord = Order.find_by_sql("SELECT date_voided,date_created,voided FROM orders WHERE accession_number='#{tracking_number}'")
             if !ord.blank?
-              date_voided = ord[0]['date_voided']
-              date_created = ord[0]['date_created']
+              date_voided = ord[0]['date_voided'].to_s.strftime("%d-%b-%y")  rescue nil
+              date_created = ord[0]['date_created'].to_s.strftime("%d-%b-%y")  rescue nil
               if ord[0]['voided'] ==  1
-                rv_data.push([date_created.strftime("%d-%b-%y"),date_voided.strftime("%d-%b-%y"),rst_value,"Yes"])
+                rv_data.push([date_created,date_voided , rst_value,"Yes"])
               else
-                rv_data.push([date_created.strftime("%d-%b-%y"),"------","Not Available","No"])
+                rv_data.push([date_created,"------","Not Available","No"])
               end
             end
           end      
@@ -198,12 +198,12 @@ class ApplicationController < GenericApplicationController
               rst_value = value['tests']['Viral Load']['test_result']['Viral Load'] rescue nil
               ord = Order.find_by_sql("SELECT date_voided,date_created,voided FROM orders WHERE accession_number='#{tracking_number}'")
               if !ord.blank?
-                date_voided = ord[0]['date_voided']
-                date_created = ord[0]['date_created']
+                date_voided = ord[0]['date_voided'].to_s.strftime("%d-%b-%y")  rescue nil
+                date_created = ord[0]['date_created'].to_s.strftime("%d-%b-%y")  rescue nil
                 if ord[0]['voided'] ==  1
-                  rv_data.push([date_created.strftime("%d-%b-%y"),date_voided.strftime("%d-%b-%y"),rst_value,"Yes"])
+                  rv_data.push([date_created,date_voided,rst_value,"Yes"])
                 else
-                  rv_data.push([date_created.strftime("%d-%b-%y"),date_voided.strftime("%d-%b-%y"),rst_value,"No"])
+                  rv_data.push([date_created,date_voided,rst_value,"No"])
                 end
               end
             end      

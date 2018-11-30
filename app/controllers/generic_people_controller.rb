@@ -1865,8 +1865,8 @@ EOF
         rs = get_vl_with_results(@patient)           
         if rs != nil
           vl_result = rs[0]
-          vl_latest_date = rs[1].strftime("%d-%b-%Y")
-          date_vl_result_given = rs[2].strftime("%d-%b-%Y")          
+          vl_latest_date = rs[1].strftime("%d-%b-%Y") rescue nil
+          date_vl_result_given = rs[2].strftime("%d-%b-%Y")      rescue nil     
           value = vl_result.split(vl_result[0,1])[1]
           high_vl = true
           if (value.to_i < 1000)
