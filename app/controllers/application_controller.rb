@@ -171,9 +171,10 @@ class ApplicationController < GenericApplicationController
             tracking_number = key
             rst_value = value['tests']['Viral Load']['test_result']['Viral Load'] rescue nil
             ord = Order.find_by_sql("SELECT date_voided,date_created,voided FROM orders WHERE accession_number='#{tracking_number}'")
+           
             if !ord.blank?
-              date_voided = ord[0]['date_voided'].to_s.strftime("%d-%b-%y")  rescue nil
-              date_created = ord[0]['date_created'].to_s.strftime("%d-%b-%y")  rescue nil
+              date_voided = ord[0]['date_voided'].to_date  rescue nil
+              date_created = ord[0]['date_created'].to_date  rescue nil
               if ord[0]['voided'] ==  1
                 rv_data.push([date_created,date_voided , rst_value,"Yes"])
               else
@@ -198,8 +199,8 @@ class ApplicationController < GenericApplicationController
               rst_value = value['tests']['Viral Load']['test_result']['Viral Load'] rescue nil
               ord = Order.find_by_sql("SELECT date_voided,date_created,voided FROM orders WHERE accession_number='#{tracking_number}'")
               if !ord.blank?
-                date_voided = ord[0]['date_voided'].to_s.strftime("%d-%b-%y")  rescue nil
-                date_created = ord[0]['date_created'].to_s.strftime("%d-%b-%y")  rescue nil
+                date_voided = ord[0]['date_voided'].to_date rescue nil
+                date_created = ord[0]['date_created'].to_date rescue nil
                 if ord[0]['voided'] ==  1
                   rv_data.push([date_created,date_voided,rst_value,"Yes"])
                 else
