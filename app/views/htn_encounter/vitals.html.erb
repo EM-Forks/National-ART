@@ -258,7 +258,7 @@ dateToday = session[:datetime].to_date rescue Date.today
     //alert(correctedWeights)
     return [{name: 'Weight', data: correctedWeights}];
   }
-    
+
   function hookKeyboard(){
 
     __$("nextButton").onclick = function(){
@@ -355,6 +355,7 @@ dateToday = session[:datetime].to_date rescue Date.today
   }
 
   function addButton() {
+    jQuery("#captureBPBtn").remove();
     if ((<%= htn_activated %>) && (<%= !@patient_eligible %>))
     {
       var bp = document.createElement("button");
@@ -371,7 +372,6 @@ dateToday = session[:datetime].to_date rescue Date.today
       bp.setAttribute("id", "captureBPBtn")
       document.getElementById("buttons").appendChild(bp);
     }
-
   }
 
   function hideButton()
@@ -406,7 +406,7 @@ dateToday = session[:datetime].to_date rescue Date.today
     :absoluteMin => 0,
     :absoluteMax => 250,
     :units => 'kg',
-    :validationRule => "([0-9]+\\.[0-9])|Unknown$",
+    :validationRule => "([0-9]+\\.[0-9])",
     :validationMessage => "You must enter a decimal between 0 and 9 (for example: 54<b>.6</b>)",
     :tt_pageStyleClass => "Keyboard Numeric NumbersOnlyWithDecimal",
     :helpText => "Weight (Kg)" }).html_safe %>
@@ -416,7 +416,7 @@ dateToday = session[:datetime].to_date rescue Date.today
     :tt_pageStyleClass => "NoKeyboard",
     :condition => "#{@bp_treatment_info_available == false}",
     :helpText => "Already taking drugs for blood pressure?" }).html_safe %>
-  
+
   <% if @patient_bean.age > 18 and not @current_height == 0 %>
     <%= (touch_hidden_tag "HEIGHT (CM)", @patient, @current_height).html_safe %>
   <% else %>
@@ -428,7 +428,7 @@ dateToday = session[:datetime].to_date rescue Date.today
       :absoluteMin => 10,
       :absoluteMax => 228,
       :units => 'cm',
-      :validationRule => "^([0-9]+)|Unknown$",
+      :validationRule => "^\\d+$|Unknown$",
       :validationMessage => "You must enter numbers only (for example 157)",
       :tt_pageStyleClass => "Numeric NumbersOnly",
       :helpText => "Height (cm)" }).html_safe %>
@@ -450,7 +450,7 @@ dateToday = session[:datetime].to_date rescue Date.today
                              :absoluteMin => 60,
                              :absoluteMax => 300,
                              :condition => "captureBP()",
-                             :validationRule => "^([0-9]+)|Unknown$",
+                             :validationRule => "^\\d+$",
                              :validationMessage => "You must enter numbers only (for example 157)",
                              :tt_pageStyleClass => "KeyboardNumeric NumbersOnly" }).html_safe %>
 
@@ -464,7 +464,7 @@ dateToday = session[:datetime].to_date rescue Date.today
                              :max => 110,
                              :absoluteMin => 30,
                              :absoluteMax => 150,
-                             :validationRule => "^([0-9]+)|Unknown$",
+                             :validationRule => "^\\d+$",
                              :validationMessage => "You must enter numbers only (for example 157)",
                              :tt_pageStyleClass => "Keyboard Numeric NumbersOnly"}).html_safe %>
 

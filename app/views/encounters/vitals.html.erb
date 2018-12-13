@@ -160,7 +160,7 @@ dateToday = session[:datetime].to_date rescue Date.today
     //weight_trail = [];
 
     count = 0
-    
+
     for(var i = 0; i < obs.length; i++) {
       m_index = obs[i][0];
       weight_trail[m_index] = obs[i][1];
@@ -170,7 +170,7 @@ dateToday = session[:datetime].to_date rescue Date.today
     }
 /*
     data_found = false ; prev_weight = null;
-    
+
     for(var i = 0; i < weight_trail.length; i++){
       if(count == 0)
         continue;
@@ -369,10 +369,10 @@ dateToday = session[:datetime].to_date rescue Date.today
       correctedWeights.push(obs[i][1]);
     }
     start_point = obs[0][0].split('/')
-    
+
     return [{name: 'Weight', data: correctedWeights}];
   }
-  
+
    */
   function hookKeyboard(){
 
@@ -579,7 +579,7 @@ Find more at: http://www.skillsyouneed.com/num/percent-change.html#ixzz4TIacWujf
         :absoluteMin => 10,
         :absoluteMax => 228,
         :units => 'cm',
-        :validationRule => "^([0-9]+)|Unknown$",
+        :validationRule => "^\\d+$|Unknown$",
         :validationMessage => "You must enter numbers only (for example 157)",
         :tt_pageStyleClass => "Numeric NumbersOnly",
         :helpText => "Height (cm)" }).html_safe %>
@@ -594,7 +594,7 @@ Find more at: http://www.skillsyouneed.com/num/percent-change.html#ixzz4TIacWujf
       :absoluteMin => 0,
       :absoluteMax => 250,
       :units => 'kg',
-      :validationRule => "([0-9]+\\.[0-9])|Unknown$",
+      :validationRule => "([0-9]+\\.[0-9])",
       :validationMessage => "You must enter a decimal between 0 and 9 (for example: 54<b>.6</b>)",
       :tt_pageStyleClass => "Keyboard Numeric NumbersOnlyWithDecimal",
       :helpText => "Weight (Kg)" }).html_safe %>

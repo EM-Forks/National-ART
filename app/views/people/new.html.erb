@@ -12,14 +12,15 @@
   .tt_controls_middle_name  #na { display: block; }
   .tt_controls_ground_phone_number #Unknown { display:block; }
 
-  .tt_controls_region_of_origin .keyboard{display:none;}
-  .tt_controls_current_region .keyboard{display:none;}
+  .tt_controls_region_of_origin .keyboard, .tt_controls_region_of_origin #Unknown{display:none;}
+  .tt_controls_current_region .keyboard, .tt_controls_current_region #Unknown{display:none;}
 
   .tt_controls_month_of_birth .keyboard{display:none;}
   #tt_page_month_of_birth .options{height:570px;}
   #tt_page_month_of_birth .options li{font-size:30px;}
 
   .tt_controls_home_village #space , #apostrophe { display:inline; }
+  .tt_controls_home_village #Unknown { display:none; }
   .tt_controls_home_district #num  { display:none; }
 
   .tt_controls_current_traditional_authority_ta #space { display:inline; }
@@ -45,14 +46,13 @@
   #char{ display:none; }
   #apostrophe { display:inline; }
 
-  .tt_controls_home_district #num{ display:none; }
-  .tt_controls_current_district #num{ display:none; }
+  .tt_controls_home_district #num, .tt_controls_home_district #Unknown{ display:none; }
+  .tt_controls_current_district #num, .tt_controls_current_district #Unknown{ display:none; }
 
   .tt_controls_current_city_place_or_area_of_residence #num{ display:block; }
   .tt_controls_current_city_place_or_area_of_residence #char{ display:block; }
 
   .tt_controls_closest_landmark_or_plot_number #num{ display:block; }
-  .tt_controls_closest_landmark_or_plot_number #char{ display:block; }
 
   .azButton .numericKeyboard #char {
     display: block;
@@ -358,7 +358,7 @@
 
   <%= text_field_tag "p['address2_a']" , nil, {id:  'address2_a', :tt_onUnLoad => '$("address2").value = $("address2_a").value', :condition => '$("address2").value == "Other"', :id => 'address2_a',:tt_requireNextClick => true, :ajaxURL => '/person_addresses/address2?search_string=', :allowFreeText => true, :field_type => 'alpha', :helpText => 'Specify Home District', :tt_onLoad => "$('nextButton').style.display = 'block';" } if ask_home_village %>
 
-  <%= text_field "person[addresses]" , 'county_district', :condition => '$("address2").value != "Other"', :helpText => 'Ancestral Traditional Authority (T/A) or area of residence',:tt_requireNextClick => false, :ajaxURL => '', :tt_pageStyleClass => "azButton", :tt_onLoad => "set_ajaxURL_for_suggestions('/people/traditional_authority/TraditionalAuthority?filter_value=' ,document.getElementById('address2').value);$('nextButton').style.display = 'none';" %></p>
+  <%= text_field "person[addresses]" , 'county_district', :condition => '$("address2").value != "Other"', :helpText => 'Ancestral Traditional Authority (T/A) or area of residence',:tt_requireNextClick => false, :ajaxURL => '', :tt_pageStyleClass => "azButton", :tt_onLoad => "set_ajaxURL_for_suggestions('/people/traditional_authority/TraditionalAuthority?filter_value=' ,document.getElementById('address2').value);$('nextButton').style.display = 'none'; $('Unknown').style.display = 'none'" %></p>
 
   <%= text_field "p[addresses]" , 'county_district_a', :tt_onUnLoad => '$("person_addresses_county_district").value = $("p_addresses_county_district_a").value', :condition => '$("address2").value == "Other"', :ajaxURL => '/person_addresses/traditional_authority?search_string=' , :helpText => 'Specify Ancestral Traditional Authority (T/A) or area of residence' , :tt_pageStyleClass => "azButton", :allowFreeText => true, :tt_onLoad => "$('nextButton').style.display = 'block';"  %></p>
 
@@ -391,7 +391,7 @@
     :tt_requireNextClick => false, 
     :ajaxURL => "",
     :tt_pageStyleClass => "azButton",
-    :tt_onLoad => "set_ajaxURL_for_suggestions('/people/traditional_authority/TraditionalAuthority?filter_value=' ,document.getElementById('state_province').value);"
+    :tt_onLoad => "set_ajaxURL_for_suggestions('/people/traditional_authority/TraditionalAuthority?filter_value=' ,document.getElementById('state_province').value); $('Unknown').style.display = 'none';"
   }%>
 
   <%= text_field "filter" , 't_a_a', :tt_onUnLoad => 'if ($("t_a_a")) {$("t_a").value = $("t_a_a").value}', :condition => '$("state_province").value == "Other"', :ajaxURL => "/person_addresses/traditional_authority?search_string=", :tt_pageStyleClass => "azButton", :allowFreeText => true,  :helpText => 'Specify Traditional Authority (T/A) or area of residence', :tt_onLoad => "$('nextButton').style.display = 'block';" %></p>
@@ -403,7 +403,7 @@
     :tt_requireNextClick => false,
     :tt_pageStyleClass => "azButton",
     :ajaxURL => "/people/village?search_string=",
-    :allowFreeText => false , :tt_onLoad => 'set_ajaxURL_for_suggestions("/people/village/Village?filter_value=" ,document.getElementById("filter_t_a").value);$("nextButton").style.display = "none";'} %>
+    :allowFreeText => false , :tt_onLoad => 'set_ajaxURL_for_suggestions("/people/village/Village?filter_value=" ,document.getElementById("filter_t_a").value);$("nextButton").style.display = "none"; $("Unknown").style.display = "none"'} %>
 
   <%= text_field_tag "p[addresses][city_village_a]", params[:city_village_a],
     {:tt_onUnLoad => '$("person_addresses_city_village").value = $("p_addresses_city_village_a").value',
