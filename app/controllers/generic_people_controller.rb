@@ -171,7 +171,7 @@ class GenericPeopleController < ApplicationController
         {"National id"=> PatientService.get_national_id(patient) }
     }  if !patient.blank?
 
-		render :text => PatientService.remote_demographics(person).to_json
+		render plain: PatientService.remote_demographics(person).to_json
 	end
 
 	def remote_demographics
@@ -179,7 +179,7 @@ class GenericPeopleController < ApplicationController
 		people = PatientService.find_person_by_demographics(params)
 		result = people.empty? ? {} : PatientService.demographics(people.last)
 
-		render :text => result.to_json
+		render plain: result.to_json
 	end
 
   def search_remote_people
@@ -190,7 +190,7 @@ class GenericPeopleController < ApplicationController
       results << PatientService.demographics(person)
     end
 		
-		render :text => results.to_json
+		render plain: results.to_json
 	end
 
 	def art_information
@@ -198,7 +198,7 @@ class GenericPeopleController < ApplicationController
     national_id = params["person"]["value"] if national_id.blank? rescue nil
 		art_info = Patient.art_info_for_remote(national_id)
 		art_info = art_info_for_remote(national_id)
-		render :text => art_info.to_json
+		render plain: art_info.to_json
 	end
 
 	def search
@@ -958,7 +958,7 @@ EOF
 
     end
 
-    render :text => data.to_json and return
+    render plain: data.to_json and return
   end
 
 
@@ -1159,7 +1159,7 @@ EOF
     locations = locations.map do |d|
       "<li value=\"#{d.name}\">#{d.name}</li>"
     end
-    render :text => locations.join('') + "<li value='Other'>Other</li>" and return
+    render plain: locations.join('') + "<li value='Other'>Other</li>" and return
   end
 	# Villages containing the string given in params[:value]
   def village
@@ -1356,7 +1356,7 @@ EOF
       "&family_name=#{params[:family_name]}&gender=#{params[:gender]}"
 
     result = RestClient.get(url)
-    render :text => result, :layout => false
+    render plain: result, :layout => false
   end
 
   def demographics
@@ -1395,7 +1395,7 @@ EOF
         "last_name" => last_name, "dob" => patient.birth_date,
         "gender" => patient.sex, "age" => patient.age }
     end
-    render :text => hash.to_json
+    render plain:  hash.to_json
   end
 
   def reassign_dde_national_id
@@ -1457,8 +1457,8 @@ EOF
     identifier = params[:person][:patient][:identifiers]["national_id"] rescue nil
     identifier = params["person"]["patient"]["identifiers"]["National id"] if identifier.nil?
     people = PatientService.search_by_identifier(identifier)
-    render :text => "" and return if people.blank?
-    render :text => PatientService.remote_demographics(people.first).to_json rescue nil
+    render plain: "" and return if people.blank?
+    render plain: PatientService.remote_demographics(people.first).to_json rescue nil
     return
   end
 
